@@ -1,5 +1,32 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+import { defineConfig, envField } from 'astro/config';
+
+import react from '@astrojs/react';
+import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
-export default defineConfig({});
+export default defineConfig({
+  output: "server",
+
+  integrations: [react()],
+  vite: {
+    plugins: [tailwindcss()],
+  },
+
+  site: 'https://phrp.marcvspt.tech',
+
+  env: {
+    schema: {
+      TURSO_BD_URL: envField.string({
+        context: 'server',
+        access: 'secret',
+        optional: false
+      }),
+      TURSO_DB_TOKEN: envField.string({
+        context: 'server',
+        access: 'secret',
+        optional: false
+      }),
+    }
+  }
+});
