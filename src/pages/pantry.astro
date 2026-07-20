@@ -1,0 +1,40 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import DataTable from "@/components/ui/DataTable.astro";
+import DeleteHandler from "@/components/ui/DeleteHandler.astro";
+import CrudModal from "@/components/ui/CrudModal";
+import { PantryRepository } from "@/lib/modules/pantry/repository";
+const userId = Astro.locals.userId;
+const items = await new PantryRepository().findAll(userId);
+const fields = [
+  { name: "name", label: "Nombre", type: "text" as const, required: true },
+  { name: "category_id", label: "Categoría", type: "text" as const },
+  { name: "default_quantity", label: "Cantidad por defecto", type: "number" as const, min: 0, step: "0.01" },
+  { name: "unit", label: "Unidad", type: "text" as const, placeholder: "uds, kg, lts" },
+  { name: "notes", label: "Notas", type: "textarea" as const },
+];
+const defaultForm = { name: "", category_id: "", default_quantity: 1, unit: "", notes: "" };
+---
+
+<BaseLayout title="Pantry - Open PHRP">
+  <div data-module="pantry" class="space-y-4">
+    <PageHeader title="Pantry" createLabel="Nuevo producto" createModule="pantry" />
+    <DataTable columns={["Nombre", "Cant.", "Unidad", "Notas"]} emptyMessage="Sin productos en la despensa">
+      {items.map(i => (
+        <tr key={i.id} class="hover:bg-nav-hover">
+          <td class="px-4 py-3 font-medium">{i.name}</td>
+          <td class="px-4 py-3">{i.default_quantity}</td>
+          <td class="px-4 py-3">{i.unit || "-"}</td>
+          <td class="px-4 py-3 text-text-muted text-sm">{i.notes || "-"}</td>
+          <td class="px-4 py-3 text-right space-x-2">
+            <button data-edit-pantry={i.id} class="text-indigo-600 hover:text-indigo-800 text-xs font-medium cursor-pointer">Editar</button>
+            <button data-delete-pantry={i.id} class="text-red-600 hover:text-red-800 text-xs font-medium cursor-pointer">Eliminar</button>
+          </td>
+        </tr>
+      ))}
+    </DataTable>
+  </div>
+  <CrudModal client:load module="pantry" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="producto" />
+  <DeleteHandler module="pantry" label="producto" />
+</BaseLayout>

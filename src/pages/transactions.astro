@@ -1,0 +1,56 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import DataTable from "@/components/ui/DataTable.astro";
+import DeleteHandler from "@/components/ui/DeleteHandler.astro";
+import CrudModal from "@/components/ui/CrudModal";
+import { TransactionRepository } from "@/lib/modules/transactions/repository";
+import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository";
+const userId = Astro.locals.userId;
+const filterType = Astro.url.searchParams.get("type") || "all";
+const repo = new TransactionRepository();
+const result = await repo.findAll(userId, { page: 1, pageSize: 200, ...(filterType !== "all" ? { type: filterType as "income" | "expense" } : {}) });
+const items = result ?? [];
+const pmRepo = new PaymentMethodRepository();
+const paymentMethods = await pmRepo.findAll(userId);
+const fields = [
+  { name: "type", label: "Tipo", type: "select" as const, required: true, options: [{ value: "expense", label: "Gasto" }, { value: "income", label: "Ingreso" }] },
+  { name: "amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
+  { name: "description", label: "Descripción", type: "text" as const },
+  { name: "payment_method_id", label: "Método de pago", type: "select" as const, options: [{ value: "", label: "Sin método" }, ...paymentMethods.map(pm => ({ value: pm.id, label: pm.name }))] },
+  { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "EUR €" }, { value: "MXN", label: "MXN $" }, { value: "USD", label: "USD $" }] },
+  { name: "date", label: "Fecha", type: "date" as const, required: true },
+];
+const defaultForm = { type: "expense", amount: 0, description: "", payment_method_id: "", currency: "MXN", date: new Date().toISOString().split("T")[0] };
+const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm.name]));
+---
+
+<BaseLayout title="Transacciones - Open PHRP">
+  <div data-module="transactions" class="space-y-4">
+    <PageHeader title="Transacciones" createLabel="Nueva transacción" createModule="transactions" />
+    <div class="flex gap-2">
+      {[["all", "Todas"], ["income", "Ingresos"], ["expense", "Gastos"]].map(([v, l]) => (
+        <a href={v === "all" ? "/transactions" : `/transactions?type=${v}`}
+           class={`px-3 py-1.5 text-sm rounded-lg ${filterType === v ? "bg-indigo-100 text-indigo-700 font-medium" : "bg-surface-alt text-nav hover:bg-nav-hover"}`}>{l}</a>
+      ))}
+    </div>
+    <DataTable columns={["Fecha", "Descripción", "Método", "Tipo", "Moneda", { label: "Monto", align: "right" }]} emptyMessage="Sin transacciones">
+      {items.map(tx => (
+        <tr key={tx.id} class="hover:bg-nav-hover">
+          <td class="px-4 py-3">{new Date(tx.date).toLocaleDateString("es")}</td>
+          <td class="px-4 py-3">{tx.description || "-"}</td>
+          <td class="px-4 py-3 text-xs text-text-muted">{tx.payment_method_id ? pmMap[tx.payment_method_id] || "-" : "-"}</td>
+          <td class="px-4 py-3"><span class={`text-xs font-medium px-2 py-0.5 rounded ${tx.type === "income" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{tx.type === "income" ? "Ingreso" : "Gasto"}</span></td>
+          <td class="px-4 py-3 text-xs text-text-muted">{tx.currency || "MXN"}</td>
+          <td class={`px-4 py-3 text-right font-mono ${tx.type === "income" ? "text-green-600" : "text-red-600"}`}>{tx.currency === "EUR" ? "€" : tx.currency === "USD" ? "$" : "$"}{Number(tx.amount).toFixed(2)}</td>
+          <td class="px-4 py-3 text-right space-x-2">
+            <button data-edit-transactions={tx.id} class="text-indigo-600 hover:text-indigo-800 text-xs font-medium cursor-pointer">Editar</button>
+            <button data-delete-transactions={tx.id} class="text-red-600 hover:text-red-800 text-xs font-medium cursor-pointer">Eliminar</button>
+          </td>
+        </tr>
+      ))}
+    </DataTable>
+  </div>
+  <CrudModal client:load module="transactions" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="transacción" />
+  <DeleteHandler module="transactions" label="transacción" />
+</BaseLayout>

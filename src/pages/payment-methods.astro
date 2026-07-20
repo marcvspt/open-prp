@@ -1,0 +1,53 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import DataTable from "@/components/ui/DataTable.astro";
+import DeleteHandler from "@/components/ui/DeleteHandler.astro";
+import CrudModal from "@/components/ui/CrudModal";
+import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository";
+const userId = Astro.locals.userId;
+const repo = new PaymentMethodRepository();
+const items = await repo.findAll(userId);
+const fields = [
+  { name: "name", label: "Nombre", type: "text" as const, required: true },
+  { name: "scope", label: "Ámbito", type: "select" as const, options: [
+    { value: "personal", label: "Personal" },
+    { value: "family", label: "Familiar" },
+    { value: "both", label: "Ambos" },
+  ] },
+  { name: "icon", label: "Icono", type: "text" as const },
+  { name: "color", label: "Color", type: "color" as const },
+];
+const defaultForm = { name: "", scope: "personal", icon: "", color: "#6366f1" };
+---
+
+<BaseLayout title="Métodos de pago - Open PHRP">
+  <div data-module="payment-methods" class="space-y-4">
+    <PageHeader title="Métodos de pago" createLabel="Nuevo método" createModule="payment-methods" />
+    <DataTable columns={["Nombre", "Tipo", "Ámbito", { label: "Icono", align: "center" }, "Color"]} emptyMessage="Sin métodos de pago">
+      {items.map(m => {
+        const isSystem = m.is_global || m.card_id;
+        const badge = m.is_global ? "Global" : m.card_id ? "Tarjeta" : "Personal";
+        const badgeClass = m.is_global ? "bg-purple-100 text-purple-700" : m.card_id ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700";
+        return (
+        <tr key={m.id} class="hover:bg-nav-hover">
+          <td class="px-4 py-3 font-medium">{m.name}</td>
+          <td class="px-4 py-3"><span class={`text-xs font-medium px-2 py-0.5 rounded ${badgeClass}`}>{badge}</span></td>
+          <td class="px-4 py-3 text-xs text-text-muted">{m.scope === "family" ? "Familiar" : m.scope === "both" ? "Ambos" : m.is_global ? "-" : "Personal"}</td>
+          <td class="px-4 py-3 text-center">{m.icon || "-"}</td>
+          <td class="px-4 py-3">
+            <span class="inline-block w-5 h-5 rounded-full border border-border" style={{ backgroundColor: m.color || "#6366f1" }} />
+          </td>
+          <td class="px-4 py-3 text-right space-x-2">
+            {!isSystem && <>
+              <button data-edit-payment-methods={m.id} class="text-indigo-600 hover:text-indigo-800 text-xs font-medium cursor-pointer">Editar</button>
+              <button data-delete-payment-methods={m.id} class="text-red-600 hover:text-red-800 text-xs font-medium cursor-pointer">Eliminar</button>
+            </>}
+          </td>
+        </tr>
+      );})}
+    </DataTable>
+  </div>
+  <CrudModal client:load module="payment-methods" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="método de pago" />
+  <DeleteHandler module="payment-methods" label="método de pago" />
+</BaseLayout>

@@ -1,0 +1,44 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import DataTable from "@/components/ui/DataTable.astro";
+import DeleteHandler from "@/components/ui/DeleteHandler.astro";
+import CrudModal from "@/components/ui/CrudModal";
+import { EventRepository } from "@/lib/modules/events/repository";
+const userId = Astro.locals.userId;
+const items = (await new EventRepository().findAll(userId)).data ?? [];
+const statusColor: Record<string, string> = { pending: "bg-yellow-100 text-yellow-700", confirmed: "bg-blue-100 text-blue-700", completed: "bg-green-100 text-green-700", cancelled: "bg-red-100 text-red-700" };
+const fields = [
+  { name: "title", label: "Título", type: "text" as const, required: true },
+  { name: "description", label: "Descripción", type: "textarea" as const },
+  { name: "location", label: "Ubicación", type: "text" as const },
+  { name: "start_date", label: "Inicio", type: "date" as const, required: true },
+  { name: "end_date", label: "Fin", type: "date" as const },
+  { name: "status", label: "Estado", type: "select" as const, options: [{ value: "pending", label: "Pendiente" }, { value: "confirmed", label: "Confirmado" }, { value: "completed", label: "Completado" }, { value: "cancelled", label: "Cancelado" }] },
+  { name: "is_all_day", label: "Día completo", type: "checkbox" as const },
+];
+const defaultForm = { title: "", description: "", location: "", start_date: new Date().toISOString().split("T")[0], end_date: "", status: "pending", is_all_day: false };
+---
+
+<BaseLayout title="Eventos - Open PHRP">
+  <div data-module="events" class="space-y-4">
+    <PageHeader title="Eventos" createLabel="Nuevo evento" createModule="events" />
+    <DataTable columns={["Fecha", "Título", "Estado", "Ubicación", { label: "Día completo", align: "center" }]} emptyMessage="Sin eventos">
+      {items.map(ev => (
+        <tr key={ev.id} class="hover:bg-nav-hover">
+          <td class="px-4 py-3">{new Date(ev.start_date).toLocaleDateString("es")}</td>
+          <td class="px-4 py-3 font-medium">{ev.title}</td>
+          <td class="px-4 py-3"><span class={`text-xs px-2 py-0.5 rounded ${statusColor[ev.status]}`}>{ev.status}</span></td>
+          <td class="px-4 py-3">{ev.location || "-"}</td>
+          <td class="px-4 py-3 text-center">{ev.is_all_day ? "✅" : "-"}</td>
+          <td class="px-4 py-3 text-right space-x-2">
+            <button data-edit-events={ev.id} class="text-indigo-600 hover:text-indigo-800 text-xs font-medium cursor-pointer">Editar</button>
+            <button data-delete-events={ev.id} class="text-red-600 hover:text-red-800 text-xs font-medium cursor-pointer">Eliminar</button>
+          </td>
+        </tr>
+      ))}
+    </DataTable>
+  </div>
+  <CrudModal client:load module="events" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="evento" />
+  <DeleteHandler module="events" label="evento" />
+</BaseLayout>

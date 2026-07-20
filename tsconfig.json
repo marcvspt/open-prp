@@ -29,6 +29,9 @@
       ],
       "@/hooks/*": [
         "./src/lib/hooks/*"
+      ],
+      "@/lib/*": [
+        "./src/lib/*"
       ]
     },
     "jsx": "react-jsx",

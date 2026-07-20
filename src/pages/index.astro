@@ -1,7 +1,11 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import DashboardContent from "@/components/dashboard/DashboardContent";
 ---
 
-<BaseLayout title="Open PHRP">
-    <h1>Open Personal-Home Resource Planning</h1>
+<BaseLayout title="Dashboard - Open PHRP">
+  <div class="space-y-6">
+    <h1 class="text-2xl font-bold text-text">Dashboard</h1>
+    <DashboardContent client:load />
+  </div>
 </BaseLayout>

@@ -1,0 +1,21 @@
+---
+export interface Props {
+  module: string;
+  key?: string;
+  endpoint?: string;
+}
+
+const { module, key = "is_checked", endpoint = `/api/${module}/toggle` } = Astro.props;
+---
+
+<script define:vars={{ module, endpoint, key }}>
+  document.addEventListener('click', async (e) => {
+    const toggle = /** @type {HTMLElement} */(e.target).closest(`[data-toggle-${module}]`);
+    if (toggle) {
+      const id = toggle.getAttribute(`data-toggle-${module}`);
+      const value = /** @type {HTMLInputElement} */(toggle).checked;
+      await fetch(endpoint, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, [key]: value }) });
+      window.location.reload();
+    }
+  });
+</script>
