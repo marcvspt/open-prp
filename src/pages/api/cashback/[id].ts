@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { CashbackRepository } from "@/lib/modules/cashback/repository";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
 
 const repo = new CashbackRepository();
 

@@ -2,7 +2,6 @@ CREATE TABLE IF NOT EXISTS transactions (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
-  family_id TEXT REFERENCES families(id) ON DELETE CASCADE,
   card_id TEXT REFERENCES credit_cards(id) ON DELETE SET NULL,
   installment_id TEXT REFERENCES installments(id) ON DELETE SET NULL,
   type TEXT NOT NULL CHECK(type IN ('income','expense')),
@@ -21,5 +20,4 @@ CREATE TABLE IF NOT EXISTS transactions (
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type);
-CREATE INDEX IF NOT EXISTS idx_transactions_family_id ON transactions(family_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_card_id ON transactions(card_id);

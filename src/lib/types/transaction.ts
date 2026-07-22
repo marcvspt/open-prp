@@ -2,7 +2,6 @@ export interface Transaction {
   id: string;
   user_id: string;
   category_id: string | null;
-  family_id: string | null;
   card_id: string | null;
   installment_id: string | null;
   payment_method_id: string | null;
@@ -19,7 +18,6 @@ export interface Transaction {
 
 export interface CreateTransactionInput {
   category_id?: string;
-  family_id?: string;
   card_id?: string;
   installment_id?: string;
   payment_method_id?: string;
@@ -34,7 +32,6 @@ export interface CreateTransactionInput {
 
 export interface UpdateTransactionInput {
   category_id?: string;
-  family_id?: string;
   card_id?: string;
   installment_id?: string;
   payment_method_id?: string;
@@ -54,6 +51,4 @@ export interface TransactionFilter {
   date_to?: string;
   page?: number;
   pageSize?: number;
-  scope?: "personal" | "family" | "all";
-  family_id?: string;
 }

@@ -3,33 +3,68 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/ui/PageHeader.astro";
 import DataTable from "@/components/ui/DataTable.astro";
 import DeleteHandler from "@/components/ui/DeleteHandler.astro";
-import CrudModal from "@/components/ui/CrudModal";
-import { CategoryRepository } from "@/lib/modules/transactions/categories";
+import CrudModal from "@/components/ui/CrudModal.tsx";
+import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 const userId = Astro.locals.userId;
 const items = await new CategoryRepository().findAll(userId);
+const SECTION_LABELS: Record<string, string> = {
+  despensa: "Despensa",
+  tareas: "Tareas",
+  transacciones: "Transacciones",
+  plazos: "Plazos",
+  eventos: "Eventos",
+  "pagos-recurrentes": "Pagos recurrentes",
+};
+const SECTION_COLORS: Record<string, string> = {
+  despensa: "bg-emerald-100 text-emerald-700",
+  tareas: "bg-sky-100 text-sky-700",
+  transacciones: "bg-indigo-100 text-indigo-700",
+  plazos: "bg-amber-100 text-amber-700",
+  eventos: "bg-rose-100 text-rose-700",
+  "pagos-recurrentes": "bg-violet-100 text-violet-700",
+};
+const TYPE_LABELS: Record<string, string> = {
+  global: "Global",
+  personal: "Personal",
+};
+const TYPE_COLORS: Record<string, string> = {
+  global: "bg-purple-100 text-purple-700",
+  personal: "bg-green-100 text-green-700",
+};
+const sectionOptions = Object.entries(SECTION_LABELS).map(([value, label]) => ({ value, label }));
 const fields = [
   { name: "name", label: "Nombre", type: "text" as const, required: true },
-  { name: "type", label: "Tipo", type: "select" as const, options: [{ value: "expense", label: "Gasto" }, { value: "income", label: "Ingreso" }] },
+  { name: "sections", label: "Secciones", type: "multiselect" as const, options: sectionOptions, placeholder: "Seleccionar secciones..." },
   { name: "icon", label: "Ícono (emoji)", type: "text" as const, placeholder: "🛒" },
   { name: "color", label: "Color", type: "color" as const },
 ];
-const defaultForm = { name: "", type: "expense", icon: "", color: "#6366f1" };
+const defaultForm = { name: "", type: "personal", sections: JSON.stringify(["transacciones"]), icon: "📁", color: "#6366f1" };
 ---
 
-<BaseLayout title="Categorías - Open PHRP">
+<BaseLayout title="Categorías - Open PRP">
   <div data-module="categories" class="space-y-4">
     <PageHeader title="Categorías" createLabel="Nueva categoría" createModule="categories" />
-    <DataTable columns={["Nombre", "Tipo"]} emptyMessage="Sin categorías">
-      {items.map(c => (
+    <DataTable columns={["Nombre", "Tipo", "Secciones", { label: "Icono", align: "center" }, "Color"]} emptyMessage="Sin categorías">
+      {items.map(c => {
+        let sections: string[] = [];
+        try { sections = JSON.parse(c.sections); } catch {}
+        if (!Array.isArray(sections)) sections = [];
+        const isSystem = c.type === "global";
+        return (
         <tr key={c.id} class="hover:bg-nav-hover">
-          <td class="px-4 py-3"><span class="flex items-center gap-2">{c.color && <span class="w-3 h-3 rounded-full" style={{ backgroundColor: c.color }} />}{c.icon && <span>{c.icon}</span>}{c.name}</span></td>
-          <td class="px-4 py-3"><span class={`text-xs px-2 py-0.5 rounded ${c.type === "income" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{c.type === "income" ? "Ingreso" : "Gasto"}</span></td>
+          <td class="px-4 py-3">{c.name}</td>
+          <td class="px-4 py-3"><span class={`text-xs font-medium px-2 py-0.5 rounded ${TYPE_COLORS[c.type] || "bg-gray-100 text-gray-700"}`}>{TYPE_LABELS[c.type] || c.type}</span></td>
+          <td class="px-4 py-3"><div class="flex gap-1 flex-wrap">{sections.length > 0 ? sections.map(s => <span class={`text-xs font-medium px-2 py-0.5 rounded ${SECTION_COLORS[s] || "bg-gray-100 text-gray-700"}`}>{SECTION_LABELS[s] || s}</span>) : <span class="text-xs text-text-muted">-</span>}</div></td>
+          <td class="px-4 py-3 text-center">{c.icon || "-"}</td>
+          <td class="px-4 py-3"><span class="inline-block w-5 h-5 rounded-full border border-border" style={{ backgroundColor: c.color || "#6366f1" }} /></td>
           <td class="px-4 py-3 text-right space-x-2">
-            <button data-edit-categories={c.id} class="text-indigo-600 hover:text-indigo-800 text-xs font-medium cursor-pointer">Editar</button>
-            <button data-delete-categories={c.id} class="text-red-600 hover:text-red-800 text-xs font-medium cursor-pointer">Eliminar</button>
+            {!isSystem && <>
+              <button data-edit-categories={c.id} class="text-indigo-600 hover:text-indigo-800 text-xs font-medium cursor-pointer">Editar</button>
+              <button data-delete-categories={c.id} class="text-red-600 hover:text-red-800 text-xs font-medium cursor-pointer">Eliminar</button>
+            </>}
           </td>
         </tr>
-      ))}
+      );})}
     </DataTable>
   </div>
   <CrudModal client:load module="categories" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="categoría" />

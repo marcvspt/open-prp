@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Select from "./Select";
+import Select from "@/components/ui/Select.tsx";
 
 type Theme = "light" | "dark" | "system";
 
@@ -65,15 +65,15 @@ export default function ThemeToggle() {
   }
 
   return (
-    <div class="flex items-center gap-2 px-3 py-2">
-      <svg class="w-4 h-4 shrink-0 text-nav" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icons[preference]} />
-      </svg>
+    <div className="px-3 py-2">
       <Select
         value={preference}
         onChange={handleChange}
         options={options}
-        class="flex-1"
+        class="w-full"
+        icon={<svg className="w-4 h-4 text-nav" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icons[preference]} />
+        </svg>}
       />
     </div>
   );

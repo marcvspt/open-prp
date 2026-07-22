@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { CategoryRepository } from "@/lib/modules/transactions/categories";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 
 const repo = new CategoryRepository();
 

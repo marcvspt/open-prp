@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { NoteTagRepository } from "@/lib/modules/notes/tags";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { NoteTagRepository } from "@/lib/modules/notes/tags.ts";
 
 const repo = new NoteTagRepository();
 

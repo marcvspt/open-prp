@@ -1,9 +1,9 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import ShoppingList from "@/components/shopping/ShoppingList";
+import ShoppingList from "@/components/shopping/ShoppingList.tsx";
 ---
 
-<BaseLayout title="Compras - Open PHRP">
+<BaseLayout title="Compras - Open PRP">
   <div class="space-y-6">
     <h1 class="text-2xl font-bold text-text">Lista de compras</h1>
     <ShoppingList client:load />

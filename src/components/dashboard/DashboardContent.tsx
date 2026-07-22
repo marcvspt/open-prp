@@ -1,136 +1,147 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { CreditCard } from "@/lib/types/credit-card";
-
-interface CardMonthly {
-  id: string;
-  card_id: string;
-  month: string;
-  statement_balance: number;
-  is_paid: boolean;
-  paid_at: string | null;
-}
-
-interface ServiceMonthly {
-  id: string;
-  service_id: string;
-  month: string;
-  amount: number;
-  is_active: boolean;
-  is_paid: boolean;
-  paid_at: string | null;
-}
-
-interface RecurringService {
-  id: string;
-  name: string;
-  default_amount: number;
-}
+import type { CardMonthly, CalculatedDebt } from "@/lib/types/card-monthly";
+import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment";
+import type { Transaction } from "@/lib/types/transaction";
+import type { Installment } from "@/lib/types/installment";
+import type { Event as AppEvent } from "@/lib/types/event";
+import type { Task } from "@/lib/types/task";
+import type { ShoppingItem } from "@/lib/types/shopping";
+import { getMonthOptions, monthLabel, lastDayOfMonth, isMonthInRange, daysUntil } from "@/lib/date.ts";
+import MonthSelector from "@/components/ui/MonthSelector";
 
 interface CardWithDebt extends CreditCard {
   debt?: CardMonthly;
 }
 
-const MONTHS = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
-
-function getMonthOptions(): string[] {
-  const now = new Date();
-  const months: string[] = [];
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    months.push(`${y}-${m}`);
-  }
-  return months;
+function dueDaysBorder(days: number): string {
+  if (days <= 0) return "border-gray-400";
+  if (days <= 3) return "border-red-400";
+  if (days <= 8) return "border-yellow-400";
+  return "border-green-400";
 }
 
-function monthLabel(month: string): string {
-  const d = new Date(month + "-01");
-  return d.toLocaleDateString("es", { year: "numeric", month: "long" });
-}
-
-function daysUntil(day: number): number {
-  const now = new Date();
-  const today = now.getDate();
-  if (day === today) return 0;
-  let target = new Date(now.getFullYear(), now.getMonth(), day);
-  if (target < now) {
-    target = new Date(now.getFullYear(), now.getMonth() + 1, day);
-  }
-  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function dueDaysClass(days: number): string {
+function dueDaysBadge(days: number): string {
   if (days <= 0) return "bg-gray-100 text-gray-600";
-  if (days <= 3) return "bg-red-100 text-red-700 border-red-300";
-  if (days <= 8) return "bg-yellow-100 text-yellow-700 border-yellow-300";
-  return "bg-green-50 text-green-700 border-green-200";
+  if (days <= 3) return "bg-red-100 text-red-700";
+  if (days <= 8) return "bg-yellow-100 text-yellow-700";
+  return "bg-green-50 text-green-700";
 }
 
 function formatCurrency(n: number): string {
   return "$" + n.toFixed(2);
 }
 
-const months = getMonthOptions();
-
 export default function DashboardContent() {
-  const [activeTab, setActiveTab] = useState("resumen");
-  const [currentMonth, setCurrentMonth] = useState(months[0]);
+  const months = useMemo(() => getMonthOptions(), []);
+  const defaultMonth = months[0];
+  const defaultTab = "resumen";
+
+  const [activeTab, setActiveTab] = useState(() => typeof location !== "undefined" ? new URLSearchParams(location.search).get("tab") || defaultTab : defaultTab);
+  const [currentMonth, setCurrentMonth] = useState(() => typeof location !== "undefined" ? new URLSearchParams(location.search).get("month") || defaultMonth : defaultMonth);
   const [cards, setCards] = useState<CardWithDebt[]>([]);
-  const [services, setServices] = useState<RecurringService[]>([]);
+  const [services, setServices] = useState<RecurringPayment[]>([]);
   const [cardDebts, setCardDebts] = useState<CardMonthly[]>([]);
-  const [servicePayments, setServicePayments] = useState<ServiceMonthly[]>([]);
+  const [servicePayments, setServicePayments] = useState<RecurringPaymentMonthly[]>([]);
   const [historyCard, setHistoryCard] = useState<CardMonthly[]>([]);
-  const [historyService, setHistoryService] = useState<ServiceMonthly[]>([]);
-  const [txData, setTxData] = useState({ incomes: 0, expenses: 0, recentTx: [] as any[] });
-  const [editingBalance, setEditingBalance] = useState<string | null>(null);
-  const [balanceInput, setBalanceInput] = useState("");
+  const [historyService, setHistoryService] = useState<RecurringPaymentMonthly[]>([]);
+  const [txData, setTxData] = useState({ incomes: 0, expenses: 0, recentTx: [] as Transaction[] });
+  const [installmentTotal, setInstallmentTotal] = useState(0);
+  const [calculatedDebts, setCalculatedDebts] = useState<Record<string, CalculatedDebt>>({});
+  const [upcomingEvents, setUpcomingEvents] = useState<AppEvent[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
+  const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
+  const [activeShopping, setActiveShopping] = useState<ShoppingItem[]>([]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (activeTab !== defaultTab) params.set("tab", activeTab);
+    else params.delete("tab");
+    if (currentMonth !== defaultMonth) params.set("month", currentMonth);
+    else params.delete("month");
+    const qs = params.toString();
+    history.replaceState(null, "", qs ? "?" + qs : location.pathname);
+  }, [activeTab, currentMonth, defaultTab, defaultMonth]);
+
+  const handleTabChange = (tab: string) => setActiveTab(tab);
+  const handleMonthChange = (month: string) => setCurrentMonth(month);
 
   const fetchMonthData = useCallback(async (month: string) => {
-    try {
-      const [cardsRes, servicesRes, cardDebtRes, svcPayRes, txRes] = await Promise.all([
-        fetch("/api/credit-cards"),
-        fetch("/api/services"),
-        fetch(`/api/card-monthly?month=${month}`),
-        fetch(`/api/service-monthly?month=${month}`),
-        fetch(`/api/transactions?page=1&pageSize=100`),
-      ]);
-      const cardsJson = await cardsRes.json();
-      const svcJson = await servicesRes.json();
-      const cdJson = await cardDebtRes.json();
-      const spJson = await svcPayRes.json();
-      const txJson = await txRes.json();
+    async function safeFetch<T>(url: string, fallback: T): Promise<T> {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return fallback;
+        const json = await res.json();
+        return (json?.data ?? json) as T;
+      } catch { return fallback; }
+    }
 
-      let allCards: CardWithDebt[] = cardsJson.data ?? cardsJson ?? [];
-      let allSvcs: RecurringService[] = svcJson.data ?? svcJson ?? [];
-      let cdData: CardMonthly[] = cdJson.data ?? cdJson ?? [];
-      let spData: ServiceMonthly[] = spJson.data ?? spJson ?? [];
-      let txDataArr: any[] = txJson.data ?? txJson ?? [];
-      if (!Array.isArray(txDataArr)) txDataArr = [];
+    const today = new Date().toLocaleDateString("sv");
+    const thirtyLater = new Date(Date.now() + 30 * 86400000).toLocaleDateString("sv");
 
-      setCards(allCards);
-      setServices(allSvcs);
-      setCardDebts(cdData);
-      setServicePayments(spData);
-      setTxData({
-        incomes: txDataArr.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0),
-        expenses: txDataArr.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0),
-        recentTx: txDataArr.slice(0, 5),
-      });
-    } catch {}
+    const [allCards, allSvcs, cdData, spData, txDataArr, instData, eventsData, tasksData, shoppingData] = await Promise.all([
+      safeFetch<CardWithDebt[]>("/api/credit-cards", []),
+      safeFetch<RecurringPayment[]>("/api/recurring-payments", []),
+      safeFetch<CardMonthly[]>(`/api/card-monthly?month=${month}`, []),
+      safeFetch<RecurringPaymentMonthly[]>(`/api/recurring-payment-monthly?month=${month}`, []),
+      safeFetch<Transaction[]>(`/api/transactions?page=1&pageSize=100&date_from=${month}-01&date_to=${lastDayOfMonth(month)}`, []),
+      safeFetch<Installment[]>("/api/installments?active_only=true", []),
+      safeFetch<AppEvent[]>(`/api/events?date_from=${today}&date_to=${thirtyLater}&status=pending,confirmed&pageSize=20`, []),
+      safeFetch<Task[]>("/api/tasks?is_completed=false", []),
+      safeFetch<ShoppingItem[]>("/api/shopping?is_completed=false", []),
+    ]);
+
+    setCards(allCards);
+    setServices(allSvcs);
+    setCardDebts(cdData);
+    setServicePayments(spData);
+    setUpcomingEvents(eventsData);
+    setPendingTasks(tasksData.filter(t => !t.due_date || t.due_date >= today));
+    setOverdueTasks(tasksData.filter(t => t.due_date && t.due_date < today));
+    setActiveShopping(shoppingData);
+
+    const txIncomes = txDataArr.filter((t: Transaction) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
+    const txExpenses = txDataArr.filter((t: Transaction) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
+    const instMonthTotal = instData
+      .filter((i: Installment) => isMonthInRange(month, i.start_month, i.total_months))
+      .reduce((s: number, i: Installment) => s + Number(i.monthly_amount), 0);
+    const svcExpenses = spData.reduce((s: number, sp: RecurringPaymentMonthly) => s + Number(sp.amount), 0);
+
+    setInstallmentTotal(instMonthTotal);
+    setTxData({
+      incomes: txIncomes,
+      expenses: txExpenses + instMonthTotal + svcExpenses,
+      recentTx: txDataArr.slice(0, 5),
+    });
+
+    const calcMap: Record<string, CalculatedDebt> = {};
+    for (const card of allCards) {
+      if (card.type !== "credit") continue;
+      const res = await safeFetch<CalculatedDebt | null>(`/api/card-monthly/calculate?cardId=${card.id}&month=${month}`, null);
+      if (res) calcMap[card.id] = res;
+    }
+    setCalculatedDebts(calcMap);
+
+    const freshDebts = await safeFetch<CardMonthly[]>(`/api/card-monthly?month=${month}`, []);
+    setCardDebts(freshDebts);
   }, []);
 
   const fetchHistory = useCallback(async () => {
-    try {
-      const [cdHist, spHist] = await Promise.all([
-        fetch("/api/card-monthly/history"),
-        fetch("/api/service-monthly/history"),
-      ]);
-      const cdJson = await cdHist.json();
-      const spJson = await spHist.json();
-      setHistoryCard(cdJson.data ?? cdJson ?? []);
-      setHistoryService(spJson.data ?? spJson ?? []);
-    } catch {}
+    async function safeFetch<T>(url: string, fallback: T): Promise<T> {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return fallback;
+        const json = await res.json();
+        return (json?.data ?? json) as T;
+      } catch { return fallback; }
+    }
+
+    const [cdHist, spHist] = await Promise.all([
+      safeFetch<CardMonthly[]>("/api/card-monthly/history", []),
+      safeFetch<RecurringPaymentMonthly[]>("/api/recurring-payment-monthly/history", []),
+    ]);
+    setHistoryCard(cdHist);
+    setHistoryService(spHist);
   }, []);
 
   useEffect(() => { fetchMonthData(currentMonth); }, [currentMonth, fetchMonthData]);
@@ -149,65 +160,13 @@ export default function DashboardContent() {
     } catch {}
   }
 
-  async function handleToggleServicePaid(id: string, isPaid: boolean) {
-    try {
-      const res = await fetch("/api/service-monthly", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, is_paid: isPaid }),
-      });
-      if (res.ok) {
-        setServicePayments(prev => prev.map(d => d.id === id ? { ...d, is_paid: isPaid, paid_at: isPaid ? new Date().toISOString() : null } : d));
-      }
-    } catch {}
-  }
-
-  async function handleSaveBalance(cardId: string, month: string) {
-    const statementBalance = parseFloat(balanceInput);
-    if (isNaN(statementBalance)) return;
-    try {
-      const res = await fetch("/api/card-monthly", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ card_id: cardId, month, statement_balance: statementBalance }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        const data = json.data ?? json;
-        setCardDebts(prev => {
-          const idx = prev.findIndex(d => d.card_id === cardId && d.month === month);
-          if (idx >= 0) {
-            const next = [...prev];
-            next[idx] = data;
-            return next;
-          }
-          return [...prev, data];
-        });
-        setEditingBalance(null);
-        setBalanceInput("");
-      }
-    } catch {}
-  }
-
-  async function handleCreateServicePayment(serviceId: string) {
-    try {
-      const res = await fetch(`/api/services/${serviceId}/monthly?month=${currentMonth}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      if (res.ok) {
-        fetchMonthData(currentMonth);
-      }
-    } catch {}
-  }
-
   const getCardDebt = (cardId: string) => cardDebts.find(d => d.card_id === cardId);
 
   const tabs = [
     { key: "resumen", label: "Resumen" },
     { key: "tarjetas", label: "Tarjetas" },
-    { key: "servicios", label: "Servicios" },
+    { key: "eventos", label: "Eventos" },
+    { key: "tareas", label: "Tareas" },
     { key: "historial", label: "Historial" },
   ];
 
@@ -216,9 +175,10 @@ export default function DashboardContent() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-1">
           {tabs.map(t => (
-            <button
+            <a
               key={t.key}
-              onClick={() => setActiveTab(t.key)}
+              href={`?tab=${t.key}&month=${currentMonth}`}
+              onClick={e => { e.preventDefault(); handleTabChange(t.key); }}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 activeTab === t.key
                   ? "bg-indigo-600 text-white"
@@ -226,24 +186,16 @@ export default function DashboardContent() {
               }`}
             >
               {t.label}
-            </button>
+            </a>
           ))}
         </div>
-        <select
-          value={currentMonth}
-          onChange={e => setCurrentMonth(e.target.value)}
-          className="text-sm border border-border rounded-lg px-3 py-2 bg-panel text-text"
-        >
-          {months.map(m => (
-            <option key={m} value={m}>{monthLabel(m)}</option>
-          ))}
-        </select>
+        <MonthSelector value={currentMonth} onChange={handleMonthChange} />
       </div>
 
       {/* Resumen */}
       {activeTab === "resumen" && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
               <p className="text-xs text-text-muted uppercase tracking-wider">Ingresos</p>
               <p className="text-xl font-bold mt-1 text-green-600">{formatCurrency(txData.incomes)}</p>
@@ -261,6 +213,36 @@ export default function DashboardContent() {
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
               <p className="text-xs text-text-muted uppercase tracking-wider">Tarjetas</p>
               <p className="text-xl font-bold mt-1 text-indigo-600">{cards.length}</p>
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Plazos</p>
+              <p className="text-xl font-bold mt-1 text-orange-600">{formatCurrency(installmentTotal)}</p>
+            </div>
+          </div>
+          {installmentTotal > 0 && (
+            <p className="text-xs text-text-muted -mt-4">* Incluye {formatCurrency(installmentTotal)} en plazos y {formatCurrency(servicePayments.reduce((s, sp) => s + Number(sp.amount), 0))} en pagos recurrentes</p>
+          )}
+
+          {/* Organización */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Tareas pendientes</p>
+              <p className="text-xl font-bold mt-1 text-sky-600">{pendingTasks.length}</p>
+              {overdueTasks.length > 0 && (
+                <p className="text-xs text-red-500 mt-0.5">{overdueTasks.length} vencidas</p>
+              )}
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Próximos eventos</p>
+              <p className="text-xl font-bold mt-1 text-rose-600">{upcomingEvents.length}</p>
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Compras activas</p>
+              <p className="text-xl font-bold mt-1 text-amber-600">{activeShopping.length}</p>
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Pagos recurrentes</p>
+              <p className="text-xl font-bold mt-1 text-purple-600">{services.length}</p>
             </div>
           </div>
 
@@ -282,7 +264,7 @@ export default function DashboardContent() {
                           {formatCurrency(d.statement_balance)}
                         </span>
                         {!d.is_paid && card && (
-                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${dueDaysClass(dueIn)}`}>
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${dueDaysBadge(dueIn)}`}>
                             {dueIn <= 0 ? "Vencido" : `${dueIn} días`}
                           </span>
                         )}
@@ -296,10 +278,10 @@ export default function DashboardContent() {
 
           {servicePayments.length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-text mb-3">Servicios del mes</h2>
+              <h2 className="text-base font-semibold text-text mb-3">Pagos recurrentes del mes</h2>
               <div className="space-y-2">
                 {servicePayments.map(sp => {
-                  const svc = services.find(s => s.id === sp.service_id);
+                  const svc = services.find(s => s.id === sp.payment_id);
                   return (
                     <div key={sp.id} className="flex items-center justify-between text-sm py-1">
                       <div className="flex items-center gap-2">
@@ -317,12 +299,12 @@ export default function DashboardContent() {
           )}
 
           <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-text mb-3">Últimas transacciones</h2>
+            <h2 className="text-base font-semibold text-text mb-3">Transacciones del mes</h2>
             {txData.recentTx.length === 0 ? (
               <p className="text-sm text-text-muted">Sin transacciones</p>
             ) : (
               <div className="space-y-2">
-                {txData.recentTx.map((tx: any) => (
+                {txData.recentTx.map((tx: Transaction) => (
                   <div key={tx.id} className="flex items-center justify-between text-sm py-1">
                     <div className="flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${tx.type === "income" ? "bg-green-400" : "bg-red-400"}`} />
@@ -348,9 +330,11 @@ export default function DashboardContent() {
             cards.map(card => {
               const debt = getCardDebt(card.id);
               const dueIn = daysUntil(card.due_day);
-              const available = card.max_limit - (debt?.statement_balance ?? 0);
+              const calc = card.type === "credit" ? calculatedDebts[card.id] : null;
+              const committed = calc ? calc.total_committed : (debt?.statement_balance ?? 0);
+              const available = card.max_limit - committed;
               return (
-                <div key={card.id} className={`bg-panel rounded-xl border p-4 shadow-sm ${dueDaysClass(card.due_day > 0 ? dueIn : 99)}`}>
+                <div key={card.id} className={`bg-panel rounded-xl border-2 p-4 shadow-sm ${card.type === "credit" && debt && !debt.is_paid ? dueDaysBorder(dueIn) : "border-border"}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-semibold text-text">{card.name}</h3>
@@ -365,7 +349,7 @@ export default function DashboardContent() {
                             : "bg-green-600 text-white hover:bg-green-700"
                         }`}
                       >
-                        {debt.is_paid ? "Pagada" : "Pagar"}
+                        {debt.is_paid ? "Pagada" : "Marcar como pagado"}
                       </button>
                     )}
                   </div>
@@ -375,49 +359,25 @@ export default function DashboardContent() {
                       <p className="font-mono font-medium">{formatCurrency(card.max_limit)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-text-muted">Deuda</p>
-                      {debt ? (
-                        <div className="flex items-center gap-1">
-                          {editingBalance === card.id ? (
-                            <>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={balanceInput}
-                                onChange={e => setBalanceInput(e.target.value)}
-                                className="w-24 text-sm border border-border rounded px-1 py-0.5 font-mono"
-                                autoFocus
-                                onKeyDown={e => { if (e.key === "Enter") handleSaveBalance(card.id, currentMonth); if (e.key === "Escape") setEditingBalance(null); }}
-                              />
-                              <button onClick={() => handleSaveBalance(card.id, currentMonth)} className="text-xs text-indigo-600">OK</button>
-                              <button onClick={() => { setEditingBalance(null); setBalanceInput(""); }} className="text-xs text-gray-400">X</button>
-                            </>
-                          ) : (
-                            <button onClick={() => { setEditingBalance(card.id); setBalanceInput(String(debt.statement_balance)); }} className="font-mono font-medium text-red-600 hover:text-indigo-600">
-                              {formatCurrency(debt.statement_balance)}
-                            </button>
-                          )}
+                      <p className="text-xs text-text-muted">Deuda calculada</p>
+                      {calc ? (
+                        <div className="group relative">
+                          <p className="font-mono font-medium text-red-600 cursor-help">{formatCurrency(calc.statement_balance)}</p>
+                          <div className="absolute left-0 top-full mt-1 w-64 bg-panel border border-border rounded-lg shadow-lg p-3 text-xs z-10 hidden group-hover:block">
+                            <div className="space-y-1">
+                              <div className="flex justify-between"><span>Compras</span><span className="font-mono">{formatCurrency(calc.total_purchases)}</span></div>
+                              <div className="flex justify-between"><span>Plazos (este mes)</span><span className="font-mono">{formatCurrency(calc.total_installments)}</span></div>
+                              <div className="flex justify-between"><span>Cashback</span><span className="font-mono text-green-600">-{formatCurrency(calc.total_cashback)}</span></div>
+                              <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>Adeudo del mes</span><span className="font-mono">{formatCurrency(calc.statement_balance)}</span></div>
+                              <div className="flex justify-between text-text-muted"><span>Plazos futuros</span><span className="font-mono">{formatCurrency(calc.committed_installments)}</span></div>
+                              <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>Total comprometido</span><span className="font-mono">{formatCurrency(calc.total_committed)}</span></div>
+                            </div>
+                          </div>
                         </div>
+                      ) : debt ? (
+                        <p className="font-mono font-medium text-red-600">{formatCurrency(debt.statement_balance)}</p>
                       ) : (
-                        <div className="flex items-center gap-1">
-                          {editingBalance === card.id ? (
-                            <>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={balanceInput}
-                                onChange={e => setBalanceInput(e.target.value)}
-                                className="w-24 text-sm border border-border rounded px-1 py-0.5 font-mono"
-                                autoFocus
-                                onKeyDown={e => { if (e.key === "Enter") handleSaveBalance(card.id, currentMonth); if (e.key === "Escape") setEditingBalance(null); }}
-                              />
-                              <button onClick={() => handleSaveBalance(card.id, currentMonth)} className="text-xs text-indigo-600">OK</button>
-                              <button onClick={() => { setEditingBalance(null); setBalanceInput(""); }} className="text-xs text-gray-400">X</button>
-                            </>
-                          ) : (
-                            <button onClick={() => { setEditingBalance(card.id); setBalanceInput("0"); }} className="text-xs text-text-muted hover:text-indigo-600">Establecer</button>
-                          )}
-                        </div>
+                        <p className="text-xs text-text-muted">-</p>
                       )}
                     </div>
                     <div>
@@ -432,7 +392,7 @@ export default function DashboardContent() {
                   {card.type === "credit" && debt && !debt.is_paid && (
                     <div className="mt-3 flex items-center gap-2 text-xs">
                       <span className="text-text-muted">Vencimiento:</span>
-                      <span className={`font-medium ${dueDaysClass(dueIn)} px-2 py-0.5 rounded`}>
+                      <span className={`font-medium ${dueDaysBadge(dueIn)} px-2 py-0.5 rounded`}>
                         {dueIn <= 0 ? "Vencido" : `En ${dueIn} días (día ${card.due_day})`}
                       </span>
                     </div>
@@ -444,51 +404,68 @@ export default function DashboardContent() {
         </div>
       )}
 
-      {/* Servicios */}
-      {activeTab === "servicios" && (
+      {/* Eventos */}
+      {activeTab === "eventos" && (
         <div className="space-y-4">
-          {services.length === 0 ? (
-            <p className="text-text-muted text-sm">No hay servicios registrados. Crea uno en la sección Servicios.</p>
+          {upcomingEvents.length === 0 ? (
+            <p className="text-text-muted text-sm">No hay eventos próximos</p>
           ) : (
-            services.map(svc => {
-              const payment = servicePayments.find(sp => sp.service_id === svc.id);
-              return (
-                <div key={svc.id} className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-text">{svc.name}</h3>
-                      <p className="text-sm text-text-muted">{formatCurrency(svc.default_amount)}/mes</p>
-                    </div>
-                    {payment ? (
-                      <button
-                        onClick={() => handleToggleServicePaid(payment.id, !payment.is_paid)}
-                        className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
-                          payment.is_paid
-                            ? "bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700"
-                            : "bg-green-600 text-white hover:bg-green-700"
-                        }`}
-                      >
-                        {payment.is_paid ? "Pagado" : "Pagar"}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleCreateServicePayment(svc.id)}
-                        className="px-3 py-1 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
-                      >
-                        Agregar al mes
-                      </button>
+            upcomingEvents.map(ev => (
+              <div key={ev.id} className="bg-panel rounded-xl border border-border p-4 shadow-sm flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-text">{ev.title}</h3>
+                  <p className="text-sm text-text-muted mt-1">
+                    {new Date(ev.start_date).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}
+                    {ev.end_date && ` — ${new Date(ev.end_date).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}`}
+                  </p>
+                  {ev.location && <p className="text-xs text-text-muted mt-0.5">{ev.location}</p>}
+                  {ev.description && <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{ev.description}</p>}
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  ev.status === "confirmed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                }`}>
+                  {ev.status === "confirmed" ? "Confirmado" : "Pendiente"}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Tareas */}
+      {activeTab === "tareas" && (
+        <div className="space-y-4">
+          {overdueTasks.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-red-600 mb-2">Vencidas</h3>
+              {overdueTasks.map(t => (
+                <div key={t.id} className="bg-panel rounded-xl border border-red-200 p-3 shadow-sm flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-medium text-text">{t.title}</p>
+                    <p className="text-xs text-red-500">Vencía el {new Date(t.due_date!).toLocaleDateString("es-MX")}</p>
+                  </div>
+                  {t.priority > 0 && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Prioridad {t.priority}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          {pendingTasks.length === 0 && overdueTasks.length === 0 ? (
+            <p className="text-text-muted text-sm">No hay tareas pendientes</p>
+          ) : (
+            <div>
+              {overdueTasks.length > 0 && <h3 className="text-sm font-semibold text-text mb-2">Pendientes</h3>}
+              {pendingTasks.map(t => (
+                <div key={t.id} className="bg-panel rounded-xl border border-border p-3 shadow-sm flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-medium text-text">{t.title}</p>
+                    {t.due_date && (
+                      <p className="text-xs text-text-muted">Vence el {new Date(t.due_date).toLocaleDateString("es-MX")}</p>
                     )}
                   </div>
-                  {payment && (
-                    <div className="mt-2 text-xs text-text-muted">
-                      {payment.is_paid
-                        ? `Pagado${payment.paid_at ? ` el ${new Date(payment.paid_at).toLocaleDateString("es")}` : ""}`
-                        : `Pendiente - ${formatCurrency(payment.amount)}`}
-                    </div>
-                  )}
+                  {t.priority > 0 && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Prioridad {t.priority}</span>}
                 </div>
-              );
-            })
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -533,7 +510,7 @@ export default function DashboardContent() {
             )}
           </div>
           <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-text mb-3">Historial de servicios</h2>
+            <h2 className="text-base font-semibold text-text mb-3">Historial de pagos recurrentes</h2>
             {historyService.length === 0 ? (
               <p className="text-sm text-text-muted">Sin datos históricos</p>
             ) : (
@@ -542,14 +519,14 @@ export default function DashboardContent() {
                   <thead>
                     <tr className="text-text-muted text-xs uppercase border-b border-border">
                       <th className="text-left px-3 py-2">Mes</th>
-                      <th className="text-left px-3 py-2">Servicio</th>
+                      <th className="text-left px-3 py-2">Pago</th>
                       <th className="text-right px-3 py-2">Monto</th>
                       <th className="text-center px-3 py-2">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {historyService.map(sp => {
-                      const svc = services.find(s => s.id === sp.service_id);
+                      const svc = services.find(s => s.id === sp.payment_id);
                       return (
                         <tr key={sp.id} className="border-b border-border/50">
                           <td className="px-3 py-2 text-text-muted">{monthLabel(sp.month)}</td>

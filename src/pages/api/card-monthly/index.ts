@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { CardMonthlyRepository } from "@/lib/modules/card-monthly/repository";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { CardMonthlyRepository } from "@/lib/modules/card-monthly/repository.ts";
 
 const repo = new CardMonthlyRepository();
 

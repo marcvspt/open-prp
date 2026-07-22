@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { InstallmentRepository } from "@/lib/modules/installments/repository";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { InstallmentRepository } from "@/lib/modules/installments/repository.ts";
 
 const repo = new InstallmentRepository();
 

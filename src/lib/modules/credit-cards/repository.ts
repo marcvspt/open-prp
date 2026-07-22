@@ -1,7 +1,7 @@
-import { getDb } from "../../db/client";
-import { nextSeq } from "../../db/utils";
-import type { CreditCard, CreditCardInput } from "../../types/credit-card";
-import { PaymentMethodRepository } from "../payment-methods/repository";
+import { getDb } from "@/lib/db/client.ts";
+import { nextSeq } from "@/lib/db/utils.ts";
+import type { CreditCard, CreditCardInput } from "@/lib/types/credit-card.ts";
+import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 
 const pmRepo = new PaymentMethodRepository();
 
@@ -51,7 +51,7 @@ export class CreditCardRepository {
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: any[] = [];
+    const args: (string | number | boolean | null)[] = [];
 
     if (data.name !== undefined) { sets.push("name = ?"); args.push(data.name); }
     if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }

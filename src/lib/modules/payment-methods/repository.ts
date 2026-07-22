@@ -1,21 +1,13 @@
-import { getDb } from "../../db/client";
-import { nextSeq } from "../../db/utils";
-import type { PaymentMethod, CreatePaymentMethodInput, UpdatePaymentMethodInput } from "../../types/payment-method";
+import { getDb } from "@/lib/db/client.ts";
+import { nextSeq } from "@/lib/db/utils.ts";
+import type { PaymentMethod, CreatePaymentMethodInput, UpdatePaymentMethodInput } from "@/lib/types/payment-method.ts";
 
 export class PaymentMethodRepository {
-  async findAll(userId: string, familyId?: string): Promise<PaymentMethod[]> {
+  async findAll(userId: string): Promise<PaymentMethod[]> {
     const db = getDb();
-    const conditions = ["is_global = 1 OR user_id = ?"];
-    const args: any[] = [userId];
-
-    if (familyId) {
-      conditions.push("(scope IN ('family','both') AND family_id = ?)");
-      args.push(familyId);
-    }
-
     const result = await db.execute({
-      sql: `SELECT * FROM payment_methods WHERE ${conditions.join(" OR ")} ORDER BY is_global DESC, seq ASC`,
-      args,
+      sql: "SELECT * FROM payment_methods WHERE type = 'global' OR (type IN ('personal','card') AND user_id = ?) ORDER BY type = 'global' DESC, seq ASC",
+      args: [userId],
     });
     return result.rows as unknown as PaymentMethod[];
   }
@@ -36,12 +28,12 @@ export class PaymentMethodRepository {
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: `INSERT INTO payment_methods (id, user_id, name, scope, family_id, icon, color, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO payment_methods (id, user_id, name, type, icon, color, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id, userId, data.name,
-        data.scope ?? null, data.family_id ?? null,
-        data.icon ?? null, data.color ?? null,
+        data.type ?? "personal",
+        data.icon || "💳", data.color ?? null,
         seq, now, now,
       ],
     });
@@ -59,9 +51,9 @@ export class PaymentMethodRepository {
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: `INSERT INTO payment_methods (id, user_id, name, scope, card_id, icon, color, seq, created_at, updated_at)
+      sql: `INSERT INTO payment_methods (id, user_id, name, type, card_id, icon, color, seq, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, name, null, cardId, "credit-card", "#6366f1", seq, now, now],
+      args: [id, userId, name, "card", cardId, "💳", "#6366f1", seq, now, now],
     });
 
     const result = await db.execute({
@@ -82,15 +74,14 @@ export class PaymentMethodRepository {
   async update(id: string, data: UpdatePaymentMethodInput, userId: string): Promise<PaymentMethod | null> {
     const db = getDb();
     const existing = await this.findById(id);
-    if (!existing || (existing.is_global && existing.user_id === null)) return null;
+    if (!existing || existing.type === "global") return null;
     if (existing.card_id) return null;
 
     const sets: string[] = [];
-    const args: any[] = [];
+    const args: (string | number | boolean | null)[] = [];
 
     if (data.name !== undefined) { sets.push("name = ?"); args.push(data.name); }
-    if (data.scope !== undefined) { sets.push("scope = ?"); args.push(data.scope ?? null); }
-    if (data.family_id !== undefined) { sets.push("family_id = ?"); args.push(data.family_id ?? null); }
+    if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }
     if (data.icon !== undefined) { sets.push("icon = ?"); args.push(data.icon ?? null); }
     if (data.color !== undefined) { sets.push("color = ?"); args.push(data.color ?? null); }
 
@@ -116,7 +107,7 @@ export class PaymentMethodRepository {
     const db = getDb();
     const existing = await this.findById(id);
     if (!existing) return false;
-    if (existing.is_global) return false;
+    if (existing.type === "global") return false;
     if (existing.card_id) return false;
     if (existing.user_id !== userId) return false;
 

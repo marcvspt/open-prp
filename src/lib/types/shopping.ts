@@ -2,7 +2,6 @@ export interface ShoppingItem {
   id: string;
   seq: number;
   user_id: string;
-  family_id: string | null;
   name: string;
   quantity: number;
   unit: string | null;
@@ -26,7 +25,6 @@ export interface ShoppingItemInput {
   category?: string;
   despensa_item_id?: string;
   event_id?: string;
-  family_id?: string;
   priority?: number;
 }
 
@@ -39,7 +37,6 @@ export interface ShoppingItemUpdate {
   is_completed?: boolean;
   category?: string;
   event_id?: string;
-  family_id?: string;
   priority?: number;
 }
 
@@ -48,6 +45,4 @@ export interface ShoppingFilter {
   is_completed?: boolean;
   category?: string;
   event_id?: string;
-  family_id?: string;
-  scope?: "personal" | "family" | "all";
 }

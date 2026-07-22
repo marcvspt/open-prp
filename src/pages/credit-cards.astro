@@ -3,8 +3,8 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/ui/PageHeader.astro";
 import DataTable from "@/components/ui/DataTable.astro";
 import DeleteHandler from "@/components/ui/DeleteHandler.astro";
-import CrudModal from "@/components/ui/CrudModal";
-import { CreditCardRepository } from "@/lib/modules/credit-cards/repository";
+import CrudModal from "@/components/ui/CrudModal.tsx";
+import { CreditCardRepository } from "@/lib/modules/credit-cards/repository.ts";
 const userId = Astro.locals.userId;
 const items = await new CreditCardRepository().findAll(userId);
 const fields = [
@@ -18,7 +18,7 @@ const fields = [
 const defaultForm = { name: "", type: "credit", max_limit: 0, closing_day: 15, due_day: 10, color: "#6366f1" };
 ---
 
-<BaseLayout title="Tarjetas - Open PHRP">
+<BaseLayout title="Tarjetas - Open PRP">
   <div data-module="credit-cards" class="space-y-4">
     <PageHeader title="Tarjetas de crédito" createLabel="Nueva tarjeta" createModule="credit-cards" />
     <DataTable columns={["Nombre", "Tipo", { label: "Límite", align: "right" }, { label: "Cierre", align: "center" }, { label: "Vencimiento", align: "center" }]} emptyMessage="Sin tarjetas">

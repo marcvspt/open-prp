@@ -1,4 +1,4 @@
-import { getDb } from "./client";
+import { getDb } from "@/lib/db/client.ts";
 
 export async function nextSeq(table: string): Promise<number> {
   const db = getDb();

@@ -20,12 +20,4 @@ export interface CreditCardInput {
   color?: string;
 }
 
-export interface CreditCardMonthly {
-  card_id: string;
-  month: string;
-  statement_balance: number;
-  total_installments: number;
-  total_purchases: number;
-  total_cashback: number;
-  available_credit: number;
-}
+

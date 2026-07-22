@@ -1,28 +1,13 @@
-import { getDb } from "../../db/client";
-import { nextSeq } from "../../db/utils";
-import { localISOString } from "../../date";
-import type { ShoppingItem, ShoppingItemInput, ShoppingItemUpdate, ShoppingFilter } from "../../types/shopping";
+import { getDb } from "@/lib/db/client.ts";
+import { nextSeq } from "@/lib/db/utils.ts";
+import { localISOString } from "@/lib/date.ts";
+import type { ShoppingItem, ShoppingItemInput, ShoppingItemUpdate, ShoppingFilter } from "@/lib/types/shopping.ts";
 
 export class ShoppingRepository {
   async findAll(userId: string, filter?: ShoppingFilter): Promise<ShoppingItem[]> {
     const db = getDb();
-    const conditions: string[] = [];
-    const args: any[] = [];
-    const scope = filter?.scope ?? "personal";
-
-    if (scope === "personal") {
-      conditions.push("user_id = ? AND family_id IS NULL");
-      args.push(userId);
-    } else if (scope === "family" && filter?.family_id) {
-      conditions.push("family_id = ?");
-      args.push(filter.family_id);
-    } else if (scope === "all") {
-      conditions.push("(user_id = ? OR family_id IN (SELECT family_id FROM family_members WHERE user_id = ?))");
-      args.push(userId, userId);
-    } else {
-      conditions.push("user_id = ? AND family_id IS NULL");
-      args.push(userId);
-    }
+    const conditions: string[] = ["user_id = ?"];
+    const args: (string | number | boolean | null)[] = [userId];
 
     if (filter?.is_checked !== undefined) { conditions.push("is_checked = ?"); args.push(filter.is_checked ? 1 : 0); }
     if (filter?.is_completed !== undefined) { conditions.push("is_completed = ?"); args.push(filter.is_completed ? 1 : 0); }
@@ -48,8 +33,8 @@ export class ShoppingRepository {
 
   async findById(id: string, userId: string): Promise<ShoppingItem | null> {
     const result = await getDb().execute({
-      sql: "SELECT * FROM shopping_items WHERE id = ? AND (user_id = ? OR family_id IN (SELECT family_id FROM family_members WHERE user_id = ?))",
-      args: [id, userId, userId],
+      sql: "SELECT * FROM shopping_items WHERE id = ? AND user_id = ?",
+      args: [id, userId],
     });
     const row = result.rows[0] as unknown as ShoppingItem | undefined;
     if (!row) return null;
@@ -63,10 +48,10 @@ export class ShoppingRepository {
     const now = localISOString();
 
     await db.execute({
-      sql: `INSERT INTO shopping_items (id, user_id, family_id, name, quantity, unit, notes, category, despensa_item_id, event_id, priority, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO shopping_items (id, user_id, name, quantity, unit, notes, category, despensa_item_id, event_id, priority, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
-        id, userId, data.family_id ?? null, data.name, data.quantity ?? 1,
+        id, userId, data.name, data.quantity ?? 1,
         data.unit ?? null, data.notes ?? null, data.category ?? null,
         data.despensa_item_id ?? null, data.event_id ?? null,
         data.priority ?? 0, seq, now, now,
@@ -84,7 +69,7 @@ export class ShoppingRepository {
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: any[] = [];
+    const args: (string | number | boolean | null)[] = [];
 
     if (data.name !== undefined) { sets.push("name = ?"); args.push(data.name); }
     if (data.quantity !== undefined) { sets.push("quantity = ?"); args.push(data.quantity); }
@@ -94,7 +79,6 @@ export class ShoppingRepository {
     if (data.is_completed !== undefined) { sets.push("is_completed = ?"); args.push(data.is_completed ? 1 : 0); }
     if (data.category !== undefined) { sets.push("category = ?"); args.push(data.category); }
     if (data.event_id !== undefined) { sets.push("event_id = ?"); args.push(data.event_id); }
-    if (data.family_id !== undefined) { sets.push("family_id = ?"); args.push(data.family_id); }
     if (data.priority !== undefined) { sets.push("priority = ?"); args.push(data.priority); }
 
     if (sets.length === 0) return existing;

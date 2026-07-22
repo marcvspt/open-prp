@@ -18,17 +18,11 @@
       "@/components/*": [
         "./src/components/*"
       ],
-      "@/assets/*": [
-        "./src/assets/*"
-      ],
       "@/styles/*": [
         "./src/styles/*"
       ],
       "@/types/*": [
         "./src/lib/types/*"
-      ],
-      "@/hooks/*": [
-        "./src/lib/hooks/*"
       ],
       "@/lib/*": [
         "./src/lib/*"

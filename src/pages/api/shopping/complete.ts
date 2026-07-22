@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, requireUserId } from "@/lib/api-helpers";
-import { ShoppingRepository } from "@/lib/modules/shopping/repository";
+import { jsonResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { ShoppingRepository } from "@/lib/modules/shopping/repository.ts";
 
 const repo = new ShoppingRepository();
 

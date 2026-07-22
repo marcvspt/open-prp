@@ -1,28 +1,13 @@
-import { getDb } from "../../db/client";
-import { nextSeq } from "../../db/utils";
-import { localISOString } from "../../date";
-import type { PantryItem, PantryItemInput, PantryItemUpdate, PantryFilter } from "../../types/pantry";
+import { getDb } from "@/lib/db/client.ts";
+import { nextSeq } from "@/lib/db/utils.ts";
+import { localISOString } from "@/lib/date.ts";
+import type { PantryItem, PantryItemInput, PantryItemUpdate, PantryFilter } from "@/lib/types/pantry.ts";
 
 export class PantryRepository {
   async findAll(userId: string, filter?: PantryFilter): Promise<PantryItem[]> {
     const db = getDb();
-    const conditions: string[] = [];
-    const args: any[] = [];
-    const scope = filter?.scope ?? "personal";
-
-    if (scope === "personal") {
-      conditions.push("user_id = ? AND family_id IS NULL");
-      args.push(userId);
-    } else if (scope === "family" && filter?.family_id) {
-      conditions.push("family_id = ?");
-      args.push(filter.family_id);
-    } else if (scope === "all") {
-      conditions.push("(user_id = ? OR family_id IN (SELECT family_id FROM family_members WHERE user_id = ?))");
-      args.push(userId, userId);
-    } else {
-      conditions.push("user_id = ? AND family_id IS NULL");
-      args.push(userId);
-    }
+    const conditions: string[] = ["user_id = ?"];
+    const args: (string | number | boolean | null)[] = [userId];
 
     if (filter?.category_id) { conditions.push("category_id = ?"); args.push(filter.category_id); }
 
@@ -35,8 +20,8 @@ export class PantryRepository {
 
   async findById(id: string, userId: string): Promise<PantryItem | null> {
     const result = await getDb().execute({
-      sql: "SELECT * FROM pantry_items WHERE id = ? AND (user_id = ? OR family_id IN (SELECT family_id FROM family_members WHERE user_id = ?))",
-      args: [id, userId, userId],
+      sql: "SELECT * FROM pantry_items WHERE id = ? AND user_id = ?",
+      args: [id, userId],
     });
     return (result.rows[0] as unknown as PantryItem | undefined) ?? null;
   }
@@ -48,10 +33,10 @@ export class PantryRepository {
     const now = localISOString();
 
     await db.execute({
-      sql: `INSERT INTO pantry_items (id, user_id, family_id, category_id, name, default_quantity, unit, notes, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO pantry_items (id, user_id, category_id, name, default_quantity, unit, notes, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
-        id, userId, data.family_id ?? null, data.category_id ?? null,
+        id, userId, data.category_id || null,
         data.name, data.default_quantity ?? 1, data.unit ?? null,
         data.notes ?? null, seq, now, now,
       ],
@@ -67,14 +52,13 @@ export class PantryRepository {
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: any[] = [];
+    const args: (string | number | boolean | null)[] = [];
 
     if (data.name !== undefined) { sets.push("name = ?"); args.push(data.name); }
     if (data.default_quantity !== undefined) { sets.push("default_quantity = ?"); args.push(data.default_quantity); }
     if (data.unit !== undefined) { sets.push("unit = ?"); args.push(data.unit); }
     if (data.notes !== undefined) { sets.push("notes = ?"); args.push(data.notes); }
     if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id); }
-    if (data.family_id !== undefined) { sets.push("family_id = ?"); args.push(data.family_id); }
 
     if (sets.length === 0) return existing;
 

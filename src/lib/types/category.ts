@@ -1,9 +1,11 @@
+export type CategoryType = "global" | "personal";
+
 export interface Category {
   id: string;
-  user_id: string;
-  family_id: string | null;
+  user_id: string | null;
   name: string;
-  type: "income" | "expense";
+  sections: string;
+  type: CategoryType;
   icon: string | null;
   color: string | null;
   created_at: string;
@@ -12,15 +14,16 @@ export interface Category {
 
 export interface CreateCategoryInput {
   name: string;
-  type: "income" | "expense";
+  sections: string;
+  type?: CategoryType;
   icon?: string;
   color?: string;
-  family_id?: string;
 }
 
 export interface UpdateCategoryInput {
   name?: string;
+  sections?: string;
+  type?: CategoryType;
   icon?: string;
   color?: string;
-  family_id?: string;
 }

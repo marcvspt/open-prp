@@ -13,9 +13,10 @@ interface SelectProps {
   required?: boolean;
   disabled?: boolean;
   class?: string;
+  icon?: React.ReactNode;
 }
 
-export default function Select({ value, onChange, options, placeholder, required, disabled, class: className }: SelectProps) {
+export default function Select({ value, onChange, options, placeholder, required, disabled, class: className, icon }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
@@ -80,7 +81,7 @@ export default function Select({ value, onChange, options, placeholder, required
   }
 
   return (
-    <div ref={ref} class={`relative ${className ?? ""}`} onKeyDown={onKeyDown}>
+    <div ref={ref} className={`relative ${className ?? ""}`} onKeyDown={onKeyDown}>
       <button
         type="button"
         role="combobox"
@@ -90,14 +91,15 @@ export default function Select({ value, onChange, options, placeholder, required
         aria-activedescendant={highlighted >= 0 ? `${id}-opt-${highlighted}` : undefined}
         disabled={disabled}
         onClick={() => setOpen(p => !p)}
-        class={`mt-1 flex items-center justify-between w-full rounded-lg border text-sm px-3 py-2 transition-colors
+        className={`mt-1 flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-indigo-400"}
           ${open ? "border-indigo-500 ring-1 ring-indigo-500" : "border-border"}
           ${!selected && placeholder ? "text-text-muted" : "text-text"}
           bg-panel`}
       >
-        <span>{display}</span>
-        <svg class={`w-4 h-4 text-text-muted transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {icon && <span className="w-4 h-4 shrink-0">{icon}</span>}
+        <span className="flex-1 text-left">{display}</span>
+        <svg className={`w-4 h-4 text-text-muted transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -107,7 +109,7 @@ export default function Select({ value, onChange, options, placeholder, required
           id={`${id}-listbox`}
           role="listbox"
           aria-label="Opciones"
-          class="absolute z-50 mt-1 w-full rounded-lg border border-border bg-panel shadow-lg max-h-60 overflow-y-auto"
+          className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-panel shadow-lg max-h-60 overflow-y-auto"
         >
           {options.map((o, i) => (
             <li
@@ -115,10 +117,9 @@ export default function Select({ value, onChange, options, placeholder, required
               id={`${id}-opt-${i}`}
               role="option"
               aria-selected={o.value === value}
-              class={`px-3 py-2 text-sm cursor-pointer transition-colors
-                ${o.value === value ? "bg-indigo-50 text-indigo-700 font-medium" : ""}
-                ${highlighted === i ? "bg-nav-hover" : "hover:bg-nav-hover"}
-                ${o.value === value && highlighted === i ? "bg-indigo-100" : ""}
+               className={`px-3 py-2 text-sm cursor-pointer transition-colors
+                ${o.value === value ? "bg-indigo-100/50 dark:bg-indigo-900/30 text-indigo-700 font-medium" : ""}
+                ${highlighted === i ? "bg-nav-hover" : ""}
                 text-text`}
               onClick={() => select(o.value)}
               onMouseEnter={() => setHighlighted(i)}

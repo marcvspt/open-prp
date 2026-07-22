@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId, getSearchParams, parsePageParams } from "@/lib/api-helpers";
-import { TransactionRepository } from "@/lib/modules/transactions/repository";
+import { jsonResponse, errorResponse, requireUserId, getSearchParams, parsePageParams } from "@/lib/api-helpers.ts";
+import { TransactionRepository } from "@/lib/modules/transactions/repository.ts";
 
 const repo = new TransactionRepository();
 
@@ -16,8 +16,6 @@ export const GET: APIRoute = async (context) => {
     category_id: params.category_id,
     date_from: params.date_from,
     date_to: params.date_to,
-    scope: params.scope as "personal" | "family" | "all" | undefined,
-    family_id: params.family_id,
     page,
     pageSize,
   });
@@ -30,7 +28,7 @@ export const POST: APIRoute = async (context) => {
   if (uid instanceof Response) return uid;
 
   const body = await context.request.json();
-  if (!body.type || !body.amount || !body.date) {
+  if (!body.type || body.amount == null || !body.date) {
     return errorResponse("type, amount, and date are required");
   }
 

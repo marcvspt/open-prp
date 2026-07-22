@@ -1,12 +1,12 @@
-import { getDb } from "../../db/client";
-import { nextSeq } from "../../db/utils";
-import type { Cashback, CashbackInput } from "../../types/cashback";
+import { getDb } from "@/lib/db/client.ts";
+import { nextSeq } from "@/lib/db/utils.ts";
+import type { Cashback, CashbackInput } from "@/lib/types/cashback.ts";
 
 export class CashbackRepository {
   async findAll(userId: string, cardId?: string): Promise<Cashback[]> {
     const db = getDb();
     const conditions = ["user_id = ?"];
-    const args: any[] = [userId];
+    const args: (string | number | boolean | null)[] = [userId];
 
     if (cardId) { conditions.push("card_id = ?"); args.push(cardId); }
 
@@ -47,7 +47,7 @@ export class CashbackRepository {
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: any[] = [];
+    const args: (string | number | boolean | null)[] = [];
 
     if (data.card_id !== undefined) { sets.push("card_id = ?"); args.push(data.card_id ?? null); }
     if (data.amount !== undefined) { sets.push("amount = ?"); args.push(data.amount); }

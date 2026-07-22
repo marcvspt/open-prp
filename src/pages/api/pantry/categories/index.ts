@@ -1,25 +1,12 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId, getSearchParams } from "@/lib/api-helpers";
-import { PantryCategoryRepository } from "@/lib/modules/pantry/categories";
-
-const repo = new PantryCategoryRepository();
+import { jsonResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 
 export const GET: APIRoute = async (context) => {
   const uid = requireUserId(context);
   if (uid instanceof Response) return uid;
 
-  const params = getSearchParams(context);
-  const items = await repo.findAll(uid, params.family_id);
-  return jsonResponse(items);
-};
-
-export const POST: APIRoute = async (context) => {
-  const uid = requireUserId(context);
-  if (uid instanceof Response) return uid;
-
-  const body = await context.request.json();
-  if (!body.name) return errorResponse("name is required");
-
-  const item = await repo.create(body, uid);
-  return jsonResponse(item, 201);
+  const repo = new CategoryRepository();
+  const categories = await repo.findBySections(uid, ["despensa"]);
+  return jsonResponse(categories.map(c => ({ id: c.id, name: c.name, icon: c.icon, color: c.color })));
 };

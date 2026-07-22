@@ -1,33 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import type { PantryItem, PantryCategory } from "@/lib/types/pantry";
+import type { PantryItem } from "@/lib/types/pantry.ts";
+import type { ShoppingItem } from "@/lib/types/shopping.ts";
 
-interface ShoppingItem {
+interface PantryCategory {
   id: string;
   name: string;
-  quantity: number;
-  unit: string | null;
-  notes: string | null;
-  is_checked: boolean;
-  is_completed: boolean;
-  completed_at: string | null;
-  category: string | null;
-  pantry_item_id: string | null;
-  priority: number;
+  icon: string | null;
+  color: string | null;
 }
-
-const PANTRY_CATEGORIES: Record<string, string> = {
-  Frutas: "#f97316",
-  Verduras: "#22c55e",
-  Carnes: "#ef4444",
-  Lácteos: "#3b82f6",
-  Panadería: "#d97706",
-  Bebidas: "#06b6d4",
-  Limpieza: "#8b5cf6",
-  Higiene: "#ec4899",
-  Conservas: "#a855f7",
-  Congelados: "#0ea5e9",
-  Otros: "#6b7280",
-};
 
 function formatCurrency(n: number): string {
   return "$" + n.toFixed(2);
@@ -78,7 +58,7 @@ export default function ShoppingList() {
     } catch {}
   }
 
-  async function handleAddFromDespensa(d: DespensaItem) {
+  async function handleAddFromDespensa(d: PantryItem) {
     try {
       const res = await fetch("/api/shopping", {
         method: "POST",
@@ -88,7 +68,7 @@ export default function ShoppingList() {
           quantity: d.default_quantity,
           unit: d.unit || undefined,
           category: d.category_id || undefined,
-          pantry_item_id: d.id,
+          despensa_item_id: d.id,
         }),
       });
       if (res.ok) fetchData();
@@ -125,7 +105,7 @@ export default function ShoppingList() {
     } catch {}
   }
 
-  const groupedPantry: Record<string, DespensaItem[]> = {};
+  const groupedPantry: Record<string, PantryItem[]> = {};
   for (const d of pantryItems) {
     const catName = categories.find(c => c.id === d.category_id)?.name ?? "Otros";
     if (!groupedPantry[catName]) groupedPantry[catName] = [];
@@ -182,7 +162,7 @@ export default function ShoppingList() {
                     <p className="text-xs text-text-muted mb-1 font-medium">{cat}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {groupedPantry[cat].map(d => {
-                        const alreadyInList = items.some(i => i.pantry_item_id === d.id);
+                        const alreadyInList = items.some(i => i.despensa_item_id === d.id);
                         return (
                           <button
                             key={d.id}
@@ -191,7 +171,7 @@ export default function ShoppingList() {
                             className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
                               alreadyInList
                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                                : "bg-indigo-100/50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 border border-indigo-200 dark:border-indigo-800"
                             }`}
                           >
                             {d.name}

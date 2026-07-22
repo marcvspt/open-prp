@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { EventRepository } from "@/lib/modules/events/repository";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { EventRepository } from "@/lib/modules/events/repository.ts";
 
 const repo = new EventRepository();
 

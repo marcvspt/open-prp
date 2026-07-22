@@ -1,7 +1,6 @@
 export interface Note {
   id: string;
   user_id: string;
-  family_id: string | null;
   title: string;
   content: string | null;
   is_pinned: boolean;
@@ -16,7 +15,6 @@ export interface CreateNoteInput {
   is_pinned?: boolean;
   color?: string;
   tag_ids?: string[];
-  family_id?: string;
 }
 
 export interface UpdateNoteInput {
@@ -25,7 +23,6 @@ export interface UpdateNoteInput {
   is_pinned?: boolean;
   color?: string;
   tag_ids?: string[];
-  family_id?: string;
 }
 
 export interface NoteFilter {
@@ -33,14 +30,11 @@ export interface NoteFilter {
   tag_id?: string;
   page?: number;
   pageSize?: number;
-  scope?: "personal" | "family" | "all";
-  family_id?: string;
 }
 
 export interface NoteTag {
   id: string;
   user_id: string;
-  family_id: string | null;
   name: string;
   color: string | null;
   created_at: string;

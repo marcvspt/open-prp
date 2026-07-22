@@ -1,6 +1,6 @@
-import { getDb } from "../../db/client";
-import { nextSeq } from "../../db/utils";
-import type { NoteTag } from "../../types/note";
+import { getDb } from "@/lib/db/client";
+import { nextSeq } from "@/lib/db/utils";
+import type { NoteTag } from "@/lib/types/note";
 
 export class NoteTagRepository {
   async findAll(userId: string): Promise<NoteTag[]> {
@@ -11,15 +11,15 @@ export class NoteTagRepository {
     return result.rows as unknown as NoteTag[];
   }
 
-  async create(userId: string, name: string, color?: string, familyId?: string): Promise<NoteTag> {
+  async create(userId: string, name: string, color?: string): Promise<NoteTag> {
     const db = getDb();
     const id = crypto.randomUUID();
     const seq = await nextSeq("note_tags");
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: "INSERT INTO note_tags (id, user_id, family_id, name, color, seq, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      args: [id, userId, familyId ?? null, name, color ?? null, seq, now],
+      sql: "INSERT INTO note_tags (id, user_id, name, color, seq, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      args: [id, userId, name, color ?? null, seq, now],
     });
 
     const result = await db.execute({ sql: "SELECT * FROM note_tags WHERE id = ?", args: [id] });

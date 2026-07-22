@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { NoteRepository } from "@/lib/modules/notes/repository";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { NoteRepository } from "@/lib/modules/notes/repository.ts";
 
 const repo = new NoteRepository();
 

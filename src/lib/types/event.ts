@@ -1,9 +1,8 @@
 export interface Event {
   id: string;
   user_id: string;
-  family_id: string | null;
-  title: string;
-  description: string | null;
+  category_id: string | null;
+  description: string;
   location: string | null;
   start_date: string;
   end_date: string | null;
@@ -16,37 +15,34 @@ export interface Event {
 }
 
 export interface CreateEventInput {
-  title: string;
-  description?: string;
+  description: string;
   location?: string;
+  category_id?: string;
   start_date: string;
   end_date?: string;
   is_all_day?: boolean;
   status?: "pending" | "confirmed" | "cancelled" | "completed";
   color?: string;
   recurrence_rule?: string;
-  family_id?: string;
 }
 
 export interface UpdateEventInput {
-  title?: string;
   description?: string;
   location?: string;
+  category_id?: string;
   start_date?: string;
   end_date?: string;
   is_all_day?: boolean;
   status?: "pending" | "confirmed" | "cancelled" | "completed";
   color?: string;
   recurrence_rule?: string;
-  family_id?: string;
 }
 
 export interface EventFilter {
   status?: string;
+  category_id?: string;
   date_from?: string;
   date_to?: string;
   page?: number;
   pageSize?: number;
-  scope?: "personal" | "family" | "all";
-  family_id?: string;
 }

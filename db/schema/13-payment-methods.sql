@@ -1,10 +1,10 @@
+DROP TABLE IF EXISTS payment_methods;
+
 CREATE TABLE IF NOT EXISTS payment_methods (
   id TEXT PRIMARY KEY,
   user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  is_global INTEGER NOT NULL DEFAULT 0,
-  scope TEXT CHECK(scope IN ('personal','family','both')),
-  family_id TEXT REFERENCES families(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK(type IN ('global','personal','card')) DEFAULT 'personal',
   card_id TEXT REFERENCES credit_cards(id) ON DELETE CASCADE,
   icon TEXT,
   color TEXT,

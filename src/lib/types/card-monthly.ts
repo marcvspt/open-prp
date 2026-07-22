@@ -20,3 +20,12 @@ export interface CardMonthlyUpdate {
   statement_balance?: number;
   is_paid?: boolean;
 }
+
+export interface CalculatedDebt {
+  total_purchases: number;
+  total_installments: number;
+  total_cashback: number;
+  statement_balance: number;
+  committed_installments: number;
+  total_committed: number;
+}

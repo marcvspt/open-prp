@@ -1,27 +1,12 @@
-import { getDb } from "../../db/client";
-import { nextSeq } from "../../db/utils";
-import type { Note, CreateNoteInput, UpdateNoteInput, NoteFilter } from "../../types/note";
+import { getDb } from "@/lib/db/client";
+import { nextSeq } from "@/lib/db/utils";
+import type { Note, CreateNoteInput, UpdateNoteInput, NoteFilter } from "@/lib/types/note";
 
 export class NoteRepository {
   async findAll(userId: string, filter?: NoteFilter): Promise<Note[]> {
     const db = getDb();
-    const conditions: string[] = [];
-    const args: any[] = [];
-    const scope = filter?.scope ?? "personal";
-
-    if (scope === "personal") {
-      conditions.push("n.user_id = ? AND n.family_id IS NULL");
-      args.push(userId);
-    } else if (scope === "family" && filter?.family_id) {
-      conditions.push("n.family_id = ?");
-      args.push(filter.family_id);
-    } else if (scope === "all") {
-      conditions.push("(n.user_id = ? OR n.family_id = ?)");
-      args.push(userId, filter?.family_id ?? "");
-    } else {
-      conditions.push("n.user_id = ? AND n.family_id IS NULL");
-      args.push(userId);
-    }
+    const conditions: string[] = ["n.user_id = ?"];
+    const args: (string | number | boolean | null)[] = [userId];
 
     if (filter?.is_pinned !== undefined) {
       conditions.push("n.is_pinned = ?");
@@ -55,9 +40,9 @@ export class NoteRepository {
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: `INSERT INTO notes (id, user_id, family_id, title, content, is_pinned, color, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, data.family_id ?? null, data.title, data.content ?? null, data.is_pinned ? 1 : 0, data.color ?? null, seq, now, now],
+      sql: `INSERT INTO notes (id, user_id, title, content, is_pinned, color, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, userId, data.title, data.content ?? null, data.is_pinned ? 1 : 0, data.color ?? null, seq, now, now],
     });
 
     if (data.tag_ids?.length) {
@@ -76,13 +61,12 @@ export class NoteRepository {
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: any[] = [];
+    const args: (string | number | boolean | null)[] = [];
 
     if (data.title !== undefined) { sets.push("title = ?"); args.push(data.title); }
     if (data.content !== undefined) { sets.push("content = ?"); args.push(data.content ?? null); }
     if (data.is_pinned !== undefined) { sets.push("is_pinned = ?"); args.push(data.is_pinned ? 1 : 0); }
     if (data.color !== undefined) { sets.push("color = ?"); args.push(data.color ?? null); }
-    if (data.family_id !== undefined) { sets.push("family_id = ?"); args.push(data.family_id ?? null); }
 
     if (sets.length > 0) {
       sets.push("updated_at = ?");

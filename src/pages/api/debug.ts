@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { UserRepository } from "@/lib/modules/users/repository";
+import { UserRepository } from "@/lib/modules/users/repository.ts";
 
 export const GET: APIRoute = async (context) => {
   const { userId: clerkId } = context.locals.auth();

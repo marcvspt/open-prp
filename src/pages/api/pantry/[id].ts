@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { PantryRepository } from "@/lib/modules/pantry/repository";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
 
 const repo = new PantryRepository();
 

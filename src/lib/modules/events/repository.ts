@@ -1,30 +1,24 @@
-import { getDb } from "../../db/client";
-import { nextSeq } from "../../db/utils";
-import type { Event, CreateEventInput, UpdateEventInput, EventFilter } from "../../types/event";
-import type { PaginatedResponse } from "../../types/general";
+import { getDb } from "@/lib/db/client.ts";
+import { nextSeq } from "@/lib/db/utils.ts";
+import type { Event, CreateEventInput, UpdateEventInput, EventFilter } from "@/lib/types/event.ts";
+import type { PaginatedResponse } from "@/lib/types/general.ts";
 
 export class EventRepository {
   async findAll(userId: string, filter?: EventFilter): Promise<PaginatedResponse<Event>> {
     const db = getDb();
-    const conditions: string[] = [];
-    const args: any[] = [];
-    const scope = filter?.scope ?? "personal";
+    const conditions: string[] = ["user_id = ?"];
+    const args: (string | number | boolean | null)[] = [userId];
 
-    if (scope === "personal") {
-      conditions.push("user_id = ? AND family_id IS NULL");
-      args.push(userId);
-    } else if (scope === "family" && filter?.family_id) {
-      conditions.push("family_id = ?");
-      args.push(filter.family_id);
-    } else if (scope === "all") {
-      conditions.push("(user_id = ? OR family_id = ?)");
-      args.push(userId, filter?.family_id ?? "");
-    } else {
-      conditions.push("user_id = ? AND family_id IS NULL");
-      args.push(userId);
+    if (filter?.status) {
+      const statuses = filter.status.split(",").map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        conditions.push("status = ?"); args.push(statuses[0]);
+      } else if (statuses.length > 1) {
+        conditions.push(`status IN (${statuses.map(() => "?").join(",")})`);
+        args.push(...statuses);
+      }
     }
-
-    if (filter?.status) { conditions.push("status = ?"); args.push(filter.status); }
+    if (filter?.category_id) { conditions.push("category_id = ?"); args.push(filter.category_id); }
     if (filter?.date_from) { conditions.push("start_date >= ?"); args.push(filter.date_from); }
     if (filter?.date_to) { conditions.push("start_date <= ?"); args.push(filter.date_to); }
 
@@ -62,11 +56,11 @@ export class EventRepository {
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: `INSERT INTO events (id, user_id, family_id, title, description, location, start_date, end_date, is_all_day, status, color, recurrence_rule, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO events (id, user_id, category_id, description, location, start_date, end_date, is_all_day, status, color, recurrence_rule, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
-        id, userId, data.family_id ?? null, data.title, data.description ?? null,
-        data.location ?? null, data.start_date, data.end_date ?? null,
+        id, userId, data.category_id ?? null, data.description, data.location ?? null,
+        data.start_date, data.end_date ?? null,
         data.is_all_day ? 1 : 0, data.status ?? "pending", data.color ?? null,
         data.recurrence_rule ?? null, seq, now, now,
       ],
@@ -82,18 +76,17 @@ export class EventRepository {
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: any[] = [];
+    const args: (string | number | boolean | null)[] = [];
 
-    if (data.title !== undefined) { sets.push("title = ?"); args.push(data.title); }
-    if (data.description !== undefined) { sets.push("description = ?"); args.push(data.description ?? null); }
+    if (data.description !== undefined) { sets.push("description = ?"); args.push(data.description); }
     if (data.location !== undefined) { sets.push("location = ?"); args.push(data.location ?? null); }
+    if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id ?? null); }
     if (data.start_date !== undefined) { sets.push("start_date = ?"); args.push(data.start_date); }
     if (data.end_date !== undefined) { sets.push("end_date = ?"); args.push(data.end_date ?? null); }
     if (data.is_all_day !== undefined) { sets.push("is_all_day = ?"); args.push(data.is_all_day ? 1 : 0); }
     if (data.status !== undefined) { sets.push("status = ?"); args.push(data.status); }
     if (data.color !== undefined) { sets.push("color = ?"); args.push(data.color ?? null); }
     if (data.recurrence_rule !== undefined) { sets.push("recurrence_rule = ?"); args.push(data.recurrence_rule ?? null); }
-    if (data.family_id !== undefined) { sets.push("family_id = ?"); args.push(data.family_id ?? null); }
 
     if (sets.length === 0) return existing;
 

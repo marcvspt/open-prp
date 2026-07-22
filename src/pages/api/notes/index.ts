@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId, getSearchParams, parsePageParams } from "@/lib/api-helpers";
-import { NoteRepository } from "@/lib/modules/notes/repository";
+import { jsonResponse, errorResponse, requireUserId, getSearchParams, parsePageParams } from "@/lib/api-helpers.ts";
+import { NoteRepository } from "@/lib/modules/notes/repository.ts";
 
 const repo = new NoteRepository();
 
@@ -14,8 +14,6 @@ export const GET: APIRoute = async (context) => {
   const result = await repo.findAll(uid, {
     is_pinned: params.is_pinned === "true" ? true : params.is_pinned === "false" ? false : undefined,
     tag_id: params.tag_id,
-    scope: params.scope as "personal" | "family" | "all" | undefined,
-    family_id: params.family_id,
     page,
     pageSize,
   });

@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { CreditCardRepository } from "@/lib/modules/credit-cards/repository";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { CreditCardRepository } from "@/lib/modules/credit-cards/repository.ts";
 
 const repo = new CreditCardRepository();
 

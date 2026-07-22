@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import { apiFetch } from "@/lib/api-client";
-import { FormModal } from "./FormModal";
-import Select from "./Select";
+import { apiFetch } from "@/lib/api-client.ts";
+import { FormModal } from "@/components/ui/FormModal.tsx";
+import Select from "@/components/ui/Select.tsx";
+import MultiSelect from "@/components/ui/MultiSelect.tsx";
 
 export interface Field {
   name: string;
   label: string;
-  type: "text" | "number" | "date" | "month" | "select" | "textarea" | "checkbox" | "color";
+  type: "text" | "number" | "date" | "month" | "select" | "multiselect" | "textarea" | "checkbox" | "color";
   required?: boolean;
   options?: { value: string; label: string }[];
   step?: string;
@@ -30,7 +31,19 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
   const [saving, setSaving] = useState(false);
 
   const reset = useCallback(() => {
-    setForm({ ...defaultForm });
+    const base = { ...defaultForm };
+    const now = new Date();
+    const localDate = now.toLocaleDateString("sv");
+    const localMonth = localDate.slice(0, 7);
+    for (const f of fields) {
+      if ((f.type === "date" || ["date","start_date","end_date","due_date"].includes(f.name)) && !base[f.name]) {
+        base[f.name] = localDate;
+      }
+      if ((f.type === "month" || ["start_month","applied_month"].includes(f.name)) && !base[f.name]) {
+        base[f.name] = localMonth;
+      }
+    }
+    setForm(base);
     setEditingId(null);
   }, [defaultJson]);
 
@@ -72,8 +85,8 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
       }
       setOpen(false);
       window.location.reload();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setSaving(false);
     }
@@ -85,28 +98,30 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
 
   return (
     <>
-      {saving && editingId && <div class="fixed inset-0 z-40 flex items-center justify-center bg-overlay"><div class="bg-panel p-4 rounded-lg text-sm">Cargando...</div></div>}
+      {saving && editingId && <div className="fixed inset-0 z-40 flex items-center justify-center bg-overlay"><div className="bg-panel p-4 rounded-lg text-sm">Cargando...</div></div>}
       <FormModal open={open} onClose={() => setOpen(false)} title={editingId ? `Editar ${titleSingular}` : `Nuevo ${titleSingular}`}>
-        <form onSubmit={handleSubmit} class="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {fields.map(f => (
             <div key={f.name}>
-              <label class="block text-sm font-medium text-text">{f.label}</label>
-              {f.type === "select" ? (
+              <label className="block text-sm font-medium text-text">{f.label}</label>
+              {f.type === "multiselect" ? (
+                <MultiSelect value={String(form[f.name] ?? "[]")} onChange={v => setVal(f.name, v)} options={f.options ?? []} placeholder={f.placeholder} />
+              ) : f.type === "select" ? (
                 <Select value={String(form[f.name] ?? "")} onChange={v => setVal(f.name, v)} options={f.options ?? []} required={f.required} />
               ) : f.type === "textarea" ? (
-                <textarea value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} rows={4} class="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm" placeholder={f.placeholder} required={f.required} />
+                <textarea value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} rows={4} className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm" placeholder={f.placeholder} required={f.required} />
               ) : f.type === "checkbox" ? (
-                <input type="checkbox" checked={Boolean(form[f.name])} onChange={e => setVal(f.name, e.target.checked)} class="mt-1 block w-4 h-4 accent-indigo-600" />
+                <input type="checkbox" checked={Boolean(form[f.name])} onChange={e => setVal(f.name, e.target.checked)} className="mt-1 block w-4 h-4 accent-indigo-600" />
               ) : f.type === "color" ? (
-                <input type="color" value={String(form[f.name] ?? "#6366f1")} onChange={e => setVal(f.name, e.target.value)} class="mt-1 block w-full h-10 rounded-lg border border-border cursor-pointer" />
+                <input type="color" value={String(form[f.name] ?? "#6366f1")} onChange={e => setVal(f.name, e.target.value)} className="mt-1 block w-full h-10 rounded-lg border border-border cursor-pointer" />
               ) : (
-                <input type={f.type} value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, f.type === "number" ? parseFloat(e.target.value) || 0 : e.target.value)} step={f.step} min={f.min} class="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm" placeholder={f.placeholder} required={f.required} />
+                <input type={f.type} value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, f.type === "number" ? parseFloat(e.target.value) || 0 : e.target.value)} step={f.step} min={f.min} className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm" placeholder={f.placeholder} required={f.required} />
               )}
             </div>
           ))}
-          <div class="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setOpen(false)} class="px-4 py-2 text-sm text-nav hover:text-text">Cancelar</button>
-            <button type="submit" disabled={saving} class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50">{saving ? "Guardando..." : editingId ? "Guardar" : "Crear"}</button>
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-sm text-nav hover:text-text">Cancelar</button>
+            <button type="submit" disabled={saving} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50">{saving ? "Guardando..." : editingId ? "Guardar" : "Crear"}</button>
           </div>
         </form>
       </FormModal>

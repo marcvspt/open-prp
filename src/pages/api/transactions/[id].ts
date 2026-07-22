@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { TransactionRepository } from "@/lib/modules/transactions/repository";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { TransactionRepository } from "@/lib/modules/transactions/repository.ts";
 
 const repo = new TransactionRepository();
 

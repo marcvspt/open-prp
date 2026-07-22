@@ -1,10 +1,10 @@
+export type PaymentMethodType = "global" | "personal" | "card";
+
 export interface PaymentMethod {
   id: string;
   user_id: string | null;
   name: string;
-  is_global: number;
-  scope: "personal" | "family" | "both" | null;
-  family_id: string | null;
+  type: PaymentMethodType;
   card_id: string | null;
   icon: string | null;
   color: string | null;
@@ -15,16 +15,14 @@ export interface PaymentMethod {
 
 export interface CreatePaymentMethodInput {
   name: string;
-  scope?: "personal" | "family" | "both";
-  family_id?: string;
+  type?: PaymentMethodType;
   icon?: string;
   color?: string;
 }
 
 export interface UpdatePaymentMethodInput {
   name?: string;
-  scope?: "personal" | "family" | "both";
-  family_id?: string;
+  type?: PaymentMethodType;
   icon?: string;
   color?: string;
 }

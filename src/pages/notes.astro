@@ -2,8 +2,8 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/ui/PageHeader.astro";
 import DeleteHandler from "@/components/ui/DeleteHandler.astro";
-import CrudModal from "@/components/ui/CrudModal";
-import { NoteRepository } from "@/lib/modules/notes/repository";
+import CrudModal from "@/components/ui/CrudModal.tsx";
+import { NoteRepository } from "@/lib/modules/notes/repository.ts";
 const userId = Astro.locals.userId;
 const items = (await new NoteRepository().findAll(userId)) ?? [];
 const colors: Record<string, string> = { blue: "border-blue-300 bg-blue-50", green: "border-green-300 bg-green-50", yellow: "border-yellow-300 bg-yellow-50", pink: "border-pink-300 bg-pink-50", purple: "border-purple-300 bg-purple-50" };
@@ -16,7 +16,7 @@ const fields = [
 const defaultForm = { title: "", content: "", color: "", is_pinned: false };
 ---
 
-<BaseLayout title="Notas - Open PHRP">
+<BaseLayout title="Notas - Open PRP">
   <div data-module="notes" class="space-y-4">
     <PageHeader title="Notas" createLabel="Nueva nota" createModule="notes" />
     {items.length === 0 ? (

@@ -1,6 +1,6 @@
-import { getDb } from "../../db/client";
-import { localISOString } from "../../date";
-import type { CardMonthly, CardMonthlyInput, CardMonthlyUpdate } from "../../types/card-monthly";
+import { getDb } from "@/lib/db/client.ts";
+import { localISOString } from "@/lib/date.ts";
+import type { CardMonthly, CardMonthlyInput, CardMonthlyUpdate } from "@/lib/types/card-monthly.ts";
 
 export class CardMonthlyRepository {
   async findByMonth(month: string, userId: string): Promise<CardMonthly[]> {

@@ -1,11 +1,10 @@
 ---
-import BaseLayout from "@/layouts/BaseLayout.astro";
-import DashboardContent from "@/components/dashboard/DashboardContent";
+const { userId } = Astro.locals.auth();
+
+if (userId) {
+  return Astro.redirect("/dashboard");
+}
+return Astro.redirect("/login");
 ---
 
-<BaseLayout title="Dashboard - Open PHRP">
-  <div class="space-y-6">
-    <h1 class="text-2xl font-bold text-text">Dashboard</h1>
-    <DashboardContent client:load />
-  </div>
-</BaseLayout>
+<!-- Redirecting... -->

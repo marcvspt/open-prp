@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers";
-import { NoteTagRepository } from "@/lib/modules/notes/tags";
+import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { NoteTagRepository } from "@/lib/modules/notes/tags.ts";
 
 const repo = new NoteTagRepository();
 
@@ -21,6 +21,6 @@ export const POST: APIRoute = async (context) => {
     return errorResponse("name is required");
   }
 
-  const tag = await repo.create(uid, body.name, body.color, body.family_id);
+  const tag = await repo.create(uid, body.name, body.color);
   return jsonResponse(tag, 201);
 };

@@ -3,31 +3,35 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/ui/PageHeader.astro";
 import DataTable from "@/components/ui/DataTable.astro";
 import DeleteHandler from "@/components/ui/DeleteHandler.astro";
-import CrudModal from "@/components/ui/CrudModal";
-import { CashbackRepository } from "@/lib/modules/cashback/repository";
+import CrudModal from "@/components/ui/CrudModal.tsx";
+import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
+import { CreditCardRepository } from "@/lib/modules/credit-cards/repository.ts";
 const userId = Astro.locals.userId;
 const items = await new CashbackRepository().findAll(userId);
+const allCards = await new CreditCardRepository().findAll(userId);
+const creditCards = allCards.filter(c => c.type === "credit");
+const cardMap = Object.fromEntries(allCards.map(c => [c.id, c]));
 const fields = [
   { name: "amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
   { name: "description", label: "Descripción", type: "text" as const },
   { name: "date", label: "Fecha", type: "date" as const, required: true },
   { name: "applied_month", label: "Aplicado al mes", type: "month" as const },
-  { name: "card_id", label: "ID de tarjeta (opcional)", type: "text" as const },
+  { name: "card_id", label: "Tarjeta", type: "select" as const, options: [{ value: "", label: "Sin tarjeta" }, ...creditCards.map(c => ({ value: c.id, label: c.name }))] },
 ];
-const defaultForm = { amount: 0, description: "", date: new Date().toISOString().split("T")[0], applied_month: "", card_id: "" };
+const defaultForm = { amount: 0, description: "", date: "", applied_month: "", card_id: "" };
 ---
 
-<BaseLayout title="Cashback - Open PHRP">
+<BaseLayout title="Cashback - Open PRP">
   <div data-module="cashback" class="space-y-4">
     <PageHeader title="Cashback" createLabel="Nuevo cashback" createModule="cashback" />
-    <DataTable columns={["Fecha", "Descripción", { label: "Monto", align: "right" }, { label: "Aplicado a", align: "center" }, { label: "Tarjeta", align: "center" }]} emptyMessage="Sin cashback">
+    <DataTable columns={["Fecha", "Descripción", { label: "Monto", align: "right" }, { label: "Aplicado a", align: "center" }, "Tarjeta"]} emptyMessage="Sin cashback">
       {items.map(c => (
         <tr key={c.id} class="hover:bg-nav-hover">
           <td class="px-4 py-3">{new Date(c.date).toLocaleDateString("es")}</td>
           <td class="px-4 py-3">{c.description || "-"}</td>
           <td class="px-4 py-3 text-right font-mono text-green-600">+${Number(c.amount).toFixed(2)}</td>
           <td class="px-4 py-3 text-center">{c.applied_month ? <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{c.applied_month}</span> : "-"}</td>
-          <td class="px-4 py-3 text-center">{c.card_id ? "✅" : "-"}</td>
+          <td class="px-4 py-3">{c.card_id ? (cardMap[c.card_id] ? <span class="inline-flex items-center gap-1 text-xs bg-gray-100 px-2 py-0.5 rounded">{cardMap[c.card_id].color && <span class="w-2 h-2 rounded-full" style={`background-color: ${cardMap[c.card_id].color}`} />}{cardMap[c.card_id].name}</span> : "-") : "-"}</td>
           <td class="px-4 py-3 text-right space-x-2">
             <button data-edit-cashback={c.id} class="text-indigo-600 hover:text-indigo-800 text-xs font-medium cursor-pointer">Editar</button>
             <button data-delete-cashback={c.id} class="text-red-600 hover:text-red-800 text-xs font-medium cursor-pointer">Eliminar</button>
