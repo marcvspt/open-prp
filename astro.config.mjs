@@ -3,21 +3,27 @@ import { defineConfig, envField } from 'astro/config';
 
 import react from '@astrojs/react';
 import tailwindcss from "@tailwindcss/vite";
+import clerk from "@clerk/astro";
+
+import netlify from '@astrojs/netlify';
 
 // https://astro.build/config
 export default defineConfig({
   output: "server",
 
-  integrations: [react()],
+  adapter: netlify(),
+
+  integrations: [react(), clerk()],
+
   vite: {
     plugins: [tailwindcss()],
   },
 
-  site: 'https://phrp.marcvspt.tech',
+  site: 'https://ophrp.marcvspt.tech',
 
   env: {
     schema: {
-      TURSO_BD_URL: envField.string({
+      TURSO_DB_URL: envField.string({
         context: 'server',
         access: 'secret',
         optional: false
@@ -27,6 +33,16 @@ export default defineConfig({
         access: 'secret',
         optional: false
       }),
+      PUBLIC_CLERK_PUBLISHABLE_KEY: envField.string({
+        context: 'client',
+        access: 'public',
+        optional: false
+      }),
+      CLERK_SECRET_KEY: envField.string({
+        context: 'server',
+        access: 'secret',
+        optional: false
+      }),
     }
-  }
+  },
 });

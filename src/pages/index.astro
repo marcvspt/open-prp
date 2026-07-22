@@ -1,7 +1,10 @@
 ---
-import BaseLayout from "@/layouts/BaseLayout.astro";
+const { userId } = Astro.locals.auth();
+
+if (userId) {
+  return Astro.redirect("/dashboard");
+}
+return Astro.redirect("/login");
 ---
 
-<BaseLayout title="Open PHRP">
-    <h1>Open Personal-Home Resource Planning</h1>
-</BaseLayout>
+<!-- Redirecting... -->

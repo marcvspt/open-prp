@@ -1,0 +1,57 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/ui/PageHeader.astro";
+import DataTable from "@/components/ui/DataTable.astro";
+import DeleteHandler from "@/components/ui/DeleteHandler.astro";
+import CrudModal from "@/components/ui/CrudModal.tsx";
+import { InstallmentRepository } from "@/lib/modules/installments/repository.ts";
+import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
+import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
+const userId = Astro.locals.userId;
+const activeOnly = Astro.url.searchParams.get("active_only") !== "false";
+const items = await new InstallmentRepository().findAll(userId, { active_only: activeOnly });
+const catRepo = new CategoryRepository();
+const instCategories = await catRepo.findBySections(userId, ["plazos"]);
+const pmRepo = new PaymentMethodRepository();
+const paymentMethods = await pmRepo.findAll(userId);
+const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm]));
+const catMap = Object.fromEntries(instCategories.map(c => [c.id, c]));
+const fields = [
+  { name: "description", label: "Descripción", type: "text" as const, required: true },
+  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...instCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
+  { name: "payment_method_id", label: "Método de pago", type: "select" as const, options: [{ value: "", label: "Sin método" }, ...paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` }))] },
+  { name: "total_amount", label: "Monto total", type: "number" as const, required: true, step: "0.01" },
+  { name: "monthly_amount", label: "Cuota mensual", type: "number" as const, required: true, step: "0.01" },
+  { name: "total_months", label: "Total de meses", type: "number" as const, required: true, min: 1 },
+  { name: "start_month", label: "Mes de inicio", type: "month" as const, required: true },
+];
+const defaultForm = { description: "", category_id: "", payment_method_id: "", total_amount: 0, monthly_amount: 0, total_months: 1, start_month: "" };
+---
+
+<BaseLayout title="Plazos - Open PRP">
+  <div data-module="installments" class="space-y-4">
+    <PageHeader title="Plazos / Cuotas" createLabel="Nuevo plazo" createModule="installments" />
+    <a href={activeOnly ? "/installments?active_only=false" : "/installments"} class={`inline-block px-3 py-1.5 text-sm rounded-lg ${activeOnly ? "bg-indigo-100 text-indigo-700 font-medium" : "bg-surface-alt text-nav hover:bg-nav-hover"}`}>
+      {activeOnly ? "Mostrando solo activos" : "Mostrando todos"}
+    </a>
+    <DataTable columns={["Descripción", { label: "Total", align: "right" }, { label: "Cuota", align: "right" }, { label: "Progreso", align: "center" }, { label: "Inicio", align: "center" }, "Categoría", "Método"]} emptyMessage="Sin plazos">
+      {items.map(i => (
+        <tr key={i.id} class="hover:bg-nav-hover">
+          <td class="px-4 py-3 font-medium">{i.description}</td>
+          <td class="px-4 py-3 text-right font-mono text-red-600">${Number(i.total_amount).toFixed(2)}</td>
+          <td class="px-4 py-3 text-right font-mono text-red-600">${Number(i.monthly_amount).toFixed(2)}</td>
+          <td class="px-4 py-3 text-center"><span class={`text-xs px-2 py-0.5 rounded font-medium ${i.remaining_months <= 0 ? "bg-green-100 text-green-700" : i.remaining_months <= 3 ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700"}`}>{i.remaining_months}/{i.total_months}</span></td>
+          <td class="px-4 py-3 text-center text-xs">{i.start_month}</td>
+          <td class="px-4 py-3">{i.category_id ? <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">{catMap[i.category_id] ? `${catMap[i.category_id].icon || "📂"} ${catMap[i.category_id].name}` : "-"}</span> : "-"}</td>
+          <td class="px-4 py-3">{i.payment_method_id ? <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">{pmMap[i.payment_method_id] ? `${pmMap[i.payment_method_id].icon || "💳"} ${pmMap[i.payment_method_id].name}` : "-"}</span> : "-"}</td>
+          <td class="px-4 py-3 text-right space-x-2">
+            <button data-edit-installments={i.id} class="text-indigo-600 hover:text-indigo-800 text-xs font-medium cursor-pointer">Editar</button>
+            <button data-delete-installments={i.id} class="text-red-600 hover:text-red-800 text-xs font-medium cursor-pointer">Eliminar</button>
+          </td>
+        </tr>
+      ))}
+    </DataTable>
+  </div>
+  <CrudModal client:load module="installments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="plazo" />
+  <DeleteHandler module="installments" label="plazo" />
+</BaseLayout>

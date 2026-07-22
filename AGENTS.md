@@ -8,6 +8,110 @@ astro dev --background
 
 Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
 
+## Project Structure
+
+- **Routing**: `/` → redirects to `/dashboard` (logged in) or `/login` (not logged in). `/login` redirects to `/dashboard` if already authenticated. Middleware also redirects any route (except `/login`) to `/login` if not authenticated.
+- **Pages**: each module has a page in `src/pages/*.astro` and API routes in `src/pages/api/*/`
+- **React components**: use `client:load` directive for hydration
+- **All imports**: use `@/` alias (e.g. `@/lib/db/client`, `@/components/ui/Select`)
+
+## TypeScript
+
+- **No `any`** types. SQL bind args use `(string | number | boolean | null)[]`.
+- **Catch blocks**: omit unused error parameter (`catch {`), or use `catch (e: unknown)` and log.
+- **CategoryType**: `"global" | "personal"` (no `"family"` or `"both"`)
+- **PaymentMethodType**: `"global" | "personal" | "card"` (no `"family"` or `"both"`)
+- No `scope` or `family_id` in any type or repository.
+
+## Database
+
+### Schema & Seeding
+
+Schema SQL: `db/schema/*.sql` — archivos modulares (uno por módulo de negocio), con prefijo numérico para orden de creación. Cada archivo usa `CREATE TABLE IF NOT EXISTS` e `CREATE INDEX IF NOT EXISTS` para ser idempotente.
+
+- Tabla `categories` tiene `UNIQUE(user_id, name)` para evitar duplicados.
+- Tabla `events` y `tasks` no tienen campo `title` — solo `description`.
+- Tabla `recurring_payment_monthly` tiene columnas `category_id` y `payment_method_id` para snapshot al momento de creación.
+
+- Seed: `pnpm db:seed` (carga `.env` + `.env.development`)
+- Seed producción: `pnpm db:seed:prod` (carga `.env` + `.env.production`)
+- El script usa `@libsql/client` (Node version) para ejecución directa.
+
+### Repository layer
+
+Each module in `src/lib/modules/*/repository.ts` uses `getDb()` from `src/lib/db/client.ts` which returns a raw `@libsql/client/web` instance. All queries use `db.execute({ sql, args })` with `?` bind parameters to prevent SQL injection.
+
+- **Categories**: `create()` checks for existing name before inserting; if exists, returns existing (API prevents with 409).
+- **Recurring Payments**: `upsertMonthly()` snapshots `category_id` and `payment_method_id` from the template at creation time.
+- **findAll() on recurring-payments**: LEFT JOIN con `categories` y `payment_methods` para traer `category_name`, `payment_method_name`, `payment_method_icon`.
+
+Common helpers:
+- `nextSeq("table_name")` — gets `COALESCE(MAX(seq), 0) + 1` for a table via raw SQL
+- `getDb()` — creates/returns a singleton `@libsql/client/web` client
+
+## Auth & Middleware
+
+- Uses `@clerk/astro` with `clerkMiddleware` in `src/middleware.ts`
+- **Clerk user sync**: on every request, `needsSync()` checks if `email`/`display_name` are empty OR `updated_at` is older than 5 min. If so, calls Clerk API (`users.getUser`) and updates `email`/`display_name` in the local DB.
+- React hooks from Clerk: import from `@clerk/astro/react` (e.g. `useAuth`), NOT from `@clerk/clerk-react` (not installed).
+- The `UserButton` + "Mi cuenta" area is clickable as a whole via a forwarded click script.
+
+## UI / Components
+
+### Select & MultiSelect
+
+- `Select.tsx` — combobox accesible con teclado. Used throughout the app.
+- `MultiSelect.tsx` — multi-selection with checkboxes and "Todas las secciones" option.
+- **Dark mode**: selected options use `bg-indigo-100/50 dark:bg-indigo-900/30` instead of hardcoded light colors.
+
+### CrudModal
+
+- `CrudModal.tsx` renders a generic CRUD form modal. Triggered by `data-create="{module}"` and `data-edit-{module}="{id}"` attributes.
+- The `data-create` attribute uses `=` syntax (e.g. `data-create="categories"`), NOT hyphenated (`data-create-categories`).
+- After save, calls `window.location.reload()`. Components using `history.replaceState` must preserve `location.pathname` (not fallback to `"/"`) to avoid reloading to root.
+
+### Events & Tasks (cards layout)
+
+- **Events** and **Tasks** pages use a grid of cards instead of DataTable.
+- **Events** have no `title` field — only `description`. Cards show: description, status badge (with color + icon), start/end dates, category with icon, location.
+- **Tasks** have no `title` field — only `description`. Cards show: checkbox, description, priority badge (with color + icon), category with icon, due date.
+
+### Theme
+
+- Dark mode toggle via `ThemeToggle.tsx`, stores preference in localStorage.
+- CSS variables in `global.css` handle light/dark theming.
+- Clerk components adapt automatically via `color-scheme: light` on `:root` and `color-scheme: dark` on `.dark`.
+
+## Deployment
+
+El adaptador se configura en `astro.config.mjs` - solo cambiar la línea `adapter:` y su import:
+
+```js
+// Cloudflare
+import cloudflare from '@astrojs/cloudflare';
+adapter: cloudflare({ platformProxy: { enabled: true } }),
+
+// Vercel
+// import vercel from '@astrojs/vercel/serverless';
+// adapter: vercel(),
+
+// Netlify
+// import netlify from '@astrojs/netlify';
+// adapter: netlify(),
+```
+
+El cliente de BD (`@libsql/client/web`) funciona en Node 18+, Cloudflare Workers, Vercel Edge/Serverless y Netlify Edge/Functions sin cambios.
+
+### Cloudflare Pages
+
+1. `pnpm build` → genera `dist/`
+2. Subir a Cloudflare Pages: seleccionar `dist/` como directorio de salida
+3. Variables de entorno en el dashboard: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
+
+### Vercel / Netlify
+
+Solo cambiar el adapter en la config y hacer deploy desde el dashboard o CLI.
+
 ## Documentation
 
 Full documentation: https://docs.astro.build

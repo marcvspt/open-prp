@@ -1,0 +1,36 @@
+---
+type Column = string | { label: string; align?: "left" | "right" | "center" };
+
+export interface Props {
+  columns: Column[];
+  emptyMessage?: string;
+  actions?: boolean;
+}
+
+const { columns, emptyMessage = "Sin datos", actions = true } = Astro.props;
+const colCount = columns.length + (actions ? 1 : 0);
+
+const alignMap: Record<string, string> = { left: "text-left", right: "text-right", center: "text-center" };
+---
+
+<div class="overflow-x-auto rounded-lg border border-border">
+  <table class="min-w-full divide-y divide-border text-sm">
+    <thead class="bg-surface-alt">
+      <tr>
+        {columns.map(col => {
+          const label = typeof col === "string" ? col : col.label;
+          const align = alignMap[typeof col === "string" ? "left" : col.align ?? "left"];
+          return <th class={`px-4 py-3 ${align} font-medium text-text-muted uppercase tracking-wider`}>{label}</th>;
+        })}
+        {actions && <th class="px-4 py-3 text-right font-medium text-text-muted uppercase tracking-wider">Acciones</th>}
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-border-light">
+      {Astro.slots.has("default") ? (
+        <slot />
+      ) : (
+        <tr><td colspan={colCount} class="px-4 py-8 text-center text-text-muted">{emptyMessage}</td></tr>
+      )}
+    </tbody>
+  </table>
+</div>

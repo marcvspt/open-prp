@@ -1,2 +1,41 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+@theme {
+  --color-surface: #f9fafb;
+  --color-surface-alt: #f3f4f6;
+  --color-panel: #ffffff;
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+  --color-nav: #4b5563;
+  --color-nav-hover: #f3f4f6;
+  --color-nav-active: #eef2ff;
+  --color-nav-active-text: #4338ca;
+  --color-overlay: rgba(0, 0, 0, 0.4);
+}
+
+.dark {
+  --color-surface: #111827;
+  --color-surface-alt: #1f2937;
+  --color-panel: #1f2937;
+  --color-border: #374151;
+  --color-border-light: #1f2937;
+  --color-text: #f3f4f6;
+  --color-text-muted: #9ca3af;
+  --color-nav: #9ca3af;
+  --color-nav-hover: #374151;
+  --color-nav-active: rgba(49, 46, 129, 0.4);
+  --color-nav-active-text: #a5b4fc;
+  --color-overlay: rgba(0, 0, 0, 0.6);
+}

@@ -1,0 +1,18 @@
+---
+export interface Props {
+  module: string;
+  label?: string;
+}
+
+const { module, label = "elemento" } = Astro.props;
+---
+
+<script define:vars={{ module, label }}>
+  document.addEventListener('click', async (e) => {
+    const del = /** @type {HTMLElement} */(e.target).closest(`[data-delete-${module}]`);
+    if (del && del.getAttribute(`data-delete-${module}`) && confirm(`¿Eliminar ${label}?`)) {
+      await fetch(`/api/${module}/${del.getAttribute(`data-delete-${module}`)}`, { method: 'DELETE' });
+      window.location.reload();
+    }
+  });
+</script>

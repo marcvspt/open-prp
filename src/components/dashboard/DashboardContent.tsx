@@ -1,0 +1,552 @@
+import { useState, useEffect, useCallback, useMemo } from "react";
+import type { CreditCard } from "@/lib/types/credit-card";
+import type { CardMonthly, CalculatedDebt } from "@/lib/types/card-monthly";
+import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment";
+import type { Transaction } from "@/lib/types/transaction";
+import type { Installment } from "@/lib/types/installment";
+import type { Event as AppEvent } from "@/lib/types/event";
+import type { Task } from "@/lib/types/task";
+import type { ShoppingItem } from "@/lib/types/shopping";
+import { getMonthOptions, monthLabel, lastDayOfMonth, isMonthInRange, daysUntil } from "@/lib/date.ts";
+import MonthSelector from "@/components/ui/MonthSelector";
+
+interface CardWithDebt extends CreditCard {
+  debt?: CardMonthly;
+}
+
+function dueDaysBorder(days: number): string {
+  if (days <= 0) return "border-gray-400";
+  if (days <= 3) return "border-red-400";
+  if (days <= 8) return "border-yellow-400";
+  return "border-green-400";
+}
+
+function dueDaysBadge(days: number): string {
+  if (days <= 0) return "bg-gray-100 text-gray-600";
+  if (days <= 3) return "bg-red-100 text-red-700";
+  if (days <= 8) return "bg-yellow-100 text-yellow-700";
+  return "bg-green-50 text-green-700";
+}
+
+function formatCurrency(n: number): string {
+  return "$" + n.toFixed(2);
+}
+
+export default function DashboardContent() {
+  const months = useMemo(() => getMonthOptions(), []);
+  const defaultMonth = months[0];
+  const defaultTab = "resumen";
+
+  const [activeTab, setActiveTab] = useState(() => typeof location !== "undefined" ? new URLSearchParams(location.search).get("tab") || defaultTab : defaultTab);
+  const [currentMonth, setCurrentMonth] = useState(() => typeof location !== "undefined" ? new URLSearchParams(location.search).get("month") || defaultMonth : defaultMonth);
+  const [cards, setCards] = useState<CardWithDebt[]>([]);
+  const [services, setServices] = useState<RecurringPayment[]>([]);
+  const [cardDebts, setCardDebts] = useState<CardMonthly[]>([]);
+  const [servicePayments, setServicePayments] = useState<RecurringPaymentMonthly[]>([]);
+  const [historyCard, setHistoryCard] = useState<CardMonthly[]>([]);
+  const [historyService, setHistoryService] = useState<RecurringPaymentMonthly[]>([]);
+  const [txData, setTxData] = useState({ incomes: 0, expenses: 0, recentTx: [] as Transaction[] });
+  const [installmentTotal, setInstallmentTotal] = useState(0);
+  const [calculatedDebts, setCalculatedDebts] = useState<Record<string, CalculatedDebt>>({});
+  const [upcomingEvents, setUpcomingEvents] = useState<AppEvent[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
+  const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
+  const [activeShopping, setActiveShopping] = useState<ShoppingItem[]>([]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (activeTab !== defaultTab) params.set("tab", activeTab);
+    else params.delete("tab");
+    if (currentMonth !== defaultMonth) params.set("month", currentMonth);
+    else params.delete("month");
+    const qs = params.toString();
+    history.replaceState(null, "", qs ? "?" + qs : location.pathname);
+  }, [activeTab, currentMonth, defaultTab, defaultMonth]);
+
+  const handleTabChange = (tab: string) => setActiveTab(tab);
+  const handleMonthChange = (month: string) => setCurrentMonth(month);
+
+  const fetchMonthData = useCallback(async (month: string) => {
+    async function safeFetch<T>(url: string, fallback: T): Promise<T> {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return fallback;
+        const json = await res.json();
+        return (json?.data ?? json) as T;
+      } catch { return fallback; }
+    }
+
+    const today = new Date().toLocaleDateString("sv");
+    const thirtyLater = new Date(Date.now() + 30 * 86400000).toLocaleDateString("sv");
+
+    const [allCards, allSvcs, cdData, spData, txDataArr, instData, eventsData, tasksData, shoppingData] = await Promise.all([
+      safeFetch<CardWithDebt[]>("/api/credit-cards", []),
+      safeFetch<RecurringPayment[]>("/api/recurring-payments", []),
+      safeFetch<CardMonthly[]>(`/api/card-monthly?month=${month}`, []),
+      safeFetch<RecurringPaymentMonthly[]>(`/api/recurring-payment-monthly?month=${month}`, []),
+      safeFetch<Transaction[]>(`/api/transactions?page=1&pageSize=100&date_from=${month}-01&date_to=${lastDayOfMonth(month)}`, []),
+      safeFetch<Installment[]>("/api/installments?active_only=true", []),
+      safeFetch<AppEvent[]>(`/api/events?date_from=${today}&date_to=${thirtyLater}&status=pending,confirmed&pageSize=20`, []),
+      safeFetch<Task[]>("/api/tasks?is_completed=false", []),
+      safeFetch<ShoppingItem[]>("/api/shopping?is_completed=false", []),
+    ]);
+
+    setCards(allCards);
+    setServices(allSvcs);
+    setCardDebts(cdData);
+    setServicePayments(spData);
+    setUpcomingEvents(eventsData);
+    setPendingTasks(tasksData.filter(t => !t.due_date || t.due_date >= today));
+    setOverdueTasks(tasksData.filter(t => t.due_date && t.due_date < today));
+    setActiveShopping(shoppingData);
+
+    const txIncomes = txDataArr.filter((t: Transaction) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
+    const txExpenses = txDataArr.filter((t: Transaction) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
+    const instMonthTotal = instData
+      .filter((i: Installment) => isMonthInRange(month, i.start_month, i.total_months))
+      .reduce((s: number, i: Installment) => s + Number(i.monthly_amount), 0);
+    const svcExpenses = spData.reduce((s: number, sp: RecurringPaymentMonthly) => s + Number(sp.amount), 0);
+
+    setInstallmentTotal(instMonthTotal);
+    setTxData({
+      incomes: txIncomes,
+      expenses: txExpenses + instMonthTotal + svcExpenses,
+      recentTx: txDataArr.slice(0, 5),
+    });
+
+    const calcMap: Record<string, CalculatedDebt> = {};
+    for (const card of allCards) {
+      if (card.type !== "credit") continue;
+      const res = await safeFetch<CalculatedDebt | null>(`/api/card-monthly/calculate?cardId=${card.id}&month=${month}`, null);
+      if (res) calcMap[card.id] = res;
+    }
+    setCalculatedDebts(calcMap);
+
+    const freshDebts = await safeFetch<CardMonthly[]>(`/api/card-monthly?month=${month}`, []);
+    setCardDebts(freshDebts);
+  }, []);
+
+  const fetchHistory = useCallback(async () => {
+    async function safeFetch<T>(url: string, fallback: T): Promise<T> {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return fallback;
+        const json = await res.json();
+        return (json?.data ?? json) as T;
+      } catch { return fallback; }
+    }
+
+    const [cdHist, spHist] = await Promise.all([
+      safeFetch<CardMonthly[]>("/api/card-monthly/history", []),
+      safeFetch<RecurringPaymentMonthly[]>("/api/recurring-payment-monthly/history", []),
+    ]);
+    setHistoryCard(cdHist);
+    setHistoryService(spHist);
+  }, []);
+
+  useEffect(() => { fetchMonthData(currentMonth); }, [currentMonth, fetchMonthData]);
+  useEffect(() => { if (activeTab === "historial") fetchHistory(); }, [activeTab, fetchHistory]);
+
+  async function handleToggleCardPaid(id: string, isPaid: boolean) {
+    try {
+      const res = await fetch("/api/card-monthly", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, is_paid: isPaid }),
+      });
+      if (res.ok) {
+        setCardDebts(prev => prev.map(d => d.id === id ? { ...d, is_paid: isPaid, paid_at: isPaid ? new Date().toISOString() : null } : d));
+      }
+    } catch {}
+  }
+
+  const getCardDebt = (cardId: string) => cardDebts.find(d => d.card_id === cardId);
+
+  const tabs = [
+    { key: "resumen", label: "Resumen" },
+    { key: "tarjetas", label: "Tarjetas" },
+    { key: "eventos", label: "Eventos" },
+    { key: "tareas", label: "Tareas" },
+    { key: "historial", label: "Historial" },
+  ];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex gap-1">
+          {tabs.map(t => (
+            <a
+              key={t.key}
+              href={`?tab=${t.key}&month=${currentMonth}`}
+              onClick={e => { e.preventDefault(); handleTabChange(t.key); }}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                activeTab === t.key
+                  ? "bg-indigo-600 text-white"
+                  : "bg-panel text-text-muted hover:text-text hover:bg-nav-hover"
+              }`}
+            >
+              {t.label}
+            </a>
+          ))}
+        </div>
+        <MonthSelector value={currentMonth} onChange={handleMonthChange} />
+      </div>
+
+      {/* Resumen */}
+      {activeTab === "resumen" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Ingresos</p>
+              <p className="text-xl font-bold mt-1 text-green-600">{formatCurrency(txData.incomes)}</p>
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Gastos</p>
+              <p className="text-xl font-bold mt-1 text-red-600">{formatCurrency(txData.expenses)}</p>
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Balance</p>
+              <p className={`text-xl font-bold mt-1 ${txData.incomes - txData.expenses >= 0 ? "text-green-600" : "text-red-600"}`}>
+                {formatCurrency(txData.incomes - txData.expenses)}
+              </p>
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Tarjetas</p>
+              <p className="text-xl font-bold mt-1 text-indigo-600">{cards.length}</p>
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Plazos</p>
+              <p className="text-xl font-bold mt-1 text-orange-600">{formatCurrency(installmentTotal)}</p>
+            </div>
+          </div>
+          {installmentTotal > 0 && (
+            <p className="text-xs text-text-muted -mt-4">* Incluye {formatCurrency(installmentTotal)} en plazos y {formatCurrency(servicePayments.reduce((s, sp) => s + Number(sp.amount), 0))} en pagos recurrentes</p>
+          )}
+
+          {/* Organización */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Tareas pendientes</p>
+              <p className="text-xl font-bold mt-1 text-sky-600">{pendingTasks.length}</p>
+              {overdueTasks.length > 0 && (
+                <p className="text-xs text-red-500 mt-0.5">{overdueTasks.length} vencidas</p>
+              )}
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Próximos eventos</p>
+              <p className="text-xl font-bold mt-1 text-rose-600">{upcomingEvents.length}</p>
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Compras activas</p>
+              <p className="text-xl font-bold mt-1 text-amber-600">{activeShopping.length}</p>
+            </div>
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Pagos recurrentes</p>
+              <p className="text-xl font-bold mt-1 text-purple-600">{services.length}</p>
+            </div>
+          </div>
+
+          {cardDebts.length > 0 && (
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <h2 className="text-base font-semibold text-text mb-3">Deudas del mes</h2>
+              <div className="space-y-2">
+                {cardDebts.map(d => {
+                  const card = cards.find(c => c.id === d.card_id);
+                  const dueIn = card ? daysUntil(card.due_day) : 0;
+                  return (
+                    <div key={d.id} className="flex items-center justify-between text-sm py-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${d.is_paid ? "bg-green-400" : "bg-orange-400"}`} />
+                        <span>{card?.name ?? "?"}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`font-mono ${d.is_paid ? "text-green-600 line-through" : "text-red-600"}`}>
+                          {formatCurrency(d.statement_balance)}
+                        </span>
+                        {!d.is_paid && card && (
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${dueDaysBadge(dueIn)}`}>
+                            {dueIn <= 0 ? "Vencido" : `${dueIn} días`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {servicePayments.length > 0 && (
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <h2 className="text-base font-semibold text-text mb-3">Pagos recurrentes del mes</h2>
+              <div className="space-y-2">
+                {servicePayments.map(sp => {
+                  const svc = services.find(s => s.id === sp.payment_id);
+                  return (
+                    <div key={sp.id} className="flex items-center justify-between text-sm py-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${sp.is_paid ? "bg-green-400" : "bg-orange-400"}`} />
+                        <span>{svc?.name ?? "?"}</span>
+                      </div>
+                      <span className={`font-mono ${sp.is_paid ? "text-green-600 line-through" : "text-red-600"}`}>
+                        {formatCurrency(sp.amount)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <h2 className="text-base font-semibold text-text mb-3">Transacciones del mes</h2>
+            {txData.recentTx.length === 0 ? (
+              <p className="text-sm text-text-muted">Sin transacciones</p>
+            ) : (
+              <div className="space-y-2">
+                {txData.recentTx.map((tx: Transaction) => (
+                  <div key={tx.id} className="flex items-center justify-between text-sm py-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${tx.type === "income" ? "bg-green-400" : "bg-red-400"}`} />
+                      <span>{tx.description || "Sin descripción"}</span>
+                    </div>
+                    <span className={`font-medium ${tx.type === "income" ? "text-green-600" : "text-red-600"}`}>
+                      {tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Tarjetas */}
+      {activeTab === "tarjetas" && (
+        <div className="space-y-4">
+          {cards.length === 0 ? (
+            <p className="text-text-muted text-sm">No hay tarjetas registradas</p>
+          ) : (
+            cards.map(card => {
+              const debt = getCardDebt(card.id);
+              const dueIn = daysUntil(card.due_day);
+              const calc = card.type === "credit" ? calculatedDebts[card.id] : null;
+              const committed = calc ? calc.total_committed : (debt?.statement_balance ?? 0);
+              const available = card.max_limit - committed;
+              return (
+                <div key={card.id} className={`bg-panel rounded-xl border-2 p-4 shadow-sm ${card.type === "credit" && debt && !debt.is_paid ? dueDaysBorder(dueIn) : "border-border"}`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-text">{card.name}</h3>
+                      <span className="text-xs text-text-muted uppercase">{card.type === "credit" ? "Crédito" : "Débito"}</span>
+                    </div>
+                    {debt && (
+                      <button
+                        onClick={() => handleToggleCardPaid(debt.id, !debt.is_paid)}
+                        className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
+                          debt.is_paid
+                            ? "bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700"
+                            : "bg-green-600 text-white hover:bg-green-700"
+                        }`}
+                      >
+                        {debt.is_paid ? "Pagada" : "Marcar como pagado"}
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-text-muted">Límite</p>
+                      <p className="font-mono font-medium">{formatCurrency(card.max_limit)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted">Deuda calculada</p>
+                      {calc ? (
+                        <div className="group relative">
+                          <p className="font-mono font-medium text-red-600 cursor-help">{formatCurrency(calc.statement_balance)}</p>
+                          <div className="absolute left-0 top-full mt-1 w-64 bg-panel border border-border rounded-lg shadow-lg p-3 text-xs z-10 hidden group-hover:block">
+                            <div className="space-y-1">
+                              <div className="flex justify-between"><span>Compras</span><span className="font-mono">{formatCurrency(calc.total_purchases)}</span></div>
+                              <div className="flex justify-between"><span>Plazos (este mes)</span><span className="font-mono">{formatCurrency(calc.total_installments)}</span></div>
+                              <div className="flex justify-between"><span>Cashback</span><span className="font-mono text-green-600">-{formatCurrency(calc.total_cashback)}</span></div>
+                              <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>Adeudo del mes</span><span className="font-mono">{formatCurrency(calc.statement_balance)}</span></div>
+                              <div className="flex justify-between text-text-muted"><span>Plazos futuros</span><span className="font-mono">{formatCurrency(calc.committed_installments)}</span></div>
+                              <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>Total comprometido</span><span className="font-mono">{formatCurrency(calc.total_committed)}</span></div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : debt ? (
+                        <p className="font-mono font-medium text-red-600">{formatCurrency(debt.statement_balance)}</p>
+                      ) : (
+                        <p className="text-xs text-text-muted">-</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted">Disponible</p>
+                      <p className={`font-mono font-medium ${available < 0 ? "text-red-600" : "text-green-600"}`}>{formatCurrency(Math.max(0, available))}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-muted">Cierre / Pago</p>
+                      <p className="font-mono font-medium">{card.closing_day} / {card.due_day}</p>
+                    </div>
+                  </div>
+                  {card.type === "credit" && debt && !debt.is_paid && (
+                    <div className="mt-3 flex items-center gap-2 text-xs">
+                      <span className="text-text-muted">Vencimiento:</span>
+                      <span className={`font-medium ${dueDaysBadge(dueIn)} px-2 py-0.5 rounded`}>
+                        {dueIn <= 0 ? "Vencido" : `En ${dueIn} días (día ${card.due_day})`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* Eventos */}
+      {activeTab === "eventos" && (
+        <div className="space-y-4">
+          {upcomingEvents.length === 0 ? (
+            <p className="text-text-muted text-sm">No hay eventos próximos</p>
+          ) : (
+            upcomingEvents.map(ev => (
+              <div key={ev.id} className="bg-panel rounded-xl border border-border p-4 shadow-sm flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-text">{ev.title}</h3>
+                  <p className="text-sm text-text-muted mt-1">
+                    {new Date(ev.start_date).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}
+                    {ev.end_date && ` — ${new Date(ev.end_date).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}`}
+                  </p>
+                  {ev.location && <p className="text-xs text-text-muted mt-0.5">{ev.location}</p>}
+                  {ev.description && <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{ev.description}</p>}
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  ev.status === "confirmed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                }`}>
+                  {ev.status === "confirmed" ? "Confirmado" : "Pendiente"}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Tareas */}
+      {activeTab === "tareas" && (
+        <div className="space-y-4">
+          {overdueTasks.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-red-600 mb-2">Vencidas</h3>
+              {overdueTasks.map(t => (
+                <div key={t.id} className="bg-panel rounded-xl border border-red-200 p-3 shadow-sm flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-medium text-text">{t.title}</p>
+                    <p className="text-xs text-red-500">Vencía el {new Date(t.due_date!).toLocaleDateString("es-MX")}</p>
+                  </div>
+                  {t.priority > 0 && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Prioridad {t.priority}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          {pendingTasks.length === 0 && overdueTasks.length === 0 ? (
+            <p className="text-text-muted text-sm">No hay tareas pendientes</p>
+          ) : (
+            <div>
+              {overdueTasks.length > 0 && <h3 className="text-sm font-semibold text-text mb-2">Pendientes</h3>}
+              {pendingTasks.map(t => (
+                <div key={t.id} className="bg-panel rounded-xl border border-border p-3 shadow-sm flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-medium text-text">{t.title}</p>
+                    {t.due_date && (
+                      <p className="text-xs text-text-muted">Vence el {new Date(t.due_date).toLocaleDateString("es-MX")}</p>
+                    )}
+                  </div>
+                  {t.priority > 0 && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Prioridad {t.priority}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Historial */}
+      {activeTab === "historial" && (
+        <div className="space-y-6">
+          <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <h2 className="text-base font-semibold text-text mb-3">Historial de tarjetas</h2>
+            {historyCard.length === 0 ? (
+              <p className="text-sm text-text-muted">Sin datos históricos</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-text-muted text-xs uppercase border-b border-border">
+                      <th className="text-left px-3 py-2">Mes</th>
+                      <th className="text-left px-3 py-2">Tarjeta</th>
+                      <th className="text-right px-3 py-2">Deuda</th>
+                      <th className="text-center px-3 py-2">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyCard.map(d => {
+                      const card = cards.find(c => c.id === d.card_id);
+                      return (
+                        <tr key={d.id} className="border-b border-border/50">
+                          <td className="px-3 py-2 text-text-muted">{monthLabel(d.month)}</td>
+                          <td className="px-3 py-2 font-medium">{card?.name ?? "?"}</td>
+                          <td className="px-3 py-2 text-right font-mono">{formatCurrency(d.statement_balance)}</td>
+                          <td className="px-3 py-2 text-center">
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${d.is_paid ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
+                              {d.is_paid ? "Pagado" : "Pendiente"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <h2 className="text-base font-semibold text-text mb-3">Historial de pagos recurrentes</h2>
+            {historyService.length === 0 ? (
+              <p className="text-sm text-text-muted">Sin datos históricos</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-text-muted text-xs uppercase border-b border-border">
+                      <th className="text-left px-3 py-2">Mes</th>
+                      <th className="text-left px-3 py-2">Pago</th>
+                      <th className="text-right px-3 py-2">Monto</th>
+                      <th className="text-center px-3 py-2">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyService.map(sp => {
+                      const svc = services.find(s => s.id === sp.payment_id);
+                      return (
+                        <tr key={sp.id} className="border-b border-border/50">
+                          <td className="px-3 py-2 text-text-muted">{monthLabel(sp.month)}</td>
+                          <td className="px-3 py-2 font-medium">{svc?.name ?? "?"}</td>
+                          <td className="px-3 py-2 text-right font-mono">{formatCurrency(sp.amount)}</td>
+                          <td className="px-3 py-2 text-center">
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${sp.is_paid ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
+                              {sp.is_paid ? "Pagado" : "Pendiente"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
