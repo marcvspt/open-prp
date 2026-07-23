@@ -3,6 +3,7 @@ export interface RecurringPayment {
   user_id: string;
   name: string;
   default_amount: number;
+  currency: string;
   category_id: string | null;
   payment_method_id: string | null;
   created_at: string;
@@ -12,6 +13,7 @@ export interface RecurringPayment {
 export interface RecurringPaymentInput {
   name: string;
   default_amount: number;
+  currency?: string;
   category_id?: string;
   payment_method_id?: string;
 }

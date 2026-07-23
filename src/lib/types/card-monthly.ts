@@ -24,6 +24,7 @@ export interface CardMonthlyUpdate {
 export interface CalculatedDebt {
   total_purchases: number;
   total_installments: number;
+  total_recurring: number;
   total_cashback: number;
   statement_balance: number;
   committed_installments: number;

@@ -16,13 +16,15 @@ const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
 const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm]));
 const catMap = Object.fromEntries(svcCategories.map(c => [c.id, c]));
+const currencySymbol: Record<string, string> = { EUR: "€", MXN: "$", USD: "$" };
 const fields = [
-  { name: "name", label: "Nombre", type: "text" as const, required: true },
-  { name: "default_amount", label: "Monto por defecto", type: "number" as const, required: true, step: "0.01" },
-  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...svcCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
+  { name: "name", label: "Descripción", type: "text" as const, required: true },
+  { name: "default_amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
+  { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "€ EUR" }, { value: "MXN", label: "$ MXN" }, { value: "USD", label: "$ USD" }] },
   { name: "payment_method_id", label: "Método de pago", type: "select" as const, options: [{ value: "", label: "Sin método" }, ...paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` }))] },
+  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...svcCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
 ];
-const defaultForm = { name: "", default_amount: 0, category_id: "", payment_method_id: "" };
+const defaultForm = { name: "", default_amount: 0, currency: "MXN", payment_method_id: "", category_id: "" };
 ---
 
 <BaseLayout title="Pagos Recurrentes - Open PRP">
@@ -30,24 +32,25 @@ const defaultForm = { name: "", default_amount: 0, category_id: "", payment_meth
     <PageHeader title="Pagos Recurrentes" />
     <div class="tabs-container">
       <div class="flex gap-0 border-b border-border" role="tablist">
-        <button data-tab="monthly" class="tab-btn px-4 py-2 text-sm font-medium text-text-muted hover:text-text border-b-2 border-transparent -mb-px transition cursor-pointer" data-active="true">Gastos del mes</button>
-        <button data-tab="list" class="tab-btn px-4 py-2 text-sm font-medium text-text-muted hover:text-text border-b-2 border-transparent -mb-px transition cursor-pointer">Administrar pagos</button>
+        <button data-tab="monthly" class="tab-btn px-4 py-2 text-sm font-medium text-string-muted hover:text-string border-b-2 border-transparent -mb-px transition cursor-pointer" data-active="true">Gastos del mes</button>
+        <button data-tab="list" class="tab-btn px-4 py-2 text-sm font-medium text-string-muted hover:text-string border-b-2 border-transparent -mb-px transition cursor-pointer">Administrar pagos</button>
       </div>
       <div data-tab-content="monthly" class="tab-content pt-4">
         <RecurringPaymentsMonthly client:load />
       </div>
       <div data-tab-content="list" class="tab-content hidden pt-4">
         <div class="flex items-center justify-between mb-4">
-          <p class="text-sm text-text-muted">Todos tus pagos recurrentes registrados</p>
+          <p class="text-sm text-string-muted">Todos tus pagos recurrentes registrados</p>
           <button data-create="recurring-payments" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer">Nuevo pago recurrente</button>
         </div>
-        <DataTable columns={["Nombre", { label: "Monto", align: "right" }, "Categoría", "Método de pago"]} emptyMessage="Sin pagos recurrentes">
+        <DataTable columns={["Descripción", { label: "Monto", align: "right" }, "Moneda", "Método", "Categoría", { label: "Acciones", align: "right" }]} emptyMessage="Sin pagos recurrentes">
           {items.map(s => (
             <tr key={s.id} class="hover:bg-nav-hover">
               <td class="px-4 py-3 font-medium">{s.name}</td>
-              <td class="px-4 py-3 text-right font-mono text-red-600">${Number(s.default_amount).toFixed(2)}</td>
-              <td class="px-4 py-3">{s.category_id ? <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">{catMap[s.category_id] ? `${catMap[s.category_id].icon || "📂"} ${catMap[s.category_id].name}` : "-"}</span> : "-"}</td>
-              <td class="px-4 py-3">{s.payment_method_id ? <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">{pmMap[s.payment_method_id] ? `${pmMap[s.payment_method_id].icon || "💳"} ${pmMap[s.payment_method_id].name}` : "-"}</span> : "-"}</td>
+              <td class="px-4 py-3 text-right font-mono text-red-600">{currencySymbol[s.currency] || "$"}{Number(s.default_amount).toFixed(2)}</td>
+              <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[s.currency] || "$"} {s.currency || "MXN"}</td>
+              <td class="px-4 py-3">{s.payment_method_id ? <span class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">{pmMap[s.payment_method_id] ? `${pmMap[s.payment_method_id].icon || "💳"} ${pmMap[s.payment_method_id].name}` : "-"}</span> : "-"}</td>
+              <td class="px-4 py-3">{s.category_id ? <span class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">{catMap[s.category_id] ? `${catMap[s.category_id].icon || "📂"} ${catMap[s.category_id].name}` : "-"}</span> : "-"}</td>
               <td class="px-4 py-3 text-right space-x-2">
                 <button data-edit-recurring-payments={s.id} class="text-indigo-600 hover:text-indigo-800 text-xs font-medium cursor-pointer">Editar</button>
                 <button data-delete-recurring-payments={s.id} class="text-red-600 hover:text-red-800 text-xs font-medium cursor-pointer">Eliminar</button>
@@ -61,23 +64,3 @@ const defaultForm = { name: "", default_amount: 0, category_id: "", payment_meth
   <CrudModal client:load module="recurring-payments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="pago recurrente" />
   <DeleteHandler module="recurring-payments" label="pago recurrente" />
 </BaseLayout>
-
-<script>
-  const tabs = document.querySelectorAll("[data-tab]");
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      const target = tab.dataset.tab;
-      tabs.forEach(t => {
-        t.dataset.active = t === tab ? "true" : "false";
-        t.classList.toggle("text-indigo-600", t === tab);
-        t.classList.toggle("border-indigo-600", t === tab);
-        t.classList.toggle("text-text-muted", t !== tab);
-        t.classList.toggle("border-transparent", t !== tab);
-      });
-      document.querySelectorAll("[data-tab-content]").forEach(el => {
-        el.classList.toggle("hidden", el.dataset.tabContent !== target);
-      });
-    });
-  });
-  tabs[0]?.click();
-</script>

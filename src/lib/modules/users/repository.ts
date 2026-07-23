@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db/client.ts";
+import { nextSeq } from "@/lib/db/utils.ts";
 import type { User } from "@/lib/types/user.ts";
 
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000;
@@ -13,10 +14,11 @@ export class UserRepository {
     if (existing.rows[0]) return existing.rows[0] as unknown as User;
 
     const id = crypto.randomUUID();
+    const seq = await nextSeq("users");
     const now = new Date().toISOString();
     await db.execute({
-      sql: "INSERT INTO users (id, clerk_id, email, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-      args: [id, clerkId, email, name ?? null, now, now],
+      sql: "INSERT INTO users (id, clerk_id, email, display_name, seq, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      args: [id, clerkId, email, name ?? null, seq, now, now],
     });
 
     const result = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [id] });

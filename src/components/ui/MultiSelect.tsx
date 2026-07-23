@@ -114,11 +114,11 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
         className={`mt-1 flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-indigo-400"}
           ${open ? "border-indigo-500 ring-1 ring-indigo-500" : "border-border"}
-          ${selectedValues.length === 0 && !allSelected ? "text-text-muted" : "text-text"}
+          ${selectedValues.length === 0 && !allSelected ? "text-string-muted" : "text-string"}
           bg-panel`}
       >
         <span className="flex-1 text-left truncate">{display}</span>
-        <svg className={`w-4 h-4 text-text-muted transition-transform shrink-0 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={`w-4 h-4 text-string-muted transition-transform shrink-0 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -136,7 +136,7 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
             aria-selected={allSelected}
             className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2
               ${highlighted === 0 ? "bg-nav-hover" : ""}
-              text-text`}
+              text-string`}
             onClick={() => toggle("*")}
             onMouseEnter={() => setHighlighted(0)}
           >
@@ -154,7 +154,7 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
                 className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2
                   ${isSelected ? "bg-indigo-100/50 dark:bg-indigo-900/30 text-indigo-700" : ""}
                   ${highlighted === idx ? "bg-nav-hover" : ""}
-                  text-text`}
+                  text-string`}
                 onClick={() => toggle(o.value)}
                 onMouseEnter={() => setHighlighted(idx)}
               >

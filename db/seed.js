@@ -82,6 +82,7 @@ async function seed() {
     { name: "Electrónica", sections: ["plazos"], icon: "📱", color: "#3b82f6" },
     { name: "Muebles", sections: ["plazos"], icon: "🪑", color: "#f97316" },
     { name: "Educación", sections: ["plazos"], icon: "🎓", color: "#8b5cf6" },
+    { name: "Saldo de tarjeta", sections: ["plazos"], icon: "💳", color: "#ef4444" },
     // Pagos recurrentes
     { name: "Suscripciones", sections: ["pagos-recurrentes"], icon: "📺", color: "#ec4899" },
     { name: "Facturas", sections: ["pagos-recurrentes"], icon: "📄", color: "#ef4444" },

@@ -26,10 +26,6 @@ export const POST: APIRoute = async (context) => {
   if (uid instanceof Response) return uid;
 
   const body = await context.request.json();
-  if (!body.title) {
-    return errorResponse("title is required");
-  }
-
   const note = await repo.create(body, uid);
   return jsonResponse(note, 201);
 };

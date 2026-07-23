@@ -14,7 +14,11 @@ function formatCurrency(n: number): string {
 }
 
 export default function ShoppingList() {
-  const [activeTab, setActiveTab] = useState<"lista" | "historial">("lista");
+  const [activeTab, setActiveTab] = useState<"lista" | "historial">(() =>
+    typeof location !== "undefined"
+      ? (location.hash.replace("#", "") as "lista" | "historial") || "lista"
+      : "lista"
+  );
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [historyItems, setHistoryItems] = useState<ShoppingItem[]>([]);
   const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
@@ -132,19 +136,19 @@ export default function ShoppingList() {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex gap-0 border-b border-border mb-6">
         <button
-          onClick={() => setActiveTab("lista")}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeTab === "lista" ? "bg-indigo-600 text-white" : "bg-panel text-text-muted hover:text-text hover:bg-nav-hover"
+          onClick={() => { setActiveTab("lista"); location.hash = "#lista"; }}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer ${
+            activeTab === "lista" ? "text-indigo-600 border-indigo-600" : "text-string-muted border-transparent hover:text-string"
           }`}
         >
           Lista actual
         </button>
         <button
-          onClick={() => setActiveTab("historial")}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeTab === "historial" ? "bg-indigo-600 text-white" : "bg-panel text-text-muted hover:text-text hover:bg-nav-hover"
+          onClick={() => { setActiveTab("historial"); location.hash = "#historial"; }}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer ${
+            activeTab === "historial" ? "text-indigo-600 border-indigo-600" : "text-string-muted border-transparent hover:text-string"
           }`}
         >
           Historial
@@ -155,11 +159,11 @@ export default function ShoppingList() {
         <div className="space-y-4">
           {Object.keys(groupedPantry).length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-text mb-3">Desde la despensa</h2>
+              <h2 className="text-sm font-semibold text-string mb-3">Desde la despensa</h2>
               <div className="flex flex-wrap gap-2">
                 {sortedCategories.map(cat => (
                   <div key={cat} className="w-full">
-                    <p className="text-xs text-text-muted mb-1 font-medium">{cat}</p>
+                    <p className="text-xs text-string-muted mb-1 font-medium">{cat}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {groupedPantry[cat].map(d => {
                         const alreadyInList = items.some(i => i.despensa_item_id === d.id);
@@ -170,7 +174,7 @@ export default function ShoppingList() {
                             disabled={alreadyInList}
                             className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
                               alreadyInList
-                                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                ? "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                                 : "bg-indigo-100/50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 border border-indigo-200 dark:border-indigo-800"
                             }`}
                           >
@@ -186,7 +190,7 @@ export default function ShoppingList() {
           )}
 
           <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-text mb-3">Agregar otro</h2>
+            <h2 className="text-sm font-semibold text-string mb-3">Agregar otro</h2>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -194,7 +198,7 @@ export default function ShoppingList() {
                 onChange={e => setOtroInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") handleAddOtro(); }}
                 placeholder="Escribe el nombre del producto..."
-                className="flex-1 text-sm border border-border rounded-lg px-3 py-2 bg-surface text-text placeholder-text-muted"
+                className="flex-1 text-sm border border-border rounded-lg px-3 py-2 bg-surface text-string placeholder-text-muted"
               />
               <button
                 onClick={handleAddOtro}
@@ -207,7 +211,7 @@ export default function ShoppingList() {
 
           {activeItems.length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-text mb-3">Por comprar ({activeItems.length})</h2>
+              <h2 className="text-sm font-semibold text-string mb-3">Por comprar ({activeItems.length})</h2>
               <div className="space-y-1">
                 {activeItems.map(i => (
                   <div key={i.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-nav-hover group">
@@ -218,8 +222,8 @@ export default function ShoppingList() {
                         onChange={() => handleToggleCheck(i.id)}
                         className="w-4 h-4 accent-indigo-600 cursor-pointer"
                       />
-                      <span className="text-sm font-medium text-text">{i.name}</span>
-                      <span className="text-xs text-text-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
+                      <span className="text-sm font-medium text-string">{i.name}</span>
+                      <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
                     </div>
                     <button onClick={() => handleDelete(i.id)} className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">Eliminar</button>
                   </div>
@@ -231,7 +235,7 @@ export default function ShoppingList() {
           {checkedItems.length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-text">Comprados ({checkedItems.length})</h2>
+                <h2 className="text-sm font-semibold text-string">Comprados ({checkedItems.length})</h2>
                 <button
                   onClick={handleComplete}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white hover:bg-green-700"
@@ -249,8 +253,8 @@ export default function ShoppingList() {
                         onChange={() => handleToggleCheck(i.id)}
                         className="w-4 h-4 accent-indigo-600 cursor-pointer"
                       />
-                      <span className="text-sm line-through text-text-muted">{i.name}</span>
-                      <span className="text-xs text-text-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
+                      <span className="text-sm line-through text-string-muted">{i.name}</span>
+                      <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
                     </div>
                   </div>
                 ))}
@@ -260,7 +264,7 @@ export default function ShoppingList() {
 
           {activeItems.length === 0 && checkedItems.length === 0 && (
             <div className="bg-panel rounded-xl border border-border p-8 shadow-sm text-center">
-              <p className="text-text-muted text-sm">Agrega productos desde la despensa o escribe el nombre</p>
+              <p className="text-string-muted text-sm">Agrega productos desde la despensa o escribe el nombre</p>
             </div>
           )}
         </div>
@@ -270,21 +274,21 @@ export default function ShoppingList() {
         <div className="space-y-4">
           {Object.keys(historyByMonth).length === 0 ? (
             <div className="bg-panel rounded-xl border border-border p-8 shadow-sm text-center">
-              <p className="text-text-muted text-sm">Sin compras completadas aún</p>
+              <p className="text-string-muted text-sm">Sin compras completadas aún</p>
             </div>
           ) : (
             Object.entries(historyByMonth).sort(([a], [b]) => b.localeCompare(a)).map(([month, monthItems]) => (
               <div key={month} className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-                <h3 className="text-sm font-semibold text-text mb-3">{monthLabel(month)}</h3>
+                <h3 className="text-sm font-semibold text-string mb-3">{monthLabel(month)}</h3>
                 <div className="space-y-1">
                   {monthItems.map(i => (
                     <div key={i.id} className="flex items-center justify-between py-1 px-2">
                       <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                        <span className="text-sm text-text">{i.name}</span>
-                        <span className="text-xs text-text-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
+                        <span className="text-sm text-string">{i.name}</span>
+                        <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
                       </div>
-                      <span className="text-xs text-text-muted">{i.completed_at ? new Date(i.completed_at).toLocaleDateString("es") : ""}</span>
+                      <span className="text-xs text-string-muted">{i.completed_at ? new Date(i.completed_at).toLocaleDateString("es") : ""}</span>
                     </div>
                   ))}
                 </div>

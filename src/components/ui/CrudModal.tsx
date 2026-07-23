@@ -13,6 +13,7 @@ export interface Field {
   step?: string;
   min?: number;
   placeholder?: string;
+  showIf?: { field: string; value: string };
 }
 
 interface CrudModalProps {
@@ -39,13 +40,23 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
       if ((f.type === "date" || ["date","start_date","end_date","due_date"].includes(f.name)) && !base[f.name]) {
         base[f.name] = localDate;
       }
-      if ((f.type === "month" || ["start_month","applied_month"].includes(f.name)) && !base[f.name]) {
+      if (f.type === "month" && !base[f.name]) {
         base[f.name] = localMonth;
       }
     }
     setForm(base);
     setEditingId(null);
   }, [defaultJson]);
+
+  useEffect(() => {
+    if (!open || editingId) return;
+    try {
+      const saved = localStorage.getItem("currency");
+      if (saved && ["EUR", "MXN", "USD"].includes(saved)) {
+        setForm(f => ({ ...f, currency: saved }));
+      }
+    } catch {}
+  }, [open, editingId]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -101,9 +112,9 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
       {saving && editingId && <div className="fixed inset-0 z-40 flex items-center justify-center bg-overlay"><div className="bg-panel p-4 rounded-lg text-sm">Cargando...</div></div>}
       <FormModal open={open} onClose={() => setOpen(false)} title={editingId ? `Editar ${titleSingular}` : `Nuevo ${titleSingular}`}>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {fields.map(f => (
+          {fields.filter(f => !f.showIf || String(form[f.showIf.field]) === f.showIf.value).map(f => (
             <div key={f.name}>
-              <label className="block text-sm font-medium text-text">{f.label}</label>
+              <label className="block text-sm font-medium text-string">{f.label}</label>
               {f.type === "multiselect" ? (
                 <MultiSelect value={String(form[f.name] ?? "[]")} onChange={v => setVal(f.name, v)} options={f.options ?? []} placeholder={f.placeholder} />
               ) : f.type === "select" ? (
@@ -113,14 +124,21 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
               ) : f.type === "checkbox" ? (
                 <input type="checkbox" checked={Boolean(form[f.name])} onChange={e => setVal(f.name, e.target.checked)} className="mt-1 block w-4 h-4 accent-indigo-600" />
               ) : f.type === "color" ? (
-                <input type="color" value={String(form[f.name] ?? "#6366f1")} onChange={e => setVal(f.name, e.target.value)} className="mt-1 block w-full h-10 rounded-lg border border-border cursor-pointer" />
+                <div className="flex items-center gap-2 mt-1">
+                  <input type="color" value={form[f.name] ? String(form[f.name]) : "#6366f1"} onChange={e => setVal(f.name, e.target.value)} className="block w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                  {form[f.name] ? (
+                    <button type="button" onClick={() => setVal(f.name, "")} className="text-xs text-string-muted hover:text-red-600 cursor-pointer">✕ Quitar</button>
+                  ) : (
+                    <span className="text-xs text-string-muted">Sin color</span>
+                  )}
+                </div>
               ) : (
                 <input type={f.type} value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, f.type === "number" ? parseFloat(e.target.value) || 0 : e.target.value)} step={f.step} min={f.min} className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm" placeholder={f.placeholder} required={f.required} />
               )}
             </div>
           ))}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-sm text-nav hover:text-text">Cancelar</button>
+            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-sm text-nav hover:text-string">Cancelar</button>
             <button type="submit" disabled={saving} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50">{saving ? "Guardando..." : editingId ? "Guardar" : "Crear"}</button>
           </div>
         </form>

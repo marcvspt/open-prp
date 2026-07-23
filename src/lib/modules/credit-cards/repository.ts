@@ -1,12 +1,14 @@
 import { getDb } from "@/lib/db/client.ts";
 import { nextSeq } from "@/lib/db/utils.ts";
-import type { CreditCard, CreditCardInput } from "@/lib/types/credit-card.ts";
+import type { CreditCard, CreditCardInput, CardType } from "@/lib/types/credit-card.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 
 const pmRepo = new PaymentMethodRepository();
 
-function cardMethodName(type: "credit" | "debit", cardName: string): string {
-  return type === "credit" ? `Crédito (${cardName})` : `Débito (${cardName})`;
+function cardMethodName(type: CardType, cardName: string): string {
+  if (type === "credit") return `Crédito (${cardName})`;
+  if (type === "debit") return `Débito (${cardName})`;
+  return `Vales (${cardName})`;
 }
 
 export class CreditCardRepository {
@@ -35,7 +37,7 @@ export class CreditCardRepository {
     await db.execute({
       sql: `INSERT INTO credit_cards (id, user_id, name, type, max_limit, closing_day, due_day, color, seq, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, data.name, data.type, data.max_limit, data.closing_day, data.due_day, data.color ?? null, seq, now, now],
+      args: [id, userId, data.name, data.type, data.max_limit ?? null, data.closing_day ?? null, data.due_day ?? null, data.color ?? null, seq, now, now],
     });
 
     const pmSeq = await nextSeq("payment_methods");
@@ -71,12 +73,10 @@ export class CreditCardRepository {
       args,
     });
 
-    const newName = data.name ?? existing.name;
-    const newType = data.type ?? existing.type;
     if (data.name !== undefined || data.type !== undefined) {
-      await pmRepo.deleteCardMethods(id);
-      const pmSeq = await nextSeq("payment_methods");
-      await pmRepo.createCardMethod(cardMethodName(newType, newName), userId, id, pmSeq);
+      const newName = data.name ?? existing.name;
+      const newType = data.type ?? existing.type;
+      await pmRepo.updateCardMethodName(id, cardMethodName(newType, newName));
     }
 
     const result = await db.execute({ sql: "SELECT * FROM credit_cards WHERE id = ?", args: [id] });

@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS transactions;
+
 CREATE TABLE IF NOT EXISTS transactions (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

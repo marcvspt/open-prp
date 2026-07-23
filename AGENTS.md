@@ -12,6 +12,7 @@ Manage the background server with `astro dev stop`, `astro dev status`, and `ast
 
 - **Routing**: `/` → redirects to `/dashboard` (logged in) or `/login` (not logged in). `/login` redirects to `/dashboard` if already authenticated. Middleware also redirects any route (except `/login`) to `/login` if not authenticated.
 - **Pages**: each module has a page in `src/pages/*.astro` and API routes in `src/pages/api/*/`
+- **Modules** (in `src/lib/modules/`): `transactions`, `card-monthly`, `cashback`, `credit-cards`, `events`, `installments`, `notes`, `pantry`, `payment-methods`, `recurring-payments`, `shopping`, `tasks`, `users`
 - **React components**: use `client:load` directive for hydration
 - **All imports**: use `@/` alias (e.g. `@/lib/db/client`, `@/components/ui/Select`)
 
@@ -84,33 +85,9 @@ Common helpers:
 
 ## Deployment
 
-El adaptador se configura en `astro.config.mjs` - solo cambiar la línea `adapter:` y su import:
+Adaptador de Netlify configurado en `astro.config.mjs`. Conectar el repo en Netlify y configurar variables de entorno en el dashboard.
 
-```js
-// Cloudflare
-import cloudflare from '@astrojs/cloudflare';
-adapter: cloudflare({ platformProxy: { enabled: true } }),
-
-// Vercel
-// import vercel from '@astrojs/vercel/serverless';
-// adapter: vercel(),
-
-// Netlify
-// import netlify from '@astrojs/netlify';
-// adapter: netlify(),
-```
-
-El cliente de BD (`@libsql/client/web`) funciona en Node 18+, Cloudflare Workers, Vercel Edge/Serverless y Netlify Edge/Functions sin cambios.
-
-### Cloudflare Pages
-
-1. `pnpm build` → genera `dist/`
-2. Subir a Cloudflare Pages: seleccionar `dist/` como directorio de salida
-3. Variables de entorno en el dashboard: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
-
-### Vercel / Netlify
-
-Solo cambiar el adapter en la config y hacer deploy desde el dashboard o CLI.
+El cliente de BD (`@libsql/client/web`) funciona en Netlify Functions sin cambios.
 
 ## Documentation
 

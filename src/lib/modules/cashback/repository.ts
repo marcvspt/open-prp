@@ -3,12 +3,14 @@ import { nextSeq } from "@/lib/db/utils.ts";
 import type { Cashback, CashbackInput } from "@/lib/types/cashback.ts";
 
 export class CashbackRepository {
-  async findAll(userId: string, cardId?: string): Promise<Cashback[]> {
+  async findAll(userId: string, cardId?: string, dateFrom?: string, dateTo?: string): Promise<Cashback[]> {
     const db = getDb();
     const conditions = ["user_id = ?"];
     const args: (string | number | boolean | null)[] = [userId];
 
     if (cardId) { conditions.push("card_id = ?"); args.push(cardId); }
+    if (dateFrom) { conditions.push("date >= ?"); args.push(dateFrom); }
+    if (dateTo) { conditions.push("date <= ?"); args.push(dateTo); }
 
     const result = await db.execute({
       sql: `SELECT * FROM cashback WHERE ${conditions.join(" AND ")} ORDER BY date DESC`,
@@ -32,9 +34,9 @@ export class CashbackRepository {
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: `INSERT INTO cashback (id, user_id, card_id, amount, description, date, applied_month, seq, created_at)
+      sql: `INSERT INTO cashback (id, user_id, card_id, amount, currency, description, date, seq, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, data.card_id ?? null, data.amount, data.description ?? null, data.date, data.applied_month ?? null, seq, now],
+      args: [id, userId, data.card_id ?? null, data.amount, data.currency ?? "MXN", data.description ?? null, data.date, seq, now],
     });
 
     const result = await db.execute({ sql: "SELECT * FROM cashback WHERE id = ?", args: [id] });
@@ -51,9 +53,9 @@ export class CashbackRepository {
 
     if (data.card_id !== undefined) { sets.push("card_id = ?"); args.push(data.card_id ?? null); }
     if (data.amount !== undefined) { sets.push("amount = ?"); args.push(data.amount); }
+    if (data.currency !== undefined) { sets.push("currency = ?"); args.push(data.currency); }
     if (data.description !== undefined) { sets.push("description = ?"); args.push(data.description ?? null); }
     if (data.date !== undefined) { sets.push("date = ?"); args.push(data.date); }
-    if (data.applied_month !== undefined) { sets.push("applied_month = ?"); args.push(data.applied_month ?? null); }
 
     if (sets.length === 0) return existing;
 

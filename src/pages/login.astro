@@ -25,16 +25,16 @@ if (userId) return Astro.redirect("/dashboard");
       })();
     </script>
   </head>
-  <body class="bg-surface text-text min-h-screen">
+  <body class="bg-surface text-string min-h-screen">
     <div class="flex items-center justify-center min-h-screen bg-surface">
       <div class="text-center space-y-4">
         <h1 class="text-2xl font-bold text-indigo-600">Open PRP</h1>
-        <p class="text-text-muted">Personal Resource Planning</p>
+        <p class="text-string-muted">Personal Resource Planning</p>
         <div class="flex justify-center gap-2">
           <SignInButton mode="modal" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
             Iniciar sesión
           </SignInButton>
-          <SignUpButton mode="modal" class="px-4 py-2 border border-border rounded-lg hover:bg-nav-hover text-text">
+          <SignUpButton mode="modal" class="px-4 py-2 border border-border rounded-lg hover:bg-nav-hover text-string">
             Registrarse
           </SignUpButton>
         </div>

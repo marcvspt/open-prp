@@ -33,9 +33,9 @@ export class RecurringPaymentRepository {
     const now = localISOString();
 
     await db.execute({
-      sql: `INSERT INTO recurring_payments (id, user_id, name, default_amount, category_id, payment_method_id, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, data.name, data.default_amount, data.category_id ?? null, data.payment_method_id ?? null, seq, now, now],
+      sql: `INSERT INTO recurring_payments (id, user_id, name, default_amount, currency, category_id, payment_method_id, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, userId, data.name, data.default_amount, data.currency ?? "MXN", data.category_id ?? null, data.payment_method_id ?? null, seq, now, now],
     });
 
     const result = await db.execute({ sql: "SELECT * FROM recurring_payments WHERE id = ?", args: [id] });
@@ -52,6 +52,7 @@ export class RecurringPaymentRepository {
 
     if (data.name !== undefined) { sets.push("name = ?"); args.push(data.name); }
     if (data.default_amount !== undefined) { sets.push("default_amount = ?"); args.push(data.default_amount); }
+    if (data.currency !== undefined) { sets.push("currency = ?"); args.push(data.currency); }
     if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id ?? null); }
     if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id ?? null); }
 
