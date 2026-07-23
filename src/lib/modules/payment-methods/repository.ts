@@ -63,6 +63,14 @@ export class PaymentMethodRepository {
     return result.rows[0] as PaymentMethod;
   }
 
+  async updateCardMethodName(cardId: string, name: string): Promise<void> {
+    const db = getDb();
+    await db.execute({
+      sql: "UPDATE payment_methods SET name = ?, updated_at = ? WHERE card_id = ?",
+      args: [name, new Date().toISOString(), cardId],
+    });
+  }
+
   async deleteCardMethods(cardId: string): Promise<void> {
     const db = getDb();
     await db.execute({

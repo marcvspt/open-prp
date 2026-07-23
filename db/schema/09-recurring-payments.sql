@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS recurring_payments (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   default_amount REAL NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'MXN',
   category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
   payment_method_id TEXT REFERENCES payment_methods(id) ON DELETE SET NULL,
   seq INTEGER NOT NULL DEFAULT 0,

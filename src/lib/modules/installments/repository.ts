@@ -3,6 +3,29 @@ import { nextSeq } from "@/lib/db/utils.ts";
 import { localISOString } from "@/lib/date.ts";
 import type { Installment, InstallmentInput, InstallmentFilter } from "@/lib/types/installment.ts";
 
+function addMonths(dateStr: string, n: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const totalM = m - 1 + n;
+  const newY = y + Math.floor(totalM / 12);
+  const newM = totalM % 12 + 1;
+  const lastDay = new Date(newY, newM, 0).getDate();
+  const newD = Math.min(d, lastDay);
+  return `${newY}-${String(newM).padStart(2, "0")}-${String(newD).padStart(2, "0")}`;
+}
+
+function computeRemaining(startDate: string, totalMonths: number): number {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  let paid = 0;
+  for (let n = 0; n < totalMonths; n++) {
+    const pd = addMonths(startDate, n);
+    const [y, m, d] = pd.split("-").map(Number);
+    if (new Date(y, m - 1, d) <= today) paid++;
+    else break;
+  }
+  return Math.max(0, totalMonths - paid);
+}
+
 export class InstallmentRepository {
   async findAll(userId: string, filter?: InstallmentFilter): Promise<Installment[]> {
     const db = getDb();
@@ -10,21 +33,35 @@ export class InstallmentRepository {
     const args: (string | number | boolean | null)[] = [userId];
 
     if (filter?.card_id) { conditions.push("card_id = ?"); args.push(filter.card_id); }
-    if (filter?.active_only) { conditions.push("remaining_months > 0"); }
 
     const result = await db.execute({
-      sql: `SELECT * FROM installments WHERE ${conditions.join(" AND ")} ORDER BY remaining_months ASC, start_month DESC`,
+      sql: `SELECT * FROM installments WHERE ${conditions.join(" AND ")} ORDER BY start_date DESC`,
       args,
     });
-    return result.rows as unknown as Installment[];
+    const rows = result.rows as unknown as Installment[];
+    const now = localISOString();
+    return rows.map(r => {
+      const computed = computeRemaining(r.start_date, r.total_months);
+      if (computed !== r.remaining_months) {
+        db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now, r.id] });
+      }
+      return { ...r, remaining_months: computed };
+    }).filter(i => !filter?.active_only || i.remaining_months > 0);
   }
 
   async findById(id: string, userId: string): Promise<Installment | null> {
-    const result = await getDb().execute({
+    const db = getDb();
+    const result = await db.execute({
       sql: "SELECT * FROM installments WHERE id = ? AND user_id = ?",
       args: [id, userId],
     });
-    return (result.rows[0] as unknown as Installment | undefined) ?? null;
+    const row = result.rows[0] as unknown as Installment | undefined;
+    if (!row) return null;
+    const computed = computeRemaining(row.start_date, row.total_months);
+    if (computed !== row.remaining_months) {
+      db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, localISOString(), row.id] });
+    }
+    return { ...row, remaining_months: computed };
   }
 
   async create(data: InstallmentInput, userId: string): Promise<Installment> {
@@ -34,15 +71,15 @@ export class InstallmentRepository {
     const now = localISOString();
 
     await db.execute({
-      sql: `INSERT INTO installments (id, user_id, category_id, payment_method_id, card_id, description, total_amount, monthly_amount, total_months, remaining_months, start_month, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO installments (id, user_id, category_id, payment_method_id, card_id, description, total_amount, monthly_amount, total_months, remaining_months, start_date, currency, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id, userId, data.category_id ?? null,
         data.payment_method_id ?? null, data.card_id ?? null,
         data.description, data.total_amount,
         data.monthly_amount, data.total_months,
         data.remaining_months ?? data.total_months,
-        data.start_month, seq, now, now,
+        data.start_date, data.currency ?? "MXN", seq, now, now,
       ],
     });
 
@@ -63,7 +100,8 @@ export class InstallmentRepository {
     if (data.monthly_amount !== undefined) { sets.push("monthly_amount = ?"); args.push(data.monthly_amount); }
     if (data.total_months !== undefined) { sets.push("total_months = ?"); args.push(data.total_months); }
     if (data.remaining_months !== undefined) { sets.push("remaining_months = ?"); args.push(data.remaining_months); }
-    if (data.start_month !== undefined) { sets.push("start_month = ?"); args.push(data.start_month); }
+    if (data.start_date !== undefined) { sets.push("start_date = ?"); args.push(data.start_date); }
+    if (data.currency !== undefined) { sets.push("currency = ?"); args.push(data.currency); }
     if (data.card_id !== undefined) { sets.push("card_id = ?"); args.push(data.card_id ?? null); }
     if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id ?? null); }
     if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id ?? null); }

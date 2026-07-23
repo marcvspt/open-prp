@@ -1,11 +1,13 @@
+DROP TABLE IF EXISTS credit_cards;
+
 CREATE TABLE IF NOT EXISTS credit_cards (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  type TEXT NOT NULL CHECK(type IN ('credit','debit')),
-  max_limit REAL NOT NULL,
-  closing_day INTEGER NOT NULL,
-  due_day INTEGER NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('credit','debit','voucher')),
+  max_limit REAL,
+  closing_day INTEGER,
+  due_day INTEGER,
   color TEXT,
   seq INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),

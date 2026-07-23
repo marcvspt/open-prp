@@ -1,14 +1,14 @@
 {
   "name": "open-prp",
   "type": "module",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "db:seed": "node --env-file=.env --env-file=.env.development db/seed.js",
-    "db:seed:prod": "node --env-file=.env --env-file=.env.production db/seed.js"
+    "db:seed:dev": "node --env-file=.env.development db/seed.js",
+    "db:seed:prod": "node --env-file=.env.production db/seed.js"
   },
   "dependencies": {
     "@astrojs/netlify": "8.1.2",

@@ -1,6 +1,16 @@
 import { getDb } from "@/lib/db/client.ts";
 import type { CalculatedDebt } from "@/lib/types/card-monthly.ts";
 
+function addMonths(dateStr: string, n: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const totalM = m - 1 + n;
+  const newY = y + Math.floor(totalM / 12);
+  const newM = totalM % 12 + 1;
+  const lastDay = new Date(newY, newM, 0).getDate();
+  const newD = Math.min(d, lastDay);
+  return `${newY}-${String(newM).padStart(2, "0")}-${String(newD).padStart(2, "0")}`;
+}
+
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
@@ -16,16 +26,6 @@ function getPeriod(closingDay: number, year: number, month: number): { start: st
   };
 }
 
-function isMonthInRange(month: string, startMonth: string, totalMonths: number): boolean {
-  if (month < startMonth) return false;
-  const [sy, sm] = startMonth.split("-").map(Number);
-  let em = sm + totalMonths;
-  let ey = sy;
-  while (em > 12) { em -= 12; ey += 1; }
-  const endMonth = `${ey}-${String(em).padStart(2, "0")}`;
-  return month < endMonth;
-}
-
 export async function calculateCardDebt(cardId: string, month: string, userId: string): Promise<CalculatedDebt> {
   const db = getDb();
 
@@ -33,47 +33,71 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
     sql: "SELECT closing_day FROM credit_cards WHERE id = ? AND user_id = ?",
     args: [cardId, userId],
   });
-  const card = cardRes.rows[0] as { closing_day: number } | undefined;
+  const card = cardRes.rows[0] as { closing_day: number | null } | undefined;
   if (!card) throw new Error("Card not found");
 
   const [year, mon] = month.split("-").map(Number);
-  const period = getPeriod(card.closing_day, year, mon);
+  const closingDay = card.closing_day ?? daysInMonth(year, mon);
+  const period = getPeriod(closingDay, year, mon);
 
   const txResult = await db.execute({
-    sql: `SELECT COALESCE(SUM(amount), 0) AS total FROM transactions
-          WHERE card_id = ? AND user_id = ? AND type = 'expense' AND date >= ? AND date <= ?`,
-    args: [cardId, userId, period.start, period.end],
+    sql: `SELECT COALESCE(SUM(t.amount), 0) AS total FROM transactions t
+          LEFT JOIN payment_methods pm ON pm.id = t.payment_method_id
+          WHERE (t.card_id = ? OR pm.card_id = ?) AND t.user_id = ? AND t.type = 'expense' AND t.date >= ? AND t.date <= ?`,
+    args: [cardId, cardId, userId, period.start, period.end],
   });
   const totalPurchases = Number((txResult.rows[0] as { total: number }).total);
 
   const instRes = await db.execute({
-    sql: `SELECT monthly_amount, start_month, total_months, remaining_months FROM installments
-          WHERE card_id = ? AND user_id = ?`,
-    args: [cardId, userId],
+    sql: `SELECT i.monthly_amount, i.start_date, i.total_months FROM installments i
+          LEFT JOIN payment_methods pm ON pm.id = i.payment_method_id
+          WHERE (i.card_id = ? OR pm.card_id = ?) AND i.user_id = ?`,
+    args: [cardId, cardId, userId],
   });
   let totalInstallments = 0;
   let committedInstallments = 0;
-  for (const row of instRes.rows as { monthly_amount: number; start_month: string; total_months: number; remaining_months: number }[]) {
-    if (row.remaining_months > 0) {
-      if (isMonthInRange(month, row.start_month, row.total_months)) {
-        totalInstallments += Number(row.monthly_amount);
+  for (const row of instRes.rows as { monthly_amount: number; start_date: string; total_months: number }[]) {
+    const { start_date, total_months, monthly_amount } = row;
+    let found = false;
+    for (let n = 0; n < total_months; n++) {
+      const payDate = addMonths(start_date, n);
+      if (payDate >= period.start && payDate <= period.end) {
+        totalInstallments += Number(monthly_amount);
+        committedInstallments += Number(monthly_amount) * (total_months - n - 1);
+        found = true;
+        break;
       }
-      committedInstallments += Number(row.monthly_amount) * Math.max(0, Number(row.remaining_months) - 1);
+    }
+    if (!found && total_months > 0) {
+      let futurePayments = 0;
+      for (let n = 0; n < total_months; n++) {
+        if (addMonths(start_date, n) > period.end) futurePayments++;
+      }
+      committedInstallments += Number(monthly_amount) * futurePayments;
     }
   }
 
   const cbRes = await db.execute({
     sql: `SELECT COALESCE(SUM(amount), 0) AS total FROM cashback
-          WHERE card_id = ? AND user_id = ? AND applied_month = ?`,
-    args: [cardId, userId, month],
+          WHERE card_id = ? AND user_id = ? AND date >= ? AND date <= ?`,
+    args: [cardId, userId, period.start, period.end],
   });
   const totalCashback = Number((cbRes.rows[0] as { total: number }).total);
 
-  const statementBalance = totalPurchases + totalInstallments - totalCashback;
+  const rpRes = await db.execute({
+    sql: `SELECT COALESCE(SUM(rpm.amount), 0) AS total FROM recurring_payment_monthly rpm
+          JOIN payment_methods pm ON pm.id = rpm.payment_method_id
+          WHERE pm.card_id = ? AND rpm.user_id = ? AND rpm.month = ? AND rpm.is_paid = 1`,
+    args: [cardId, userId, month],
+  });
+  const totalRecurring = Number((rpRes.rows[0] as { total: number }).total);
+
+  const statementBalance = totalPurchases + totalInstallments + totalRecurring - totalCashback;
 
   return {
     total_purchases: totalPurchases,
     total_installments: totalInstallments,
+    total_recurring: totalRecurring,
     total_cashback: totalCashback,
     statement_balance: statementBalance,
     committed_installments: committedInstallments,

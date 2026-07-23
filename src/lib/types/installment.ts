@@ -9,7 +9,8 @@ export interface Installment {
   monthly_amount: number;
   total_months: number;
   remaining_months: number;
-  start_month: string;
+  start_date: string;
+  currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -23,7 +24,8 @@ export interface InstallmentInput {
   monthly_amount: number;
   total_months: number;
   remaining_months?: number;
-  start_month: string;
+  start_date: string;
+  currency?: string;
 }
 
 export interface InstallmentFilter {

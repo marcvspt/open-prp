@@ -16,8 +16,8 @@
   --color-panel: #ffffff;
   --color-border: #e5e7eb;
   --color-border-light: #f3f4f6;
-  --color-text: #111827;
-  --color-text-muted: #6b7280;
+  --color-string: #111827;
+  --color-string-muted: #6b7280;
   --color-nav: #4b5563;
   --color-nav-hover: #f3f4f6;
   --color-nav-active: #eef2ff;
@@ -31,8 +31,8 @@
   --color-panel: #1f2937;
   --color-border: #374151;
   --color-border-light: #1f2937;
-  --color-text: #f3f4f6;
-  --color-text-muted: #9ca3af;
+  --color-string: #f3f4f6;
+  --color-string-muted: #9ca3af;
   --color-nav: #9ca3af;
   --color-nav-hover: #374151;
   --color-nav-active: rgba(49, 46, 129, 0.4);

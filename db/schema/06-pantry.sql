@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS pantry_items;
 DROP TABLE IF EXISTS inventory_categories;
 DROP TABLE IF EXISTS inventory_items;
 DROP TABLE IF EXISTS pantry_categories;

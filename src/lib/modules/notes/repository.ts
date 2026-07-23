@@ -38,11 +38,12 @@ export class NoteRepository {
     const id = crypto.randomUUID();
     const seq = await nextSeq("notes");
     const now = new Date().toISOString();
+    const title = data.title?.trim() || new Date().toLocaleString("es");
 
     await db.execute({
       sql: `INSERT INTO notes (id, user_id, title, content, is_pinned, color, seq, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, data.title, data.content ?? null, data.is_pinned ? 1 : 0, data.color ?? null, seq, now, now],
+      args: [id, userId, title, data.content ?? null, data.is_pinned ? 1 : 0, data.color ?? null, seq, now, now],
     });
 
     if (data.tag_ids?.length) {

@@ -70,7 +70,7 @@ export default function ThemeToggle() {
         value={preference}
         onChange={handleChange}
         options={options}
-        class="w-full"
+        className="w-full"
         icon={<svg className="w-4 h-4 text-nav" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icons[preference]} />
         </svg>}

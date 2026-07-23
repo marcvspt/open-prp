@@ -1,6 +1,6 @@
 # Open PRP
 
-**Personal Resource Planning** — Aplicación web para gestión financiera y organización personal. Centraliza transacciones, plazos, tarjetas de crédito, servicios, compras, despensa, tareas, eventos y más en un solo lugar.
+**Personal Resource Planning** — Aplicación web para gestión financiera y organización personal. Centraliza transacciones, plazos, tarjetas de crédito, servicios, compras, despensa, notas, tareas, eventos, cashback y más en un solo lugar.
 
 ## Tecnologías
 
@@ -12,7 +12,7 @@
 | Base de datos | [Turso](https://turso.tech) (libSQL) |
 | Cliente BD | [@libsql/client](https://www.npmjs.com/package/@libsql/client) |
 | Auth | [Clerk](https://clerk.com) |
-| Despliegue | Netlify (actual) — compatible con Cloudflare Pages / Vercel |
+| Despliegue | Netlify |
 | Paquetería | [pnpm](https://pnpm.io) |
 
 ## Stack frontend
@@ -46,15 +46,22 @@ pnpm install
 
 ### 2. Configurar variables de entorno
 
-Copia los archivos de ejemplo (o créalos desde cero):
+Crea los archivos de entorno:
 
 ```sh
-# Variables compartidas (ambos entornos)
-.env
-# Variables de desarrollo (opcional, sobreescribe .env)
+# Variables de desarrollo
 .env.development
 # Variables de producción
 .env.production
+```
+
+Agrega las siguientes variables (ver pasos 3 y 4 para obtener los valores):
+
+```env
+TURSO_DB_URL=libsql://<tu-db>.turso.io
+TURSO_DB_TOKEN=<tu-token>
+PUBLIC_CLERK_PUBLISHABLE_KEY=pk_********************
+CLERK_SECRET_KEY=sk_********************
 ```
 
 ### 3. Turso — Base de datos
@@ -85,8 +92,6 @@ Turso es una base de datos libSQL distribuida.
    TURSO_DB_TOKEN=<tu-token>
    ```
 
-También puedes usar SQLite local cambiando la URL a `file:local.db`.
-
 ### 4. Clerk — Autenticación
 
 Clerk maneja registro, inicio de sesión y control de acceso.
@@ -110,7 +115,7 @@ Clerk maneja registro, inicio de sesión y control de acceso.
 
 ```sh
 # Desarrollo (carga .env + .env.development)
-pnpm db:seed
+pnpm db:seed:dev
 
 # Producción (carga .env + .env.production)
 pnpm db:seed:prod
@@ -137,43 +142,84 @@ astro dev stop
 ```
 src/
 ├── components/
-│   ├── dashboard/       # Dashboard principal con tabs y cards
-│   ├── recurring-payments/  # Gestión mensual de pagos recurrentes (cards en grid)
-│   ├── shopping/        # Lista de compras con tabs lista/historial/meses
-│   └── ui/              # Componentes compartidos
-│       ├── CrudModal.tsx    # Modal CRUD genérico
-│       ├── DataTable.astro  # Tabla con tipado
-│       ├── FormModal.tsx    # Modal base
-│       ├── MultiSelect.tsx  # Select multisección
-│       ├── Select.tsx       # Combobox accesible
+│   ├── dashboard/              # Dashboard principal con tabs y cards
+│   ├── recurring-payments/     # Gestión mensual de pagos recurrentes (cards en grid)
+│   ├── shopping/               # Lista de compras con tabs lista/historial
+│   └── ui/                     # Componentes compartidos
+│       ├── CrudModal.tsx       # Modal CRUD genérico
+│       ├── DataTable.astro     # Tabla con tipado
+│       ├── ErrorBoundary.tsx   # Límite de error React
+│       ├── FormModal.tsx       # Modal base
+│       ├── MultiSelect.tsx     # Select multisección
+│       ├── Select.tsx          # Combobox accesible
 │       ├── MonthSelector.tsx
 │       ├── ThemeToggle.tsx
 │       ├── CurrencySelect.tsx
 │       ├── PageHeader.astro
 │       ├── DeleteHandler.astro
 │       └── ToggleHandler.astro
-├── layouts/BaseLayout.astro  # Layout principal + sidebar + login screen
+├── layouts/
+│   └── BaseLayout.astro       # Layout principal + sidebar + login screen
 ├── lib/
-│   ├── db/                  # Cliente BD y utilerías
-│   ├── modules/             # Módulos de negocio (cada uno con repository.ts)
-│   │   ├── transactions/    # Incluye categories.ts (repositorio unificado)
-│   │   ├── card-monthly/    # Incluye calculator.ts
-│   │   └── ...
-│   └── types/               # 1 archivo por módulo, sin `any`
+│   ├── api-client.ts           # Helper fetch client-side
+│   ├── api-helpers.ts          # jsonResponse, errorResponse, requireUserId
+│   ├── date.ts                 # Utilerías de fecha
+│   ├── safeFetch.ts            # Fetch tipado con manejo de errores
+│   ├── db/
+│   │   ├── client.ts           # Cliente singleton @libsql/client/web
+│   │   └── utils.ts            # nextSeq() para ordenamiento
+│   ├── modules/                # Módulos de negocio (cada uno con repository.ts)
+│   │   ├── transactions/       # Incluye categories.ts (repositorio unificado)
+│   │   ├── card-monthly/       # Incluye calculator.ts
+│   │   ├── cashback/
+│   │   ├── credit-cards/
+│   │   ├── events/
+│   │   ├── installments/
+│   │   ├── notes/              # Incluye tags.ts
+│   │   ├── pantry/
+│   │   ├── payment-methods/
+│   │   ├── recurring-payments/ # Incluye upsertMonthly()
+│   │   ├── shopping/
+│   │   ├── tasks/
+│   │   └── users/
+│   └── types/                  # 1 archivo por módulo, sin `any`
 ├── pages/
-│   ├── api/                 # API REST endpoints
-│   ├── index.astro          # Redirige a /dashboard o /login
-│   ├── dashboard.astro      # Dashboard principal
-│   ├── login.astro          # Pantalla de login standalone
-│   └── ... (cada módulo tiene su página)
-├── middleware.ts            # Clerk middleware + auth redirect + sync de perfil
-├── styles/global.css        # Tailwind v4 + custom theme + color-scheme
+│   ├── api/                    # API REST endpoints
+│   ├── index.astro             # Redirige a /dashboard o /login
+│   ├── dashboard.astro         # Dashboard principal
+│   ├── login.astro             # Pantalla de login standalone
+│   ├── cashback.astro
+│   ├── categories.astro
+│   ├── credit-cards.astro
+│   ├── events.astro
+│   ├── installments.astro
+│   ├── notes.astro
+│   ├── pantry.astro
+│   ├── payment-methods.astro
+│   ├── recurring-payments.astro
+│   ├── shopping.astro
+│   ├── tasks.astro
+│   └── transactions.astro
+├── middleware.ts               # Clerk middleware + auth redirect + sync de perfil
+├── env.d.ts                    # Tipos de entorno
+└── styles/global.css           # Tailwind v4 + custom theme + color-scheme
 db/
-├── schema/                  # SQL modular, 1 archivo por módulo
+├── schema/                     # SQL modular, 1 archivo por módulo
 │   ├── 01-users.sql
+│   ├── 02-credit-cards.sql
 │   ├── 03-categories.sql
-│   └── ...
-└── seed.js                  # Script de siembra con emojis
+│   ├── 04-installments.sql
+│   ├── 05-transactions.sql
+│   ├── 06-pantry.sql
+│   ├── 07-notes.sql
+│   ├── 08-events.sql
+│   ├── 09-recurring-payments.sql
+│   ├── 10-cashback.sql
+│   ├── 11-shopping.sql
+│   ├── 12-tasks.sql
+│   ├── 13-payment-methods.sql
+│   └── 14-card-monthly.sql
+└── seed.js                     # Script de siembra con emojis
 ```
 
 ## Sistema de categorías unificado
@@ -205,31 +251,16 @@ La gestión se hace desde `/categories`.
 pnpm build    # Genera dist/
 ```
 
-### Netlify (actual)
+### Netlify
 
-El adaptador ya está configurado en `astro.config.mjs`. Solo conectar el repo en Netlify y agregar variables de entorno.
+El adaptador ya está configurado en `astro.config.mjs`. Conectar el repo en Netlify y agregar estas variables de entorno en el dashboard:
 
-### Cloudflare Pages / Vercel
-
-Cambiar el adaptador en `astro.config.mjs`:
-
-```js
-// Cloudflare
-import cloudflare from '@astrojs/cloudflare';
-adapter: cloudflare({ platformProxy: { enabled: true } }),
-
-// Vercel
-// import vercel from '@astrojs/vercel/serverless';
-// adapter: vercel(),
-```
-
-Variables de entorno requeridas en el dashboard:
 - `TURSO_DB_URL`
 - `TURSO_DB_TOKEN`
 - `PUBLIC_CLERK_PUBLISHABLE_KEY`
 - `CLERK_SECRET_KEY`
 
-> El cliente `@libsql/client/web` funciona en todos los entornos (Node 18+, Cloudflare Workers, Vercel Edge/Serverless, Netlify Edge/Functions) sin cambios.
+> El cliente `@libsql/client/web` funciona en Netlify Functions sin cambios.
 
 ## Comandos útiles
 
@@ -240,7 +271,8 @@ Variables de entorno requeridas en el dashboard:
 | `astro dev logs` | Logs del dev server |
 | `astro dev stop` | Detener dev server |
 | `pnpm build` | Build de producción |
-| `pnpm db:seed` | Seed (desarrollo) |
+| `pnpm preview` | Vista previa del build de producción |
+| `pnpm db:seed:dev` | Seed (desarrollo) |
 | `pnpm db:seed:prod` | Seed (producción) |
 
 ## Créditos

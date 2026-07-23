@@ -3,16 +3,16 @@ export interface Cashback {
   user_id: string;
   card_id: string | null;
   amount: number;
+  currency: string;
   description: string | null;
   date: string;
-  applied_month: string | null;
   created_at: string;
 }
 
 export interface CashbackInput {
   card_id?: string;
   amount: number;
+  currency?: string;
   description?: string;
   date: string;
-  applied_month?: string;
 }

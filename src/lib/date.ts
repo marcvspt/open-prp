@@ -39,12 +39,21 @@ export function lastDayOfMonth(month: string): string {
   return `${month}-${String(d).padStart(2, "0")}`;
 }
 
-export function isMonthInRange(month: string, startMonth: string, totalMonths: number): boolean {
-  if (month < startMonth) return false;
-  const [sy, sm] = startMonth.split("-").map(Number);
-  let em = sm + totalMonths;
-  let ey = sy;
-  while (em > 12) { em -= 12; ey += 1; }
-  const endMonth = `${ey}-${String(em).padStart(2, "0")}`;
-  return month < endMonth;
+export function isInstallmentInMonth(month: string, startDate: string, totalMonths: number): boolean {
+  function addMonths(dateStr: string, n: number): string {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const totalM = m - 1 + n;
+    const newY = y + Math.floor(totalM / 12);
+    const newM = totalM % 12 + 1;
+    const lastDay = new Date(newY, newM, 0).getDate();
+    const newD = Math.min(d, lastDay);
+    return `${newY}-${String(newM).padStart(2, "0")}-${String(newD).padStart(2, "0")}`;
+  }
+  const [my, mm] = month.split("-").map(Number);
+  for (let n = 0; n < totalMonths; n++) {
+    const pd = addMonths(startDate, n);
+    const [py, pm] = pd.split("-").map(Number);
+    if (py === my && pm === mm) return true;
+  }
+  return false;
 }

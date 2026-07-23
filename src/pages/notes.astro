@@ -6,11 +6,16 @@ import CrudModal from "@/components/ui/CrudModal.tsx";
 import { NoteRepository } from "@/lib/modules/notes/repository.ts";
 const userId = Astro.locals.userId;
 const items = (await new NoteRepository().findAll(userId)) ?? [];
-const colors: Record<string, string> = { blue: "border-blue-300 bg-blue-50", green: "border-green-300 bg-green-50", yellow: "border-yellow-300 bg-yellow-50", pink: "border-pink-300 bg-pink-50", purple: "border-purple-300 bg-purple-50" };
+
+const colorMap: Record<string, string> = {
+  blue: "#3b82f6", green: "#22c55e", yellow: "#eab308",
+  pink: "#ec4899", purple: "#a855f7",
+};
+
 const fields = [
-  { name: "title", label: "Título", type: "text" as const, required: true },
+  { name: "title", label: "Título", type: "text" as const },
   { name: "content", label: "Contenido", type: "textarea" as const },
-  { name: "color", label: "Color", type: "select" as const, options: [{ value: "", label: "Ninguno" }, { value: "blue", label: "Azul" }, { value: "green", label: "Verde" }, { value: "yellow", label: "Amarillo" }, { value: "pink", label: "Rosa" }, { value: "purple", label: "Púrpura" }] },
+  { name: "color", label: "Color", type: "color" as const },
   { name: "is_pinned", label: "Fijada", type: "checkbox" as const },
 ];
 const defaultForm = { title: "", content: "", color: "", is_pinned: false };
@@ -20,22 +25,24 @@ const defaultForm = { title: "", content: "", color: "", is_pinned: false };
   <div data-module="notes" class="space-y-4">
     <PageHeader title="Notas" createLabel="Nueva nota" createModule="notes" />
     {items.length === 0 ? (
-      <p class="text-center text-text-muted py-8">Sin notas</p>
+      <p class="text-center text-string-muted py-8">Sin notas</p>
     ) : (
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map(note => {
-          const c = colors[note.color ?? ""] ?? "border-border bg-panel";
+          const raw = note.color ?? "";
+          const hex = raw.startsWith("#") ? raw : (colorMap[raw] ?? "");
+          const hasColor = !!hex;
           return (
-            <div key={note.id} class={`rounded-xl border-2 p-4 shadow-sm ${c} ${note.is_pinned ? "ring-2 ring-indigo-300" : ""}`}>
+            <div key={note.id} class={`rounded-xl p-4 shadow-sm border border-border bg-panel ${hasColor ? "border-l-4" : ""} ${note.is_pinned ? "ring-2 ring-indigo-300" : ""}`} style={hasColor ? `border-left-color: ${hex}; background-color: ${hex}08` : ""}>
               <div class="flex items-start justify-between gap-2">
-                <h3 class="font-semibold text-text truncate">{note.title}</h3>
+                <h3 class="font-semibold text-string truncate">{note.title || "Sin título"}</h3>
                 <div class="flex gap-1 shrink-0">
-                  <button data-edit-notes={note.id} class="text-xs text-text-muted hover:text-indigo-600 cursor-pointer">✏️</button>
-                  <button data-delete-notes={note.id} class="text-xs text-text-muted hover:text-red-600 cursor-pointer">🗑️</button>
+                  <button data-edit-notes={note.id} class="text-xs font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer">Editar</button>
+                  <button data-delete-notes={note.id} class="text-xs font-medium text-red-600 hover:text-red-800 cursor-pointer">Eliminar</button>
                 </div>
               </div>
               {note.content && <p class="mt-2 text-sm text-nav whitespace-pre-wrap line-clamp-3">{note.content}</p>}
-              <div class="mt-3 text-xs text-text-muted">{new Date(note.updated_at).toLocaleDateString("es")}</div>
+              <div class="mt-3 text-xs text-string-muted">{new Date(note.updated_at).toLocaleDateString("es")}</div>
             </div>
           );
         })}

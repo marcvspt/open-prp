@@ -12,11 +12,11 @@ interface SelectProps {
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
-  class?: string;
+  className?: string;
   icon?: React.ReactNode;
 }
 
-export default function Select({ value, onChange, options, placeholder, required, disabled, class: className, icon }: SelectProps) {
+export default function Select({ value, onChange, options, placeholder, required, disabled, className, icon }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
@@ -94,12 +94,12 @@ export default function Select({ value, onChange, options, placeholder, required
         className={`mt-1 flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-indigo-400"}
           ${open ? "border-indigo-500 ring-1 ring-indigo-500" : "border-border"}
-          ${!selected && placeholder ? "text-text-muted" : "text-text"}
+          ${!selected && placeholder ? "text-string-muted" : "text-string"}
           bg-panel`}
       >
         {icon && <span className="w-4 h-4 shrink-0">{icon}</span>}
         <span className="flex-1 text-left">{display}</span>
-        <svg className={`w-4 h-4 text-text-muted transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={`w-4 h-4 text-string-muted transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -120,7 +120,7 @@ export default function Select({ value, onChange, options, placeholder, required
                className={`px-3 py-2 text-sm cursor-pointer transition-colors
                 ${o.value === value ? "bg-indigo-100/50 dark:bg-indigo-900/30 text-indigo-700 font-medium" : ""}
                 ${highlighted === i ? "bg-nav-hover" : ""}
-                text-text`}
+                text-string`}
               onClick={() => select(o.value)}
               onMouseEnter={() => setHighlighted(i)}
             >
