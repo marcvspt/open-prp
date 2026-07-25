@@ -2,6 +2,7 @@
 import { defineConfig, envField } from 'astro/config';
 
 import react from '@astrojs/react';
+import svgr from "vite-plugin-svgr";
 import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
 
@@ -16,7 +17,7 @@ export default defineConfig({
   integrations: [react(), clerk()],
 
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), svgr()],
   },
 
   site: 'https://ophrp.marcvspt.tech',

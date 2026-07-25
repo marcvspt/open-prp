@@ -1,0 +1,92 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { Show, SignInButton, SignUpButton } from "@clerk/astro/components";
+import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
+import Sidebar from "@/components/app/ui/Sidebar.astro";
+import MenuIcon from "@/assets/MenuIcon.svg";
+
+const { title } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
+<BaseLayout title={title}>
+  <Show when="signed-in">
+    <Sidebar currentPath={currentPath} />
+    <div
+      id="sidebar-overlay"
+      class="fixed inset-0 z-30 bg-overlay hidden lg:hidden"
+    >
+    </div>
+    <button
+      id="sidebar-toggle"
+      class="fixed top-3 left-3 z-50 flex lg:hidden items-center justify-center w-10 h-10 rounded-lg bg-panel border border-border text-nav hover:bg-nav-hover transition-colors shadow-sm"
+      aria-label="Abrir menú"
+    >
+      <MenuIcon class="w-5 h-5" />
+    </button>
+    <main
+      id="main-content"
+      class="min-h-screen bg-surface pl-0 transition-all duration-300 lg:pl-64"
+    >
+      <div class="p-4 lg:p-6 pt-16 lg:pt-6">
+        <slot />
+      </div>
+    </main>
+  </Show>
+  <Show when="signed-out">
+    <div class="flex items-center justify-center min-h-screen bg-surface">
+      <div class="text-center space-y-4">
+        <h1 class="text-2xl font-bold">Open PRP</h1>
+        <p class="text-string-muted">Personal Resource Planning</p>
+        <div class="flex justify-center gap-2">
+          <SignInButton
+            mode="modal"
+            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover"
+          >
+            Iniciar sesión
+          </SignInButton>
+          <SignUpButton
+            mode="modal"
+            class="px-4 py-2 border border-border rounded-lg hover:bg-nav-hover text-string"
+          >
+            Registrarse
+          </SignUpButton>
+        </div>
+        <div class="flex justify-center pt-4">
+          <ThemeToggle client:load />
+        </div>
+      </div>
+    </div>
+  </Show>
+</BaseLayout>
+
+<script>
+  document.addEventListener("click", function (e) {
+    const area = (e.target as HTMLElement).closest("[data-user-area]");
+    if (!area) return;
+    const btn = area.querySelector("button");
+    if (btn && btn !== e.target && !btn.contains(e.target as Node)) {
+      btn.click();
+    }
+  });
+
+  const sidebar = document.getElementById("sidebar")!;
+  const overlay = document.getElementById("sidebar-overlay")!;
+  const toggleBtn = document.getElementById("sidebar-toggle")!;
+
+  function openSidebar() {
+    sidebar.classList.remove("-translate-x-full");
+    overlay.classList.remove("hidden");
+  }
+
+  function closeSidebar() {
+    sidebar.classList.add("-translate-x-full");
+    overlay.classList.add("hidden");
+  }
+
+  toggleBtn.addEventListener("click", openSidebar);
+  overlay.addEventListener("click", closeSidebar);
+
+  const navLinks = sidebar.querySelectorAll("nav a");
+  navLinks.forEach((link) => link.addEventListener("click", closeSidebar));
+</script>

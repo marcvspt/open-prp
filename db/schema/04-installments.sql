@@ -3,7 +3,6 @@ DROP TABLE IF EXISTS installments;
 CREATE TABLE IF NOT EXISTS installments (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  card_id TEXT REFERENCES credit_cards(id) ON DELETE SET NULL,
   category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
   payment_method_id TEXT REFERENCES payment_methods(id) ON DELETE SET NULL,
   description TEXT NOT NULL,
@@ -19,4 +18,3 @@ CREATE TABLE IF NOT EXISTS installments (
 );
 
 CREATE INDEX IF NOT EXISTS idx_installments_user_id ON installments(user_id);
-CREATE INDEX IF NOT EXISTS idx_installments_card_id ON installments(card_id);

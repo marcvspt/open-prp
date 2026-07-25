@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useId } from "react";
+import ChevronIcon from "@/assets/ChevronIcon.svg?react";
 
 export interface SelectOption {
   value: string;
@@ -92,16 +93,14 @@ export default function Select({ value, onChange, options, placeholder, required
         disabled={disabled}
         onClick={() => setOpen(p => !p)}
         className={`mt-1 flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
-          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-indigo-400"}
-          ${open ? "border-indigo-500 ring-1 ring-indigo-500" : "border-border"}
+          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary"}
+          ${open ? "border-primary ring-1 ring-primary" : "border-border"}
           ${!selected && placeholder ? "text-string-muted" : "text-string"}
           bg-panel`}
       >
         {icon && <span className="w-4 h-4 shrink-0">{icon}</span>}
         <span className="flex-1 text-left">{display}</span>
-        <svg className={`w-4 h-4 text-string-muted transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronIcon className={`w-4 h-4 text-string-muted transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <ul
@@ -118,7 +117,7 @@ export default function Select({ value, onChange, options, placeholder, required
               role="option"
               aria-selected={o.value === value}
                className={`px-3 py-2 text-sm cursor-pointer transition-colors
-                ${o.value === value ? "bg-indigo-100/50 dark:bg-indigo-900/30 text-indigo-700 font-medium" : ""}
+                ${o.value === value ? "bg-primary-bg text-primary-text font-medium" : ""}
                 ${highlighted === i ? "bg-nav-hover" : ""}
                 text-string`}
               onClick={() => select(o.value)}

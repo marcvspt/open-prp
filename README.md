@@ -18,7 +18,7 @@
 ## Stack frontend
 
 - **Astro SSR**: renderizado en servidor con hidratación progresiva de componentes React
-- **Ruteo protegido**: cualquier ruta (excepto `/login`) redirige a `/login` si no hay sesión; `/` redirige a `/dashboard` (logueado) o `/login` (no logueado); `/login` redirige a `/dashboard` si ya hay sesión
+- **Ruteo protegido**: `/` es landing page pública con CTA a `/app`; `/app` redirige a `/app/dashboard` (logueado) o `/app/login` (no logueado). Middleware protege toda ruta `/app/*` excepto `/app/login`.
 - **Select personalizado**: componente combobox accesible con teclado, usado en toda la app
 - **MultiSelect**: componente propio para selección múltiple de secciones (checkboxes + "Todas")
 - **Modal CRUD genérico**: `CrudModal.tsx` que escucha eventos `data-create` / `data-edit` y renderiza formularios dinámicamente
@@ -142,24 +142,27 @@ astro dev stop
 ```
 src/
 ├── components/
-│   ├── dashboard/              # Dashboard principal con tabs y cards
-│   ├── recurring-payments/     # Gestión mensual de pagos recurrentes (cards en grid)
-│   ├── shopping/               # Lista de compras con tabs lista/historial
-│   └── ui/                     # Componentes compartidos
-│       ├── CrudModal.tsx       # Modal CRUD genérico
-│       ├── DataTable.astro     # Tabla con tipado
-│       ├── ErrorBoundary.tsx   # Límite de error React
-│       ├── FormModal.tsx       # Modal base
-│       ├── MultiSelect.tsx     # Select multisección
-│       ├── Select.tsx          # Combobox accesible
-│       ├── MonthSelector.tsx
-│       ├── ThemeToggle.tsx
-│       ├── CurrencySelect.tsx
-│       ├── PageHeader.astro
-│       ├── DeleteHandler.astro
-│       └── ToggleHandler.astro
+│   ├── app/                    # Componentes de la aplicación
+│   │   ├── dashboard/          # Dashboard principal con tabs y cards
+│   │   ├── recurring-payments/ # Gestión mensual de pagos recurrentes (cards en grid)
+│   │   ├── shopping/           # Lista de compras con tabs lista/historial
+│   │   └── ui/                 # UI específica de la app
+│   │       ├── CrudModal.tsx       # Modal CRUD genérico
+│   │       ├── DataTable.astro     # Tabla con tipado
+│   │       ├── FormModal.tsx       # Modal base
+│   │       ├── MonthSelector.tsx
+│   │       ├── CurrencySelect.tsx
+│   │       ├── PageHeader.astro
+│   │       ├── DeleteHandler.astro
+│   │       └── ToggleHandler.astro
+│   ├── ui/                     # Componentes compartidos (app + landing)
+│   │   ├── ThemeToggle.tsx
+│   │   ├── Select.tsx          # Combobox accesible
+│   │   ├── MultiSelect.tsx     # Select multisección
+│   │   └── ErrorBoundary.tsx   # Límite de error React
+│   └── landing/                # (futuros) componentes de landing page
 ├── layouts/
-│   └── BaseLayout.astro       # Layout principal + sidebar + login screen
+│   └── AppLayout.astro        # Layout principal + sidebar + login screen
 ├── lib/
 │   ├── api-client.ts           # Helper fetch client-side
 │   ├── api-helpers.ts          # jsonResponse, errorResponse, requireUserId
@@ -185,21 +188,23 @@ src/
 │   └── types/                  # 1 archivo por módulo, sin `any`
 ├── pages/
 │   ├── api/                    # API REST endpoints
-│   ├── index.astro             # Redirige a /dashboard o /login
-│   ├── dashboard.astro         # Dashboard principal
-│   ├── login.astro             # Pantalla de login standalone
-│   ├── cashback.astro
-│   ├── categories.astro
-│   ├── credit-cards.astro
-│   ├── events.astro
-│   ├── installments.astro
-│   ├── notes.astro
-│   ├── pantry.astro
-│   ├── payment-methods.astro
-│   ├── recurring-payments.astro
-│   ├── shopping.astro
-│   ├── tasks.astro
-│   └── transactions.astro
+│   ├── index.astro             # Landing page pública con CTA a /app
+│   └── app/                    # Páginas protegidas de la aplicación
+│       ├── index.astro         # Redirige a /app/dashboard o /app/login
+│       ├── dashboard.astro     # Dashboard principal
+│       ├── login.astro         # Pantalla de login
+│       ├── cashback.astro
+│       ├── categories.astro
+│       ├── credit-cards.astro
+│       ├── events.astro
+│       ├── installments.astro
+│       ├── notes.astro
+│       ├── pantry.astro
+│       ├── payment-methods.astro
+│       ├── recurring-payments.astro
+│       ├── shopping.astro
+│       ├── tasks.astro
+│       └── transactions.astro
 ├── middleware.ts               # Clerk middleware + auth redirect + sync de perfil
 ├── env.d.ts                    # Tipos de entorno
 └── styles/global.css           # Tailwind v4 + custom theme + color-scheme

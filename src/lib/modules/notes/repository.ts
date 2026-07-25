@@ -1,6 +1,6 @@
-import { getDb } from "@/lib/db/client";
-import { nextSeq } from "@/lib/db/utils";
-import type { Note, CreateNoteInput, UpdateNoteInput, NoteFilter } from "@/lib/types/note";
+import { getDb } from "@/lib/db/client.ts";
+import { nextSeq } from "@/lib/db/utils.ts";
+import type { Note, CreateNoteInput, UpdateNoteInput, NoteFilter } from "@/lib/types/note.ts";
 
 export class NoteRepository {
   async findAll(userId: string, filter?: NoteFilter): Promise<Note[]> {

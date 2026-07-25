@@ -1,7 +1,6 @@
 export interface Installment {
   id: string;
   user_id: string;
-  card_id: string | null;
   category_id: string | null;
   payment_method_id: string | null;
   description: string;
@@ -16,7 +15,6 @@ export interface Installment {
 }
 
 export interface InstallmentInput {
-  card_id?: string;
   category_id?: string;
   payment_method_id?: string;
   description: string;
@@ -29,6 +27,5 @@ export interface InstallmentInput {
 }
 
 export interface InstallmentFilter {
-  card_id?: string;
   active_only?: boolean;
 }
