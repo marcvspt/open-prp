@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useId } from "react";
+import ChevronIcon from "@/assets/ChevronIcon.svg?react";
 
 export interface MultiSelectOption {
   value: string;
@@ -112,15 +113,13 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
         disabled={disabled}
         onClick={() => setOpen(p => !p)}
         className={`mt-1 flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
-          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-indigo-400"}
-          ${open ? "border-indigo-500 ring-1 ring-indigo-500" : "border-border"}
+          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary"}
+          ${open ? "border-primary ring-1 ring-primary" : "border-border"}
           ${selectedValues.length === 0 && !allSelected ? "text-string-muted" : "text-string"}
           bg-panel`}
       >
         <span className="flex-1 text-left truncate">{display}</span>
-        <svg className={`w-4 h-4 text-string-muted transition-transform shrink-0 ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronIcon className={`w-4 h-4 text-string-muted transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <ul
@@ -140,8 +139,8 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
             onClick={() => toggle("*")}
             onMouseEnter={() => setHighlighted(0)}
           >
-            <input type="checkbox" checked={allSelected} read-only className="w-4 h-4 accent-indigo-600 pointer-events-none" />
-            <span className={allSelected ? "font-medium text-indigo-600" : ""}>Todas las secciones</span>
+            <input type="checkbox" checked={allSelected} read-only className="w-4 h-4 accent-primary pointer-events-none" />
+            <span className={allSelected ? "font-medium text-primary" : ""}>Todas las secciones</span>
           </li>
           {options.map((o, i) => {
             const idx = i + 1;
@@ -152,13 +151,13 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
                 role="option"
                 aria-selected={isSelected}
                 className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2
-                  ${isSelected ? "bg-indigo-100/50 dark:bg-indigo-900/30 text-indigo-700" : ""}
+                  ${isSelected ? "bg-primary-bg text-primary-text" : ""}
                   ${highlighted === idx ? "bg-nav-hover" : ""}
                   text-string`}
                 onClick={() => toggle(o.value)}
                 onMouseEnter={() => setHighlighted(idx)}
               >
-                <input type="checkbox" checked={isSelected} read-only className="w-4 h-4 accent-indigo-600 pointer-events-none" />
+                <input type="checkbox" checked={isSelected} read-only className="w-4 h-4 accent-primary pointer-events-none" />
                 {o.label}
               </li>
             );

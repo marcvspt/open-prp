@@ -10,11 +10,12 @@ Manage the background server with `astro dev stop`, `astro dev status`, and `ast
 
 ## Project Structure
 
-- **Routing**: `/` → redirects to `/dashboard` (logged in) or `/login` (not logged in). `/login` redirects to `/dashboard` if already authenticated. Middleware also redirects any route (except `/login`) to `/login` if not authenticated.
-- **Pages**: each module has a page in `src/pages/*.astro` and API routes in `src/pages/api/*/`
+- **Routing**: `/` → landing page pública con CTA a `/app`. `/app` → redirects to `/app/dashboard` (logged in) or `/app/login` (not logged in). Middleware protects `/app/*` (except `/app/login`). `/app/login` redirects to `/app/dashboard` if already authenticated.
+- **Pages**: each module has a page in `src/pages/app/*.astro` and API routes in `src/pages/api/*/`
 - **Modules** (in `src/lib/modules/`): `transactions`, `card-monthly`, `cashback`, `credit-cards`, `events`, `installments`, `notes`, `pantry`, `payment-methods`, `recurring-payments`, `shopping`, `tasks`, `users`
 - **React components**: use `client:load` directive for hydration
 - **All imports**: use `@/` alias (e.g. `@/lib/db/client`, `@/components/ui/Select`)
+- **Shared vs app UI**: `src/components/ui/` for components used across apps (ThemeToggle, Select, MultiSelect, ErrorBoundary); `src/components/app/ui/` for app-only UI (CrudModal, DataTable, FormModal, etc.)
 
 ## TypeScript
 

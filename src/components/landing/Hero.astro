@@ -1,0 +1,33 @@
+---
+import ArrowRightIcon from "@/assets/ArrowRightIcon.svg";
+---
+
+<section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6">
+  <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+    <div class="h-[600px] w-[600px] rounded-full bg-indigo-500/10 blur-3xl dark:bg-indigo-500/5" />
+  </div>
+  <div class="relative mx-auto max-w-3xl text-center">
+    <h1 class="text-5xl font-bold tracking-tight text-string sm:text-6xl lg:text-7xl">
+      Controla tus
+      <span class="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">finanzas personales</span>
+    </h1>
+    <p class="mt-6 text-lg text-string-muted sm:text-xl">
+      Open PRP es tu centro de gestión financiera personal. Transacciones, tarjetas, plazos, suscripciones, despensa y más, todo en un solo lugar.
+    </p>
+    <div class="mt-10 flex items-center justify-center gap-4">
+      <a
+        href="/app"
+        class="group relative inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-105 active:scale-100"
+      >
+        Comenzar gratis
+        <ArrowRightIcon class="h-5 w-5 transition-transform group-hover:translate-x-1" />
+      </a>
+      <a
+        href="#features"
+        class="rounded-xl border border-border bg-panel px-8 py-4 text-lg font-medium text-string transition-colors hover:bg-nav-hover"
+      >
+        Ver más
+      </a>
+    </div>
+  </div>
+</section>

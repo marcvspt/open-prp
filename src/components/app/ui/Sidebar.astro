@@ -1,0 +1,107 @@
+---
+import { Show, UserButton } from "@clerk/astro/components";
+import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
+import CurrencySelect from "@/components/app/ui/CurrencySelect.tsx";
+import HomeIcon from "@/assets/HomeIcon.svg";
+import DollarIcon from "@/assets/DollarIcon.svg";
+import CreditCardIcon from "@/assets/CreditCardIcon.svg";
+import ClipboardIcon from "@/assets/ClipboardIcon.svg";
+import RecurringIcon from "@/assets/RecurringIcon.svg";
+import WalletIcon from "@/assets/WalletIcon.svg";
+import CartIcon from "@/assets/CartIcon.svg";
+import PenIcon from "@/assets/PenIcon.svg";
+import CalendarIcon from "@/assets/CalendarIcon.svg";
+import PackageIcon from "@/assets/PackageIcon.svg";
+import TagIcon from "@/assets/TagIcon.svg";
+
+export interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+---
+
+<aside id="sidebar" class="fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-border bg-panel transition-transform duration-300 -translate-x-full lg:translate-x-0">
+  <div class="flex h-16 items-center gap-1 px-4 border-b border-border shrink-0">
+    <span class="text-lg font-bold">OPRP</span>
+  </div>
+
+  <nav class="flex-1 space-y-1 overflow-y-auto p-2 text-sm">
+    <a href="/app/dashboard" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath === "/app/dashboard" ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <HomeIcon class="w-5 h-5 shrink-0" />
+      <span>Dashboard</span>
+    </a>
+
+    <div class="pt-3 pb-1 px-3 text-xs font-semibold text-string-muted uppercase tracking-wider">Finanzas</div>
+    <a href="/app/transactions" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/transactions") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <DollarIcon class="w-5 h-5 shrink-0" />
+      <span>Transacciones</span>
+    </a>
+    <a href="/app/credit-cards" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/credit-cards") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <CreditCardIcon class="w-5 h-5 shrink-0" />
+      <span>Tarjetas</span>
+    </a>
+    <a href="/app/installments" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/installments") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <ClipboardIcon class="w-5 h-5 shrink-0" />
+      <span>Plazos</span>
+    </a>
+    <a href="/app/recurring-payments" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/recurring-payments") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <RecurringIcon class="w-5 h-5 shrink-0" />
+      <span>Pagos recurrentes</span>
+    </a>
+    <a href="/app/cashback" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/cashback") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <DollarIcon class="w-5 h-5 shrink-0" />
+      <span>Cashback</span>
+    </a>
+    <a href="/app/payment-methods" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/payment-methods") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <WalletIcon class="w-5 h-5 shrink-0" />
+      <span>Métodos de pago</span>
+    </a>
+
+    <div class="pt-3 pb-1 px-3 text-xs font-semibold text-string-muted uppercase tracking-wider">Organización</div>
+    <a href="/app/shopping" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/shopping") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <CartIcon class="w-5 h-5 shrink-0" />
+      <span>Compras</span>
+    </a>
+    <a href="/app/tasks" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/tasks") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <ClipboardIcon class="w-5 h-5 shrink-0" />
+      <span>Tareas</span>
+    </a>
+    <a href="/app/notes" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/notes") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <PenIcon class="w-5 h-5 shrink-0" />
+      <span>Notas</span>
+    </a>
+    <a href="/app/events" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/events") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <CalendarIcon class="w-5 h-5 shrink-0" />
+      <span>Eventos</span>
+    </a>
+    <a href="/app/pantry" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/pantry") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <PackageIcon class="w-5 h-5 shrink-0" />
+      <span>Despensa</span>
+    </a>
+
+    <div class="pt-3 pb-1 px-3 text-xs font-semibold text-string-muted uppercase tracking-wider">General</div>
+    <a href="/app/categories" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/categories") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
+      <TagIcon class="w-5 h-5 shrink-0" />
+      <span>Categorías</span>
+    </a>
+  </nav>
+
+  <div class="border-t border-border p-3 space-y-2 shrink-0">
+    <a href="https://github.com/marcvspt/open-prp" target="_blank" rel="noopener" class="flex items-center gap-3 px-3 py-2 text-xs text-string-muted hover:text-primary transition-colors">
+      GitHub
+    </a>
+    <div>
+      <ThemeToggle client:load />
+    </div>
+    <div>
+      <CurrencySelect client:load />
+    </div>
+    <Show when="signed-in">
+      <div class="flex items-center gap-3 px-3 py-2 cursor-pointer" data-user-area>
+        <UserButton afterSignOutUrl="/app/login" client:load />
+        <span class="text-xs text-string-muted">Mi cuenta</span>
+      </div>
+    </Show>
+  </div>
+</aside>

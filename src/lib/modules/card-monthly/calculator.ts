@@ -43,16 +43,16 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
   const txResult = await db.execute({
     sql: `SELECT COALESCE(SUM(t.amount), 0) AS total FROM transactions t
           LEFT JOIN payment_methods pm ON pm.id = t.payment_method_id
-          WHERE (t.card_id = ? OR pm.card_id = ?) AND t.user_id = ? AND t.type = 'expense' AND t.date >= ? AND t.date <= ?`,
-    args: [cardId, cardId, userId, period.start, period.end],
+          WHERE pm.card_id = ? AND t.user_id = ? AND t.type = 'expense' AND t.date >= ? AND t.date <= ?`,
+    args: [cardId, userId, period.start, period.end],
   });
   const totalPurchases = Number((txResult.rows[0] as { total: number }).total);
 
   const instRes = await db.execute({
     sql: `SELECT i.monthly_amount, i.start_date, i.total_months FROM installments i
           LEFT JOIN payment_methods pm ON pm.id = i.payment_method_id
-          WHERE (i.card_id = ? OR pm.card_id = ?) AND i.user_id = ?`,
-    args: [cardId, cardId, userId],
+          WHERE pm.card_id = ? AND i.user_id = ?`,
+    args: [cardId, userId],
   });
   let totalInstallments = 0;
   let committedInstallments = 0;

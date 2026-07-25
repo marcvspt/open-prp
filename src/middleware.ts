@@ -1,5 +1,5 @@
 import { clerkMiddleware, createClerkClient } from "@clerk/astro/server";
-import { UserRepository } from "@/lib/modules/users/repository";
+import { UserRepository } from "@/lib/modules/users/repository.ts";
 
 const clerkApi = createClerkClient({ secretKey: import.meta.env.CLERK_SECRET_KEY });
 
@@ -22,8 +22,8 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
       }
 
       context.locals.userId = user.id;
-    } else if (context.url.pathname !== "/login") {
-      return context.redirect("/login");
+    } else if (context.url.pathname.startsWith("/app") && context.url.pathname !== "/app/login") {
+      return context.redirect("/app/login");
     }
   } catch (e) {
     console.error("Middleware user resolution failed:", e);

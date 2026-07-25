@@ -1,0 +1,63 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import PageHeader from "@/components/app/ui/PageHeader.astro";
+import DataTable from "@/components/app/ui/DataTable.astro";
+import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
+import CrudModal from "@/components/app/ui/CrudModal.tsx";
+import { InstallmentRepository } from "@/lib/modules/installments/repository.ts";
+import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
+import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
+const userId = Astro.locals.userId;
+const activeOnly = Astro.url.searchParams.get("active_only") !== "false";
+const items = await new InstallmentRepository().findAll(userId, { active_only: activeOnly });
+const catRepo = new CategoryRepository();
+const instCategories = await catRepo.findBySections(userId, ["plazos"]);
+const pmRepo = new PaymentMethodRepository();
+const paymentMethods = await pmRepo.findAll(userId);
+const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm]));
+const catMap = Object.fromEntries(instCategories.map(c => [c.id, c]));
+const currencySymbol: Record<string, string> = { EUR: "€", MXN: "$", USD: "$" };
+const fields = [
+  { name: "start_date", label: "Fecha de inicio", type: "date" as const, required: true },
+  { name: "description", label: "Descripción", type: "text" as const, required: true },
+  { name: "total_amount", label: "Monto total", type: "number" as const, required: true, step: "0.01" },
+  { name: "monthly_amount", label: "Cuota mensual", type: "number" as const, required: true, step: "0.01" },
+  { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "€ EUR" }, { value: "MXN", label: "$ MXN" }, { value: "USD", label: "$ USD" }] },
+  { name: "total_months", label: "Total de meses", type: "number" as const, required: true, min: 1 },
+  { name: "payment_method_id", label: "Método de pago", type: "select" as const, options: [{ value: "", label: "Sin método" }, ...paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` }))] },
+  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...instCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
+];
+const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_amount: 0, currency: "MXN", total_months: 1, payment_method_id: "", category_id: "" };
+---
+
+<AppLayout title="Plazos - Open PRP">
+  <div data-module="installments" class="space-y-4">
+    <PageHeader title="Plazos / Cuotas" />
+    <div class="flex items-center justify-between gap-2 flex-wrap">
+      <a href={activeOnly ? "/app/installments?active_only=false" : "/app/installments"} class={`px-3 py-1.5 text-sm rounded-lg ${activeOnly ? "bg-primary-bg text-primary-text font-medium" : "bg-surface-alt text-nav hover:bg-nav-hover"}`}>
+        {activeOnly ? "Mostrando solo activos" : "Mostrando todos"}
+      </a>
+      <button data-create="installments" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nuevo plazo</button>
+    </div>
+    <DataTable columns={[{ label: "Fecha de inicio", align: "center" }, "Descripción", { label: "Total", align: "right" }, { label: "Cuota", align: "right" }, "Moneda", { label: "Progreso", align: "center" }, "Método", "Categoría", { label: "Acciones", align: "right" }]} emptyMessage="Sin plazos">
+      {items.map(i => (
+        <tr key={i.id} class="hover:bg-nav-hover">
+          <td class="px-4 py-3 text-center text-xs font-semibold">{i.start_date}</td>
+          <td class="px-4 py-3 font-medium">{i.description}</td>
+          <td class="px-4 py-3 text-right font-mono text-danger">{currencySymbol[i.currency] || "$"}{Number(i.total_amount).toFixed(2)}</td>
+          <td class="px-4 py-3 text-right font-mono text-danger">{currencySymbol[i.currency] || "$"}{Number(i.monthly_amount).toFixed(2)}</td>
+          <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[i.currency] || "$"} {i.currency || "MXN"}</td>
+          <td class="px-4 py-3 text-center"><span class={`text-xs px-2 py-0.5 rounded font-medium ${i.remaining_months <= 0 ? "bg-success-bg text-success-text" : i.remaining_months <= 3 ? "bg-warning-bg text-warning-text" : "bg-info-bg text-info-text"}`}>{i.remaining_months}/{i.total_months}</span></td>
+          <td class="px-4 py-3">{i.payment_method_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[i.payment_method_id] ? `${pmMap[i.payment_method_id].icon || "💳"} ${pmMap[i.payment_method_id].name}` : "-"}</span> : "-"}</td>
+          <td class="px-4 py-3">{i.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[i.category_id] ? `${catMap[i.category_id].icon || "📂"} ${catMap[i.category_id].name}` : "-"}</span> : "-"}</td>
+          <td class="px-4 py-3 text-right space-x-2">
+            <button data-edit-installments={i.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>
+            <button data-delete-installments={i.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">Eliminar</button>
+          </td>
+        </tr>
+      ))}
+    </DataTable>
+  </div>
+  <CrudModal client:load module="installments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="plazo" />
+  <DeleteHandler module="installments" label="plazo" />
+</AppLayout>

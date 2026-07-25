@@ -1,6 +1,6 @@
-import { getDb } from "@/lib/db/client";
-import { nextSeq } from "@/lib/db/utils";
-import type { NoteTag } from "@/lib/types/note";
+import { getDb } from "@/lib/db/client.ts";
+import { nextSeq } from "@/lib/db/utils.ts";
+import type { NoteTag } from "@/lib/types/note.ts";
 
 export class NoteTagRepository {
   async findAll(userId: string): Promise<NoteTag[]> {

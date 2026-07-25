@@ -2,8 +2,6 @@ export interface Transaction {
   id: string;
   user_id: string;
   category_id: string | null;
-  card_id: string | null;
-  installment_id: string | null;
   payment_method_id: string | null;
   type: "income" | "expense";
   amount: number;
@@ -18,8 +16,6 @@ export interface Transaction {
 
 export interface CreateTransactionInput {
   category_id?: string;
-  card_id?: string;
-  installment_id?: string;
   payment_method_id?: string;
   type: "income" | "expense";
   amount: number;
@@ -32,8 +28,6 @@ export interface CreateTransactionInput {
 
 export interface UpdateTransactionInput {
   category_id?: string;
-  card_id?: string;
-  installment_id?: string;
   payment_method_id?: string;
   type?: "income" | "expense";
   amount?: number;
