@@ -1,6 +1,6 @@
 # Open PRP
 
-**Personal Resource Planning** — Aplicación web para gestión financiera y organización personal. Centraliza transacciones, plazos, tarjetas de crédito, servicios, compras, despensa, notas, tareas, eventos, cashback y más en un solo lugar.
+**Personal Resource Planning** — Aplicación web para gestión financiera y organización personal. Centraliza el registro transacciones, plazos, tarjetas de crédito, servicios, compras, despensa, notas, tareas, eventos, cashback y más en un solo lugar.
 
 ## Tecnologías
 
