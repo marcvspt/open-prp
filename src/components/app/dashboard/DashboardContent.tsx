@@ -1,21 +1,13 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import type { CreditCard } from "@/lib/types/credit-card.ts";
-import type { CardMonthly, CalculatedDebt } from "@/lib/types/card-monthly.ts";
-import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment.ts";
+import { useState, useEffect, useMemo } from "react";
 import type { Transaction } from "@/lib/types/transaction.ts";
-import type { Cashback } from "@/lib/types/cashback.ts";
-import type { Installment } from "@/lib/types/installment.ts";
-import type { Event as AppEvent } from "@/lib/types/event.ts";
-import type { Task } from "@/lib/types/task.ts";
-import type { ShoppingItem } from "@/lib/types/shopping.ts";
-import type { PaymentMethod } from "@/lib/types/payment-method.ts";
-import type { Category } from "@/lib/types/category.ts";
-import { getMonthOptions, monthLabel, lastDayOfMonth, isInstallmentInMonth, daysUntil } from "@/lib/date.ts";
+import type { CardMonthly } from "@/lib/types/card-monthly.ts";
+import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
+import type { DashboardMonthData, CardWithDebt } from "@/lib/types/dashboard.ts";
+import { getMonthOptions, monthLabel, daysUntil } from "@/lib/date.ts";
+import { formatCurrency } from "@/lib/format.ts";
+import { fetchDashboardMonth, fetchDashboardHistory, payCardDebtFull, payCardDebtPartial, EMPTY_DASHBOARD_MONTH } from "@/lib/dashboard/api.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
-
-interface CardWithDebt extends CreditCard {
-  debt?: CardMonthly;
-}
+import StatCard from "@/components/app/dashboard/StatCard.tsx";
 
 function dueDaysBorder(days: number): string {
   if (days <= 0) return "border-border";
@@ -31,10 +23,6 @@ function dueDaysBadge(days: number): string {
   return "bg-success-bg text-success-text";
 }
 
-function formatCurrency(n: number): string {
-  return (n < 0 ? "-$" : "$") + Math.abs(n).toFixed(2);
-}
-
 export default function DashboardContent() {
   const months = useMemo(() => getMonthOptions(), []);
   const defaultMonth = months[0];
@@ -42,24 +30,18 @@ export default function DashboardContent() {
 
   const [activeTab, setActiveTab] = useState(() => typeof location !== "undefined" ? location.hash.replace("#", "") || defaultTab : defaultTab);
   const [currentMonth, setCurrentMonth] = useState(() => typeof location !== "undefined" ? new URLSearchParams(location.search).get("month") || defaultMonth : defaultMonth);
-  const [cards, setCards] = useState<CardWithDebt[]>([]);
-  const [services, setServices] = useState<RecurringPayment[]>([]);
-  const [cardDebts, setCardDebts] = useState<CardMonthly[]>([]);
-  const [servicePayments, setServicePayments] = useState<RecurringPaymentMonthly[]>([]);
+  const [monthData, setMonthData] = useState<DashboardMonthData>(EMPTY_DASHBOARD_MONTH);
   const [historyCard, setHistoryCard] = useState<CardMonthly[]>([]);
   const [historyService, setHistoryService] = useState<RecurringPaymentMonthly[]>([]);
-  const [txData, setTxData] = useState({ incomes: 0, expenses: 0, recentTx: [] as Transaction[] });
-  const [installmentTotal, setInstallmentTotal] = useState(0);
-  const [installments, setInstallments] = useState<Installment[]>([]);
-  const [calculatedDebts, setCalculatedDebts] = useState<Record<string, CalculatedDebt>>({});
-  const [upcomingEvents, setUpcomingEvents] = useState<AppEvent[]>([]);
-  const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
-  const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
-  const [activeShopping, setActiveShopping] = useState<ShoppingItem[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [payDialog, setPayDialog] = useState<{ debt: CardMonthly; card: CardWithDebt } | null>(null);
   const [payAmount, setPayAmount] = useState("");
+
+  const {
+    cards, services, cardDebts, servicePayments, upcomingEvents, pendingTasks,
+    overdueTasks, activeShopping, paymentMethods, categories, calculatedDebts,
+    incomes, expenses, recentTx, installmentTotal, installments,
+  } = monthData;
+  const txData = { incomes, expenses, recentTx };
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -72,144 +54,48 @@ export default function DashboardContent() {
 
   const handleMonthChange = (month: string) => setCurrentMonth(month);
 
-  const fetchMonthData = useCallback(async (month: string) => {
-    async function safeFetch<T>(url: string, fallback: T): Promise<T> {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) return fallback;
-        const json = await res.json();
-        const extracted = (json?.data as Record<string, unknown>)?.data ?? json?.data ?? json;
-        return extracted as T;
-      } catch { return fallback; }
-    }
-
-    const today = new Date().toLocaleDateString("sv");
-    const thirtyLater = new Date(Date.now() + 30 * 86400000).toLocaleDateString("sv");
-
-    const monthStart = `${month}-01`;
-    const monthEnd = lastDayOfMonth(month);
-    const [allCards, allSvcs, cdData, spData, txDataArr, instData, eventsData, tasksData, shoppingData, cbData, pmData, catData] = await Promise.all([
-      safeFetch<CardWithDebt[]>("/api/credit-cards", []),
-      safeFetch<RecurringPayment[]>("/api/recurring-payments", []),
-      safeFetch<CardMonthly[]>(`/api/card-monthly?month=${month}`, []),
-      safeFetch<RecurringPaymentMonthly[]>(`/api/recurring-payment-monthly?month=${month}`, []),
-      safeFetch<Transaction[]>(`/api/transactions?page=1&pageSize=100&date_from=${month}-01&date_to=${lastDayOfMonth(month)}`, []),
-      safeFetch<Installment[]>("/api/installments?active_only=true", []),
-      safeFetch<AppEvent[]>(`/api/events?date_from=${today}&date_to=${thirtyLater}&status=pending,confirmed&pageSize=20`, []),
-      safeFetch<Task[]>("/api/tasks?is_completed=false", []),
-      safeFetch<ShoppingItem[]>("/api/shopping?is_completed=false", []),
-      safeFetch<Cashback[]>(`/api/cashback?date_from=${monthStart}&date_to=${monthEnd}`, []),
-      safeFetch<PaymentMethod[]>("/api/payment-methods", []),
-      safeFetch<Category[]>("/api/categories", []),
-    ]);
-
-    setCards(allCards);
-    setServices(allSvcs);
-    setCardDebts(cdData);
-    setServicePayments(spData);
-    setUpcomingEvents(eventsData);
-    setPendingTasks(tasksData.filter(t => !t.due_date || t.due_date >= today));
-    setOverdueTasks(tasksData.filter(t => t.due_date && t.due_date < today));
-    setActiveShopping(shoppingData);
-    setPaymentMethods(pmData);
-    setCategories(catData);
-
-    const txIncomes = txDataArr.filter((t: Transaction) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0)
-      + cbData.reduce((s: number, cb: Cashback) => s + Number(cb.amount), 0);
-    const txExpenses = txDataArr.filter((t: Transaction) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
-    const instMonthTotal = instData
-      .filter((i: Installment) => isInstallmentInMonth(month, i.start_date, i.total_months))
-      .reduce((s: number, i: Installment) => s + Number(i.monthly_amount), 0);
-    const svcExpenses = spData.reduce((s: number, sp: RecurringPaymentMonthly) => s + Number(sp.amount), 0);
-
-    setInstallmentTotal(instMonthTotal);
-    setInstallments(instData);
-    setTxData({
-      incomes: txIncomes,
-      expenses: txExpenses + instMonthTotal + svcExpenses,
-      recentTx: txDataArr.slice(0, 5),
+  useEffect(() => {
+    let cancelled = false;
+    fetchDashboardMonth(currentMonth).then(data => {
+      if (!cancelled) setMonthData(data);
     });
+    return () => { cancelled = true; };
+  }, [currentMonth]);
 
-    const calcMap: Record<string, CalculatedDebt> = {};
-    for (const card of allCards) {
-      if (card.type !== "credit") continue;
-      const res = await safeFetch<CalculatedDebt | null>(`/api/card-monthly/calculate?cardId=${card.id}&month=${month}`, null);
-      if (res) calcMap[card.id] = res;
-    }
-    setCalculatedDebts(calcMap);
+  useEffect(() => {
+    if (activeTab !== "historial") return;
+    fetchDashboardHistory().then(h => {
+      setHistoryCard(h.card);
+      setHistoryService(h.service);
+    });
+  }, [activeTab]);
 
-    const freshDebts = await safeFetch<CardMonthly[]>(`/api/card-monthly?month=${month}`, []);
-    setCardDebts(freshDebts);
-  }, []);
-
-  const fetchHistory = useCallback(async () => {
-    async function safeFetch<T>(url: string, fallback: T): Promise<T> {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) return fallback;
-        const json = await res.json();
-        return (json?.data ?? json) as T;
-      } catch { return fallback; }
-    }
-
-    const [cdHist, spHist] = await Promise.all([
-      safeFetch<CardMonthly[]>("/api/card-monthly/history", []),
-      safeFetch<RecurringPaymentMonthly[]>("/api/recurring-payment-monthly/history", []),
-    ]);
-    setHistoryCard(cdHist);
-    setHistoryService(spHist);
-  }, []);
-
-  useEffect(() => { fetchMonthData(currentMonth); }, [currentMonth, fetchMonthData]);
-  useEffect(() => { if (activeTab === "historial") fetchHistory(); }, [activeTab, fetchHistory]);
+  function markDebtPaid(id: string) {
+    setMonthData(prev => ({
+      ...prev,
+      cardDebts: prev.cardDebts.map(d => d.id === id ? { ...d, is_paid: true, paid_at: new Date().toISOString() } : d),
+    }));
+  }
 
   async function handlePayFull(id: string) {
-    try {
-      const res = await fetch("/api/card-monthly", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, is_paid: true }),
-      });
-      if (res.ok) {
-        setCardDebts(prev => prev.map(d => d.id === id ? { ...d, is_paid: true, paid_at: new Date().toISOString() } : d));
-      }
-    } catch {}
+    if (await payCardDebtFull(id)) markDebtPaid(id);
     setPayDialog(null);
   }
 
-  async function handlePayPartial(id: string, cardId: string, month: string, statementBalance: number, paidAmount: number, closingDay: number | null) {
-    const remaining = statementBalance - paidAmount;
-    if (remaining <= 0) {
-      handlePayFull(id);
-      return;
-    }
-    const pm = paymentMethods.find(p => p.card_id === cardId);
-    const saldoCat = categories.find(c => c.name === "Saldo de tarjeta");
-    try {
-      await fetch("/api/card-monthly", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, is_paid: true }),
-      });
-      const [y, m] = month.split("-").map(Number);
-      const nextY = m === 12 ? y + 1 : y;
-      const nextM = m === 12 ? 1 : m + 1;
-      const day = closingDay ?? 1;
-      const date = `${nextY}-${String(nextM).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      await fetch("/api/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "expense",
-          amount: remaining,
-          payment_method_id: pm?.id ?? null,
-          category_id: saldoCat?.id ?? null,
-          description: `Saldo pendiente ${month}`,
-          date,
-        }),
-      });
-      setCardDebts(prev => prev.map(d => d.id === id ? { ...d, is_paid: true, paid_at: new Date().toISOString() } : d));
-    } catch {}
+  async function handlePayPartial() {
+    if (!payDialog) return;
+    const amt = parseFloat(payAmount);
+    if (!(amt > 0 && amt <= payDialog.debt.statement_balance)) return;
+    const ok = await payCardDebtPartial({
+      id: payDialog.debt.id,
+      month: payDialog.debt.month,
+      statementBalance: payDialog.debt.statement_balance,
+      paidAmount: amt,
+      closingDay: payDialog.card.closing_day,
+      paymentMethodId: paymentMethods.find(p => p.card_id === payDialog.card.id)?.id ?? null,
+      categoryId: categories.find(c => c.name === "Saldo de tarjeta")?.id ?? null,
+    });
+    if (ok) markDebtPaid(payDialog.debt.id);
     setPayDialog(null);
   }
 
@@ -249,28 +135,11 @@ export default function DashboardContent() {
       {activeTab === "resumen" && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <p className="text-xs text-string-muted uppercase tracking-wider">Ingresos</p>
-              <p className="text-xl font-bold mt-1 text-success">{formatCurrency(txData.incomes)}</p>
-            </div>
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <p className="text-xs text-string-muted uppercase tracking-wider">Gastos</p>
-              <p className="text-xl font-bold mt-1 text-danger">{formatCurrency(txData.expenses)}</p>
-            </div>
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <p className="text-xs text-string-muted uppercase tracking-wider">Balance</p>
-              <p className={`text-xl font-bold mt-1 ${txData.incomes - txData.expenses >= 0 ? "text-success" : "text-danger"}`}>
-                {formatCurrency(txData.incomes - txData.expenses)}
-              </p>
-            </div>
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <p className="text-xs text-string-muted uppercase tracking-wider">Tarjetas</p>
-              <p className="text-xl font-bold mt-1 text-primary">{cards.length}</p>
-            </div>
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <p className="text-xs text-string-muted uppercase tracking-wider">Plazos</p>
-              <p className="text-xl font-bold mt-1 text-warning">{formatCurrency(installmentTotal)}</p>
-            </div>
+            <StatCard label="Ingresos" value={formatCurrency(txData.incomes)} colorClass="text-success" />
+            <StatCard label="Gastos" value={formatCurrency(txData.expenses)} colorClass="text-danger" />
+            <StatCard label="Balance" value={formatCurrency(txData.incomes - txData.expenses)} colorClass={txData.incomes - txData.expenses >= 0 ? "text-success" : "text-danger"} />
+            <StatCard label="Tarjetas" value={String(cards.length)} colorClass="text-primary" />
+            <StatCard label="Plazos" value={formatCurrency(installmentTotal)} colorClass="text-warning" />
           </div>
           {installmentTotal > 0 && (
             <p className="text-xs text-string-muted -mt-4">* Incluye {formatCurrency(installmentTotal)} en plazos y {formatCurrency(servicePayments.reduce((s, sp) => s + Number(sp.amount), 0))} en pagos recurrentes</p>
@@ -278,25 +147,15 @@ export default function DashboardContent() {
 
           {/* Organización */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <p className="text-xs text-string-muted uppercase tracking-wider">Tareas pendientes</p>
-              <p className="text-xl font-bold mt-1 text-sky-600">{pendingTasks.length}</p>
-              {overdueTasks.length > 0 && (
-                <p className="text-xs text-danger mt-0.5">{overdueTasks.length} vencidas</p>
-              )}
-            </div>
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <p className="text-xs text-string-muted uppercase tracking-wider">Próximos eventos</p>
-              <p className="text-xl font-bold mt-1 text-rose-600">{upcomingEvents.length}</p>
-            </div>
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <p className="text-xs text-string-muted uppercase tracking-wider">Compras activas</p>
-              <p className="text-xl font-bold mt-1 text-amber-600">{activeShopping.length}</p>
-            </div>
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <p className="text-xs text-string-muted uppercase tracking-wider">Pagos recurrentes</p>
-              <p className="text-xl font-bold mt-1 text-purple-600">{services.length}</p>
-            </div>
+            <StatCard
+              label="Tareas pendientes"
+              value={String(pendingTasks.length)}
+              colorClass="text-sky-600"
+              sub={overdueTasks.length > 0 ? <p className="text-xs text-danger mt-0.5">{overdueTasks.length} vencidas</p> : undefined}
+            />
+            <StatCard label="Próximos eventos" value={String(upcomingEvents.length)} colorClass="text-rose-600" />
+            <StatCard label="Compras activas" value={String(activeShopping.length)} colorClass="text-amber-600" />
+            <StatCard label="Pagos recurrentes" value={String(services.length)} colorClass="text-purple-600" />
           </div>
 
           {cardDebts.length > 0 && (
@@ -469,18 +328,9 @@ export default function DashboardContent() {
           ) : (
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-                  <p className="text-xs text-string-muted uppercase tracking-wider">Plazos activos</p>
-                  <p className="text-xl font-bold mt-1 text-primary">{installments.length}</p>
-                </div>
-                <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-                  <p className="text-xs text-string-muted uppercase tracking-wider">Restante por pagar</p>
-                  <p className="text-xl font-bold mt-1 text-danger">{formatCurrency(installments.reduce((s, i) => s + Number(i.remaining_months) * Number(i.monthly_amount), 0))}</p>
-                </div>
-                <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-                  <p className="text-xs text-string-muted uppercase tracking-wider">Total de cuotas</p>
-                  <p className="text-xl font-bold mt-1 text-warning">{installments.reduce((s, i) => s + Number(i.total_months), 0)}</p>
-                </div>
+                <StatCard label="Plazos activos" value={String(installments.length)} colorClass="text-primary" />
+                <StatCard label="Restante por pagar" value={formatCurrency(installments.reduce((s, i) => s + Number(i.remaining_months) * Number(i.monthly_amount), 0))} colorClass="text-danger" />
+                <StatCard label="Total de cuotas" value={String(installments.reduce((s, i) => s + Number(i.total_months), 0))} colorClass="text-warning" />
               </div>
               <div className="space-y-3">
                 {installments.map(i => {
@@ -697,12 +547,7 @@ export default function DashboardContent() {
                     className="flex-1 block rounded-lg border border-border px-3 py-2 text-sm"
                   />
                   <button
-                    onClick={() => {
-                      const amt = parseFloat(payAmount);
-                      if (amt > 0 && amt <= payDialog.debt.statement_balance) {
-                        handlePayPartial(payDialog.debt.id, payDialog.card.id, payDialog.debt.month, payDialog.debt.statement_balance, amt, payDialog.card.closing_day);
-                      }
-                    }}
+                    onClick={handlePayPartial}
                     disabled={!payAmount || parseFloat(payAmount) <= 0}
                     className="px-4 py-2 text-sm font-medium rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 transition-colors"
                   >

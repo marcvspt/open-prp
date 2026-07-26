@@ -3,7 +3,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import { Show, SignInButton, SignUpButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import Sidebar from "@/components/app/ui/Sidebar.astro";
-import MenuIcon from "@/assets/MenuIcon.svg";
+import MenuIcon from "@/assets/menu.svg";
 
 const { title } = Astro.props;
 const currentPath = Astro.url.pathname;
@@ -61,32 +61,8 @@ const currentPath = Astro.url.pathname;
 </BaseLayout>
 
 <script>
-  document.addEventListener("click", function (e) {
-    const area = (e.target as HTMLElement).closest("[data-user-area]");
-    if (!area) return;
-    const btn = area.querySelector("button");
-    if (btn && btn !== e.target && !btn.contains(e.target as Node)) {
-      btn.click();
-    }
-  });
+  import { initSidebar, initUserAreaForward } from "@/lib/ui/sidebar.ts";
 
-  const sidebar = document.getElementById("sidebar")!;
-  const overlay = document.getElementById("sidebar-overlay")!;
-  const toggleBtn = document.getElementById("sidebar-toggle")!;
-
-  function openSidebar() {
-    sidebar.classList.remove("-translate-x-full");
-    overlay.classList.remove("hidden");
-  }
-
-  function closeSidebar() {
-    sidebar.classList.add("-translate-x-full");
-    overlay.classList.add("hidden");
-  }
-
-  toggleBtn.addEventListener("click", openSidebar);
-  overlay.addEventListener("click", closeSidebar);
-
-  const navLinks = sidebar.querySelectorAll("nav a");
-  navLinks.forEach((link) => link.addEventListener("click", closeSidebar));
+  initSidebar();
+  initUserAreaForward();
 </script>

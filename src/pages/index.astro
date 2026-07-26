@@ -1,11 +1,46 @@
 ---
 import LandingLayout from "@/layouts/LandingLayout.astro";
 import Hero from "@/components/landing/Hero.astro";
-import DollarIcon from "@/assets/DollarIcon.svg";
-import CreditCardIcon from "@/assets/CreditCardIcon.svg";
-import ClipboardIcon from "@/assets/ClipboardIcon.svg";
-import RecurringIcon from "@/assets/RecurringIcon.svg";
-import PackageIcon from "@/assets/PackageIcon.svg";
+import FeatureCard from "@/components/landing/FeatureCard.astro";
+import DollarIcon from "@/assets/dollar.svg";
+import CreditCardIcon from "@/assets/credit-card.svg";
+import ClipboardIcon from "@/assets/clipboard.svg";
+import RecurringIcon from "@/assets/recurring.svg";
+import PackageIcon from "@/assets/package.svg";
+import CartIcon from "@/assets/cart.svg";
+
+const FEATURES_INFO = [
+  {
+    icon: DollarIcon,
+    title: "Transacciones",
+    description: "Registra ingresos y gastos con categorías personalizadas.",
+  },
+  {
+    icon: CreditCardIcon,
+    title: "Tarjetas de crédito",
+    description: "Controla tus plásticos, fechas de cierre y pagos mensuales.",
+  },
+  {
+    icon: ClipboardIcon,
+    title: "Plazos",
+    description: "Divide compras en cuotas y da seguimiento a cada una.",
+  },
+  {
+    icon: RecurringIcon,
+    title: "Pagos recurrentes",
+    description: "Suscripciones y servicios con registro mensual automático.",
+  },
+  {
+    icon: PackageIcon,
+    title: "Despensa",
+    description: "Inventario de productos, fechas de vencimiento y compras.",
+  },
+  {
+    icon: CartIcon,
+    title: "Compras",
+    description: "Lista de compras con historial y categorías.",
+  },
+];
 ---
 
 <LandingLayout>
@@ -15,48 +50,11 @@ import PackageIcon from "@/assets/PackageIcon.svg";
       <h2 class="text-center text-3xl font-bold text-string sm:text-4xl">Todo lo que necesitas</h2>
       <p class="mt-4 text-center text-string-muted">Gestiona cada aspecto de tus finanzas desde un solo panel.</p>
       <div class="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        <div class="rounded-xl border border-border bg-panel p-6">
-          <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-bg">
-            <DollarIcon class="h-6 w-6 text-primary" />
-          </div>
-          <h3 class="text-lg font-semibold text-string">Transacciones</h3>
-          <p class="mt-2 text-sm text-string-muted">Registra ingresos y gastos con categorías personalizadas.</p>
-        </div>
-        <div class="rounded-xl border border-border bg-panel p-6">
-          <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-bg">
-            <CreditCardIcon class="h-6 w-6 text-primary" />
-          </div>
-          <h3 class="text-lg font-semibold text-string">Tarjetas de crédito</h3>
-          <p class="mt-2 text-sm text-string-muted">Controla tus plásticos, fechas de cierre y pagos mensuales.</p>
-        </div>
-        <div class="rounded-xl border border-border bg-panel p-6">
-          <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-bg">
-            <ClipboardIcon class="h-6 w-6 text-primary" />
-          </div>
-          <h3 class="text-lg font-semibold text-string">Plazos</h3>
-          <p class="mt-2 text-sm text-string-muted">Divide compras en cuotas y da seguimiento a cada una.</p>
-        </div>
-        <div class="rounded-xl border border-border bg-panel p-6">
-          <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-bg">
-            <RecurringIcon class="h-6 w-6 text-primary" />
-          </div>
-          <h3 class="text-lg font-semibold text-string">Pagos recurrentes</h3>
-          <p class="mt-2 text-sm text-string-muted">Suscripciones y servicios con registro mensual automático.</p>
-        </div>
-        <div class="rounded-xl border border-border bg-panel p-6">
-          <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-bg">
-            <PackageIcon class="h-6 w-6 text-primary" />
-          </div>
-          <h3 class="text-lg font-semibold text-string">Despensa</h3>
-          <p class="mt-2 text-sm text-string-muted">Inventario de productos, fechas de vencimiento y compras.</p>
-        </div>
-        <div class="rounded-xl border border-border bg-panel p-6">
-          <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-bg">
-            <ClipboardIcon class="h-6 w-6 text-primary" />
-          </div>
-          <h3 class="text-lg font-semibold text-string">Tareas</h3>
-          <p class="mt-2 text-sm text-string-muted">Organiza tus pendientes con prioridades y fechas límite.</p>
-        </div>
+        {FEATURES_INFO.map(({ icon: Icon, title, description }) => (
+          <FeatureCard title={title} description={description}>
+            <Icon class="h-6 w-6 text-primary" />
+          </FeatureCard>
+        ))}
       </div>
     </div>
   </section>

@@ -3,6 +3,7 @@ import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
+import FilterLinks from "@/components/app/ui/FilterLinks.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { TransactionRepository } from "@/lib/modules/transactions/repository.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
@@ -27,6 +28,11 @@ const fields = [
   { name: "date", label: "Fecha", type: "date" as const, required: true },
 ];
 const defaultForm = { type: "expense", description: "", amount: 0, currency: "MXN", payment_method_id: "", category_id: "", date: "" };
+const txFilters = [
+  { value: "all", label: "Todas", href: "/app/transactions" },
+  { value: "income", label: "Ingresos", href: "/app/transactions?type=income" },
+  { value: "expense", label: "Gastos", href: "/app/transactions?type=expense" },
+];
 const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm]));
 const catMap = Object.fromEntries(txCategories.map(c => [c.id, c]));
 ---
@@ -35,12 +41,7 @@ const catMap = Object.fromEntries(txCategories.map(c => [c.id, c]));
   <div data-module="transactions" class="space-y-4">
     <PageHeader title="Transacciones" />
     <div class="flex items-center justify-between gap-2 flex-wrap">
-      <div class="flex gap-2 flex-wrap">
-        {[["all", "Todas"], ["income", "Ingresos"], ["expense", "Gastos"]].map(([v, l]) => (
-          <a href={v === "all" ? "/app/transactions" : `/app/transactions?type=${v}`}
-             class={`px-3 py-1.5 text-sm rounded-lg ${filterType === v ? "bg-primary-bg text-primary-text font-medium" : "bg-surface-alt text-nav hover:bg-nav-hover"}`}>{l}</a>
-        ))}
-      </div>
+      <FilterLinks filters={txFilters} active={filterType} />
       <button data-create="transactions" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nueva transacción</button>
     </div>
     <DataTable columns={["Fecha", "Descripción", { label: "Monto", align: "right" }, "Moneda", "Método", "Tipo", "Categoría", { label: "Acciones", align: "right" }]} emptyMessage="Sin transacciones">

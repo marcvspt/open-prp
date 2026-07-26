@@ -2,104 +2,126 @@
 import { Show, UserButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import CurrencySelect from "@/components/app/ui/CurrencySelect.tsx";
-import HomeIcon from "@/assets/HomeIcon.svg";
-import DollarIcon from "@/assets/DollarIcon.svg";
-import CreditCardIcon from "@/assets/CreditCardIcon.svg";
-import ClipboardIcon from "@/assets/ClipboardIcon.svg";
-import RecurringIcon from "@/assets/RecurringIcon.svg";
-import WalletIcon from "@/assets/WalletIcon.svg";
-import CartIcon from "@/assets/CartIcon.svg";
-import PenIcon from "@/assets/PenIcon.svg";
-import CalendarIcon from "@/assets/CalendarIcon.svg";
-import PackageIcon from "@/assets/PackageIcon.svg";
-import TagIcon from "@/assets/TagIcon.svg";
+import HomeIcon from "@/assets/home.svg";
+import DollarIcon from "@/assets/dollar.svg";
+import CreditCardIcon from "@/assets/credit-card.svg";
+import ClipboardIcon from "@/assets/clipboard.svg";
+import RecurringIcon from "@/assets/recurring.svg";
+import WalletIcon from "@/assets/wallet.svg";
+import CartIcon from "@/assets/cart.svg";
+import PenIcon from "@/assets/pen.svg";
+import CalendarIcon from "@/assets/calendar.svg";
+import PackageIcon from "@/assets/package.svg";
+import TagIcon from "@/assets/tag.svg";
+import GithubIcon from "@/assets/github.svg";
 
 export interface Props {
   currentPath: string;
 }
 
 const { currentPath } = Astro.props;
+
+interface AppLink {
+  url: string;
+  label: string;
+  icon: typeof HomeIcon;
+}
+
+const APP_LINKS: { title?: string; links: AppLink[] }[] = [
+  {
+    links: [{ url: "/app/dashboard", label: "Dashboard", icon: HomeIcon }],
+  },
+  {
+    title: "Finanzas",
+    links: [
+      { url: "/app/transactions", label: "Transacciones", icon: DollarIcon },
+      { url: "/app/credit-cards", label: "Tarjetas", icon: CreditCardIcon },
+      { url: "/app/installments", label: "Plazos", icon: ClipboardIcon },
+      {
+        url: "/app/recurring-payments",
+        label: "Pagos recurrentes",
+        icon: RecurringIcon,
+      },
+      { url: "/app/cashback", label: "Cashback", icon: DollarIcon },
+      {
+        url: "/app/payment-methods",
+        label: "Métodos de pago",
+        icon: WalletIcon,
+      },
+    ],
+  },
+  {
+    title: "Organización",
+    links: [
+      { url: "/app/shopping", label: "Compras", icon: CartIcon },
+      { url: "/app/tasks", label: "Tareas", icon: ClipboardIcon },
+      { url: "/app/notes", label: "Notas", icon: PenIcon },
+      { url: "/app/events", label: "Eventos", icon: CalendarIcon },
+      { url: "/app/pantry", label: "Despensa", icon: PackageIcon },
+    ],
+  },
+  {
+    title: "General",
+    links: [{ url: "/app/categories", label: "Categorías", icon: TagIcon }],
+  },
+];
 ---
 
-<aside id="sidebar" class="fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-border bg-panel transition-transform duration-300 -translate-x-full lg:translate-x-0">
-  <div class="flex h-16 items-center gap-1 px-4 border-b border-border shrink-0">
+<aside
+  id="sidebar"
+  class="fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-border bg-panel transition-transform duration-300 -translate-x-full lg:translate-x-0"
+>
+  <div
+    class="flex h-16 items-center gap-1 px-4 border-b border-border shrink-0"
+  >
     <span class="text-lg font-bold">OPRP</span>
   </div>
 
   <nav class="flex-1 space-y-1 overflow-y-auto p-2 text-sm">
-    <a href="/app/dashboard" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath === "/app/dashboard" ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <HomeIcon class="w-5 h-5 shrink-0" />
-      <span>Dashboard</span>
-    </a>
-
-    <div class="pt-3 pb-1 px-3 text-xs font-semibold text-string-muted uppercase tracking-wider">Finanzas</div>
-    <a href="/app/transactions" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/transactions") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <DollarIcon class="w-5 h-5 shrink-0" />
-      <span>Transacciones</span>
-    </a>
-    <a href="/app/credit-cards" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/credit-cards") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <CreditCardIcon class="w-5 h-5 shrink-0" />
-      <span>Tarjetas</span>
-    </a>
-    <a href="/app/installments" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/installments") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <ClipboardIcon class="w-5 h-5 shrink-0" />
-      <span>Plazos</span>
-    </a>
-    <a href="/app/recurring-payments" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/recurring-payments") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <RecurringIcon class="w-5 h-5 shrink-0" />
-      <span>Pagos recurrentes</span>
-    </a>
-    <a href="/app/cashback" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/cashback") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <DollarIcon class="w-5 h-5 shrink-0" />
-      <span>Cashback</span>
-    </a>
-    <a href="/app/payment-methods" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/payment-methods") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <WalletIcon class="w-5 h-5 shrink-0" />
-      <span>Métodos de pago</span>
-    </a>
-
-    <div class="pt-3 pb-1 px-3 text-xs font-semibold text-string-muted uppercase tracking-wider">Organización</div>
-    <a href="/app/shopping" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/shopping") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <CartIcon class="w-5 h-5 shrink-0" />
-      <span>Compras</span>
-    </a>
-    <a href="/app/tasks" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/tasks") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <ClipboardIcon class="w-5 h-5 shrink-0" />
-      <span>Tareas</span>
-    </a>
-    <a href="/app/notes" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/notes") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <PenIcon class="w-5 h-5 shrink-0" />
-      <span>Notas</span>
-    </a>
-    <a href="/app/events" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/events") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <CalendarIcon class="w-5 h-5 shrink-0" />
-      <span>Eventos</span>
-    </a>
-    <a href="/app/pantry" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/pantry") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <PackageIcon class="w-5 h-5 shrink-0" />
-      <span>Despensa</span>
-    </a>
-
-    <div class="pt-3 pb-1 px-3 text-xs font-semibold text-string-muted uppercase tracking-wider">General</div>
-    <a href="/app/categories" class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith("/app/categories") ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}>
-      <TagIcon class="w-5 h-5 shrink-0" />
-      <span>Categorías</span>
-    </a>
+    {
+      APP_LINKS.map((group) => (
+        <>
+          {group.title && (
+            <div class="pt-3 pb-1 px-3 text-xs font-semibold text-string-muted uppercase tracking-wider">
+              {group.title}
+            </div>
+          )}
+          {group.links.map(({ url, label, icon: Icon }) => (
+            <a
+              href={url}
+              class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith(url) ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}
+            >
+              <Icon class="w-5 h-5 shrink-0" />
+              <span>{label}</span>
+            </a>
+          ))}
+        </>
+      ))
+    }
   </nav>
 
   <div class="border-t border-border p-3 space-y-2 shrink-0">
-    <a href="https://github.com/marcvspt/open-prp" target="_blank" rel="noopener" class="flex items-center gap-3 px-3 py-2 text-xs text-string-muted hover:text-primary transition-colors">
+    <a
+      href="https://github.com/marcvspt/open-prp"
+      target="_blank"
+      rel="noopener"
+      class="flex items-center gap-3 px-3 py-2 text-xs text-string-muted hover:text-primary transition-colors"
+    >
+      <GithubIcon class="w-4 h-4 shrink-0" />
       GitHub
     </a>
-    <div>
+    <div class="px-3">
       <ThemeToggle client:load />
     </div>
-    <div>
+    <div class="px-3">
       <CurrencySelect client:load />
     </div>
     <Show when="signed-in">
-      <div class="flex items-center gap-3 px-3 py-2 cursor-pointer" data-user-area>
-        <UserButton afterSignOutUrl="/app/login" client:load />
+      <div
+        class="flex items-center gap-3 px-3 py-2 cursor-pointer"
+        data-user-area
+      >
+        <UserButton/>
         <span class="text-xs text-string-muted">Mi cuenta</span>
       </div>
     </Show>

@@ -3,6 +3,7 @@ import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import ToggleHandler from "@/components/app/ui/ToggleHandler.astro";
+import FilterLinks from "@/components/app/ui/FilterLinks.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { TaskRepository } from "@/lib/modules/tasks/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
@@ -24,17 +25,17 @@ const fields = [
   { name: "category", label: "Categoría", type: "select" as const, options: catOptions },
 ];
 const defaultForm = { description: "", due_date: "", priority: 1, category: "" };
+const taskFilters = [
+  { value: "all", label: "Todas", href: "/app/tasks" },
+  { value: "pending", label: "Pendientes", href: "/app/tasks?filter=pending" },
+  { value: "done", label: "Completadas", href: "/app/tasks?filter=done" },
+];
 ---
 
 <AppLayout title="Tareas - Open PRP">
   <div data-module="tasks" class="space-y-4">
     <PageHeader title="Tareas" createLabel="Nueva tarea" createModule="tasks" />
-    <div class="flex gap-2 flex-wrap">
-      {[["all", "Todas"], ["pending", "Pendientes"], ["done", "Completadas"]].map(([v, l]) => (
-        <a href={v === "all" ? "/tasks" : `/tasks?filter=${v}`}
-           class={`px-3 py-1.5 text-sm rounded-lg ${filter === v ? "bg-primary-bg text-primary-text font-medium" : "bg-surface-alt text-nav hover:bg-nav-hover"}`}>{l}</a>
-      ))}
-    </div>
+    <FilterLinks filters={taskFilters} active={filter} />
     {items.length === 0 ? (
       <div class="text-string-muted text-sm">Sin tareas</div>
     ) : (

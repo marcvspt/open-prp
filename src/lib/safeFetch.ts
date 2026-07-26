@@ -17,3 +17,11 @@ export async function safeFetch<T>(url: string, init?: RequestInit): Promise<T |
     return init ? false : undefined;
   }
 }
+
+/** Fetches a list endpoint, normalizing both plain arrays and PaginatedResponse (`{ data: [...] }`). */
+export async function fetchList<T>(url: string): Promise<T[]> {
+  const data = await safeFetch<unknown>(url);
+  if (Array.isArray(data)) return data as T[];
+  const rows = (data as { data?: unknown } | undefined)?.data;
+  return Array.isArray(rows) ? (rows as T[]) : [];
+}

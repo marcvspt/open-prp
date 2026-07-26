@@ -9,10 +9,6 @@ interface PantryCategory {
   color: string | null;
 }
 
-function formatCurrency(n: number): string {
-  return "$" + n.toFixed(2);
-}
-
 export default function ShoppingList() {
   const [activeTab, setActiveTab] = useState<"lista" | "historial">(() =>
     typeof location !== "undefined"
