@@ -35,9 +35,9 @@ export class CreditCardRepository {
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: `INSERT INTO credit_cards (id, user_id, name, type, max_limit, closing_day, due_day, color, seq, created_at, updated_at)
+      sql: `INSERT INTO credit_cards (id, user_id, name, type, max_limit, cutoff_day, payment_due_day, color, seq, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, data.name, data.type, data.max_limit ?? null, data.closing_day ?? null, data.due_day ?? null, data.color ?? null, seq, now, now],
+      args: [id, userId, data.name, data.type, data.max_limit ?? null, data.cutoff_day ?? null, data.payment_due_day ?? null, data.color ?? null, seq, now, now],
     });
 
     const pmSeq = await nextSeq("payment_methods");
@@ -58,8 +58,8 @@ export class CreditCardRepository {
     if (data.name !== undefined) { sets.push("name = ?"); args.push(data.name); }
     if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }
     if (data.max_limit !== undefined) { sets.push("max_limit = ?"); args.push(data.max_limit); }
-    if (data.closing_day !== undefined) { sets.push("closing_day = ?"); args.push(data.closing_day); }
-    if (data.due_day !== undefined) { sets.push("due_day = ?"); args.push(data.due_day); }
+    if (data.cutoff_day !== undefined) { sets.push("cutoff_day = ?"); args.push(data.cutoff_day); }
+    if (data.payment_due_day !== undefined) { sets.push("payment_due_day = ?"); args.push(data.payment_due_day); }
     if (data.color !== undefined) { sets.push("color = ?"); args.push(data.color ?? null); }
 
     if (sets.length === 0) return existing;

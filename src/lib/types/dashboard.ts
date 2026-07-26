@@ -42,7 +42,7 @@ export interface PayCardDebtPartialArgs {
   month: string;
   statementBalance: number;
   paidAmount: number;
-  closingDay: number | null;
+  cutoffDay: number | null;
   paymentMethodId: string | null;
   categoryId: string | null;
 }

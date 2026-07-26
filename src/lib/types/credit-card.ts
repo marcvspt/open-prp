@@ -6,8 +6,8 @@ export interface CreditCard {
   name: string;
   type: CardType;
   max_limit: number | null;
-  closing_day: number | null;
-  due_day: number | null;
+  cutoff_day: number | null;
+  payment_due_day: number | null;
   color: string | null;
   created_at: string;
   updated_at: string;
@@ -17,8 +17,8 @@ export interface CreditCardInput {
   name: string;
   type: CardType;
   max_limit?: number | null;
-  closing_day?: number | null;
-  due_day?: number | null;
+  cutoff_day?: number | null;
+  payment_due_day?: number | null;
   color?: string;
 }
 

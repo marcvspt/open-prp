@@ -128,7 +128,7 @@ export async function payCardDebtPartial(args: PayCardDebtPartialArgs): Promise<
   const [year, monthNum] = args.month.split("-").map(Number);
   const nextYear = monthNum === 12 ? year + 1 : year;
   const nextMonth = monthNum === 12 ? 1 : monthNum + 1;
-  const day = args.closingDay ?? 1;
+  const day = args.cutoffDay ?? 1;
   const date = `${nextYear}-${String(nextMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
   return safeFetch("/api/transactions", {

@@ -91,7 +91,7 @@ export default function DashboardContent() {
       month: payDialog.debt.month,
       statementBalance: payDialog.debt.statement_balance,
       paidAmount: amt,
-      closingDay: payDialog.card.closing_day,
+      cutoffDay: payDialog.card.cutoff_day,
       paymentMethodId: paymentMethods.find(p => p.card_id === payDialog.card.id)?.id ?? null,
       categoryId: categories.find(c => c.name === "Saldo de tarjeta")?.id ?? null,
     });
@@ -164,7 +164,7 @@ export default function DashboardContent() {
               <div className="space-y-2">
                   {cardDebts.map(d => {
                     const card = cards.find(c => c.id === d.card_id);
-                    const dueIn = card && card.due_day != null ? daysUntil(card.due_day) : 0;
+                    const dueIn = card && card.payment_due_day != null ? daysUntil(card.payment_due_day) : 0;
                     return (
                     <div key={d.id} className="flex items-center justify-between text-sm py-1">
                       <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export default function DashboardContent() {
           ) : (
             cards.map(card => {
               const debt = getCardDebt(card.id);
-              const dueIn = card.due_day != null ? daysUntil(card.due_day) : 0;
+              const dueIn = card.payment_due_day != null ? daysUntil(card.payment_due_day) : 0;
               const calc = card.type === "credit" ? calculatedDebts[card.id] : null;
               const committed = calc ? calc.total_committed : (debt?.statement_balance ?? 0);
               const available = card.max_limit != null ? card.max_limit - committed : 0;
@@ -301,15 +301,15 @@ export default function DashboardContent() {
                     </div>
                     )}
                     <div>
-                      <p className="text-xs text-string-muted">{isCredit ? "Cierre / Pago" : "Tipo"}</p>
-                      <p className="font-mono font-medium">{card.closing_day != null && card.due_day != null ? `${card.closing_day} / ${card.due_day}` : typeLabel}</p>
+                      <p className="text-xs text-string-muted">{isCredit ? "Corte / Pago" : "Tipo"}</p>
+                      <p className="font-mono font-medium">{card.cutoff_day != null && card.payment_due_day != null ? `${card.cutoff_day} / ${card.payment_due_day}` : typeLabel}</p>
                     </div>
                   </div>
                   {isCredit && debt && !debt.is_paid && (
                     <div className="mt-3 flex items-center gap-2 text-xs">
-                      <span className="text-string-muted">Vencimiento:</span>
+                      <span className="text-string-muted">Límite de pago:</span>
                       <span className={`font-medium ${dueDaysBadge(dueIn)} px-2 py-0.5 rounded`}>
-                        {dueIn <= 0 ? "Vencido" : `En ${dueIn} días (día ${card.due_day})`}
+                        {dueIn <= 0 ? "Vencido" : `En ${dueIn} días (día ${card.payment_due_day})`}
                       </span>
                     </div>
                   )}
