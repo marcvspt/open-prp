@@ -10,7 +10,6 @@ export const GET: APIRoute = async (context) => {
 
   const params = getSearchParams(context);
   const installments = await repo.findAll(uid, {
-    card_id: params.card_id,
     active_only: params.active_only === "true",
   });
 

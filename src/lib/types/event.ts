@@ -9,7 +9,6 @@ export interface Event {
   is_all_day: boolean;
   status: "pending" | "confirmed" | "cancelled" | "completed";
   color: string | null;
-  recurrence_rule: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,7 +22,6 @@ export interface CreateEventInput {
   is_all_day?: boolean;
   status?: "pending" | "confirmed" | "cancelled" | "completed";
   color?: string;
-  recurrence_rule?: string;
 }
 
 export interface UpdateEventInput {
@@ -35,7 +33,6 @@ export interface UpdateEventInput {
   is_all_day?: boolean;
   status?: "pending" | "confirmed" | "cancelled" | "completed";
   color?: string;
-  recurrence_rule?: string;
 }
 
 export interface EventFilter {

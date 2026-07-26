@@ -56,13 +56,13 @@ export class EventRepository {
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: `INSERT INTO events (id, user_id, category_id, description, location, start_date, end_date, is_all_day, status, color, recurrence_rule, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO events (id, user_id, category_id, description, location, start_date, end_date, is_all_day, status, color, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id, userId, data.category_id ?? null, data.description, data.location ?? null,
         data.start_date, data.end_date ?? null,
         data.is_all_day ? 1 : 0, data.status ?? "pending", data.color ?? null,
-        data.recurrence_rule ?? null, seq, now, now,
+        seq, now, now,
       ],
     });
 
@@ -86,7 +86,6 @@ export class EventRepository {
     if (data.is_all_day !== undefined) { sets.push("is_all_day = ?"); args.push(data.is_all_day ? 1 : 0); }
     if (data.status !== undefined) { sets.push("status = ?"); args.push(data.status); }
     if (data.color !== undefined) { sets.push("color = ?"); args.push(data.color ?? null); }
-    if (data.recurrence_rule !== undefined) { sets.push("recurrence_rule = ?"); args.push(data.recurrence_rule ?? null); }
 
     if (sets.length === 0) return existing;
 

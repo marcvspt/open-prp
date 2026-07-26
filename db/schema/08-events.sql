@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS events (
   is_all_day INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','confirmed','cancelled','completed')),
   color TEXT,
-  recurrence_rule TEXT,
   seq INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))

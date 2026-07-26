@@ -8,8 +8,6 @@ export interface Transaction {
   currency: string;
   description: string | null;
   date: string;
-  is_recurring: boolean;
-  recurrence_rule: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -22,8 +20,6 @@ export interface CreateTransactionInput {
   currency?: string;
   description?: string;
   date: string;
-  is_recurring?: boolean;
-  recurrence_rule?: string;
 }
 
 export interface UpdateTransactionInput {
@@ -34,8 +30,6 @@ export interface UpdateTransactionInput {
   currency?: string;
   description?: string;
   date?: string;
-  is_recurring?: boolean;
-  recurrence_rule?: string;
 }
 
 export interface TransactionFilter {

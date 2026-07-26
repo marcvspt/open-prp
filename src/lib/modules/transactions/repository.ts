@@ -35,13 +35,12 @@ export class TransactionRepository {
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: `INSERT INTO transactions (id, user_id, type, amount, description, category_id, payment_method_id, date, currency, is_recurring, recurrence_rule, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO transactions (id, user_id, type, amount, description, category_id, payment_method_id, date, currency, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id, userId, data.type, data.amount, data.description ?? null,
         data.category_id || null, data.payment_method_id || null,
         data.date, data.currency ?? "USD",
-        data.is_recurring ? 1 : 0, data.recurrence_rule ?? null,
         seq, now, now,
       ],
     });
@@ -65,8 +64,6 @@ export class TransactionRepository {
     if (data.date !== undefined) { sets.push("date = ?"); args.push(data.date); }
     if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id || null); }
     if (data.currency !== undefined) { sets.push("currency = ?"); args.push(data.currency); }
-    if (data.is_recurring !== undefined) { sets.push("is_recurring = ?"); args.push(data.is_recurring ? 1 : 0); }
-    if (data.recurrence_rule !== undefined) { sets.push("recurrence_rule = ?"); args.push(data.recurrence_rule ?? null); }
 
     if (sets.length === 0) return existing;
 
