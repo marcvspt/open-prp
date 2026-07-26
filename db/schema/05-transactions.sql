@@ -10,8 +10,6 @@ CREATE TABLE IF NOT EXISTS transactions (
   description TEXT,
   payment_method_id TEXT REFERENCES payment_methods(id) ON DELETE SET NULL,
   date TEXT NOT NULL,
-  is_recurring INTEGER NOT NULL DEFAULT 0,
-  recurrence_rule TEXT,
   seq INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))

@@ -334,7 +334,8 @@ export default function DashboardContent() {
               </div>
               <div className="space-y-3">
                 {installments.map(i => {
-                  const card = cards.find(c => c.id === i.card_id);
+                  const pm = paymentMethods.find(p => p.id === i.payment_method_id);
+                  const card = pm?.card_id ? cards.find(c => c.id === pm.card_id) : undefined;
                   const remainingAmount = Number(i.remaining_months) * Number(i.monthly_amount);
                   const totalAmount = Number(i.total_amount);
                   return (
