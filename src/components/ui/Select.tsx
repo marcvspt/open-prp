@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useId } from "react";
-import ChevronIcon from "@/assets/ChevronIcon.svg?react";
+import ChevronIcon from "@/assets/chevron.svg?react";
 
 export interface SelectOption {
   value: string;
@@ -92,7 +92,7 @@ export default function Select({ value, onChange, options, placeholder, required
         aria-activedescendant={highlighted >= 0 ? `${id}-opt-${highlighted}` : undefined}
         disabled={disabled}
         onClick={() => setOpen(p => !p)}
-        className={`mt-1 flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
+        className={`flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary"}
           ${open ? "border-primary ring-1 ring-primary" : "border-border"}
           ${!selected && placeholder ? "text-string-muted" : "text-string"}

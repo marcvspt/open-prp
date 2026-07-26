@@ -1,35 +1,69 @@
-## Development
+## Desarrollo
 
-When starting the dev server, use background mode:
+Al iniciar el servidor de desarrollo, usa el modo background:
 
 ```
 astro dev --background
 ```
 
-Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
+Gestiona el servidor en background con `astro dev stop`, `astro dev status` y `astro dev logs`.
 
-## Project Structure
+## Estructura del proyecto
 
-- **Routing**: `/` → landing page pública con CTA a `/app`. `/app` → redirects to `/app/dashboard` (logged in) or `/app/login` (not logged in). Middleware protects `/app/*` (except `/app/login`). `/app/login` redirects to `/app/dashboard` if already authenticated.
-- **Pages**: each module has a page in `src/pages/app/*.astro` and API routes in `src/pages/api/*/`
-- **Modules** (in `src/lib/modules/`): `transactions`, `card-monthly`, `cashback`, `credit-cards`, `events`, `installments`, `notes`, `pantry`, `payment-methods`, `recurring-payments`, `shopping`, `tasks`, `users`
-- **React components**: use `client:load` directive for hydration
-- **All imports**: use `@/` alias (e.g. `@/lib/db/client`, `@/components/ui/Select`)
-- **Shared vs app UI**: `src/components/ui/` for components used across apps (ThemeToggle, Select, MultiSelect, ErrorBoundary); `src/components/app/ui/` for app-only UI (CrudModal, DataTable, FormModal, etc.)
+- **Ruteo**: `/` → landing page pública con CTA a `/app`. `/app` → redirige a `/app/dashboard` (logueado) o `/app/login` (no logueado). El middleware protege `/app/*` (excepto `/app/login`). `/app/login` redirige a `/app/dashboard` si ya está autenticado.
+- **Páginas**: cada módulo tiene una página en `src/pages/app/*.astro` y rutas API en `src/pages/api/*/`
+- **Módulos** (en `src/lib/modules/`): `transactions`, `card-monthly`, `cashback`, `credit-cards`, `events`, `installments`, `notes`, `pantry`, `payment-methods`, `recurring-payments`, `shopping`, `tasks`, `users`
+- **Componentes React**: usan la directiva `client:load` para la hidratación
+- **Todos los imports**: usan el alias `@/` **con extensión explícita del archivo** (ej. `@/lib/db/client.ts`, `@/components/ui/Select.tsx`, `@/assets/home.svg`)
+- **Tipos**: todos los tipos de dominio/compartidos viven en `src/lib/types/` (un archivo por dominio, ej. `dashboard.ts`, `transaction.ts`). Nunca definir tipos de dominio inline en componentes ni en módulos de API.
+- **Separación lógica vs UI**: la lógica sin dependencias de framework vive en `src/lib/` para poder reutilizarla si la capa de UI migra algún día:
+  - `src/lib/ui/` — lógica de browser (vanilla TS): `theme.ts` (get/save/apply/resolve + `initThemeSync`), `currency.ts`, `sidebar.ts` (`initSidebar`, `initUserAreaForward`), `tabs.ts` (`initTabs`, cambiador de tabs genérico sincronizado con el hash de la URL)
+  - `src/lib/dashboard/api.ts` — carga de datos del dashboard (`fetchDashboardMonth`, `fetchDashboardHistory`) y mutaciones (`payCardDebtFull`, `payCardDebtPartial`) + `EMPTY_DASHBOARD_MONTH`
+  - `src/lib/format.ts` — `formatCurrency`
+  - `src/lib/safeFetch.ts` — `safeFetch` (nunca lanza excepciones) + `fetchList` (normaliza arrays planos y `PaginatedResponse`)
+- **Tags `<script>` de Astro**: importar funciones init desde `src/lib/ui/` en vez de JS imperativo inline (Astro los empaqueta como módulos)
+- **UI compartida vs UI de app**: `src/components/ui/` para componentes usados en toda la app (ThemeToggle, Select, MultiSelect, ErrorBoundary); `src/components/app/ui/` para UI exclusiva de la app (CrudModal, DataTable, FormModal, FilterLinks, etc.)
+
+### Assets
+
+- 18 archivos de iconos SVG en `src/assets/` (nombres en kebab-case minúsculas: `home.svg`, `sun.svg`, `dollar.svg`, `credit-card.svg`, etc.)
+- Se importan vía el alias `@/assets/*` con `vite-plugin-svgr`; el identificador importado se mantiene en PascalCase con sufijo `Icon` (ej. `import HomeIcon from "@/assets/home.svg"`)
+- En archivos `.tsx`, usar el sufijo `?react` para obtener un componente React (ej. `import SunIcon from "@/assets/sun.svg?react"`)
+
+### Layouts
+
+- `BaseLayout.astro` — `<html>`, `<head>`, meta tags, favicon, script inline de modo oscuro y lógica del título de página (`"Open PRP | {title}"` o `"Open PRP"`) compartidos
+- `AppLayout.astro` — extiende BaseLayout; envuelve el contenido con Sidebar + main + pantalla de login para no autenticados
+- `LandingLayout.astro` — extiende BaseLayout; envuelve el contenido con Header + slot + Footer
+
+### Sidebar
+
+- Fija `w-64` en escritorio, oculta fuera de pantalla (`-translate-x-full`) en móvil
+- Drawer deslizante en móvil: hamburguesa flotante arriba a la izquierda, backdrop con overlay, se cierra al hacer clic en un link de navegación
+- Sección inferior: link de GitHub, ThemeToggle, CurrencySelect, UserButton (de `@clerk/astro/components`) + texto "Mi cuenta" con clic reenviado
+- El área del logo muestra "OPRP" (sin icono)
+- Los links de navegación son data-driven: constante `APP_LINKS` (array de grupos `{ title?, links: [{ href, label, icon }] }`) renderizada con `.map()` anidados. El estado activo usa `currentPath.startsWith(href)`. Para añadir una sección/link nuevo, basta con agregar una entrada al array.
 
 ## TypeScript
 
-- **No `any`** types. SQL bind args use `(string | number | boolean | null)[]`.
-- **Catch blocks**: omit unused error parameter (`catch {`), or use `catch (e: unknown)` and log.
-- **CategoryType**: `"global" | "personal"` (no `"family"` or `"both"`)
-- **PaymentMethodType**: `"global" | "personal" | "card"` (no `"family"` or `"both"`)
-- No `scope` or `family_id` in any type or repository.
+- **Sin tipos `any`**. Los bind args de SQL usan `(string | number | boolean | null)[]`.
+- **Bloques catch**: omitir el parámetro de error si no se usa (`catch {`), o usar `catch (e: unknown)` y registrarlo.
+- **CategoryType**: `"global" | "personal"` (sin `"family"` ni `"both"`)
+- **PaymentMethodType**: `"global" | "personal" | "card"` (sin `"family"` ni `"both"`)
+- Sin `scope` ni `family_id` en ningún tipo ni repositorio.
 
-## Database
+## Base de datos
 
-### Schema & Seeding
+### Schema y seed
 
 Schema SQL: `db/schema/*.sql` — archivos modulares (uno por módulo de negocio), con prefijo numérico para orden de creación. Cada archivo usa `CREATE TABLE IF NOT EXISTS` e `CREATE INDEX IF NOT EXISTS` para ser idempotente.
+
+**IMPORTANTE — Cambios a la DB en producción**: el aplicativo ya está en producción. Cuando un cambio requiera modificar la estructura de la base de datos:
+
+1. Entregar al usuario la sentencia SQL lista para ejecutar manualmente en su base de datos de producción (ej. `ALTER TABLE`, `CREATE INDEX`, etc.).
+2. Actualizar también los archivos `db/schema/*.sql` con el cambio, reflejando el estado final deseado.
+
+Los archivos de schema representan el estado final para un **despliegue nuevo** (base de datos desde cero), por lo que NO deben contener `ALTER TABLE` ni migraciones incrementales — solo `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS` con la estructura definitiva.
 
 - Tabla `categories` tiene `UNIQUE(user_id, name)` para evitar duplicados.
 - Tabla `events` y `tasks` no tienen campo `title` — solo `description`.
@@ -37,64 +71,83 @@ Schema SQL: `db/schema/*.sql` — archivos modulares (uno por módulo de negocio
 
 - Seed: `pnpm db:seed` (carga `.env` + `.env.development`)
 - Seed producción: `pnpm db:seed:prod` (carga `.env` + `.env.production`)
-- El script usa `@libsql/client` (Node version) para ejecución directa.
+- El script usa `@libsql/client` (versión Node) para ejecución directa.
 
-### Repository layer
+### Capa de repositorios
 
-Each module in `src/lib/modules/*/repository.ts` uses `getDb()` from `src/lib/db/client.ts` which returns a raw `@libsql/client/web` instance. All queries use `db.execute({ sql, args })` with `?` bind parameters to prevent SQL injection.
+Cada módulo en `src/lib/modules/*/repository.ts` usa `getDb()` de `src/lib/db/client.ts`, que devuelve una instancia cruda de `@libsql/client/web`. Todas las queries usan `db.execute({ sql, args })` con bind parameters `?` para prevenir inyección SQL.
 
-- **Categories**: `create()` checks for existing name before inserting; if exists, returns existing (API prevents with 409).
-- **Recurring Payments**: `upsertMonthly()` snapshots `category_id` and `payment_method_id` from the template at creation time.
-- **findAll() on recurring-payments**: LEFT JOIN con `categories` y `payment_methods` para traer `category_name`, `payment_method_name`, `payment_method_icon`.
+- **Categories**: `create()` verifica si el nombre ya existe antes de insertar; si existe, devuelve el existente (la API lo previene con 409).
+- **Recurring Payments**: `upsertMonthly()` hace snapshot de `category_id` y `payment_method_id` desde la plantilla al momento de creación.
+- **findAll() en recurring-payments**: LEFT JOIN con `categories` y `payment_methods` para traer `category_name`, `payment_method_name`, `payment_method_icon`.
 
-Common helpers:
-- `nextSeq("table_name")` — gets `COALESCE(MAX(seq), 0) + 1` for a table via raw SQL
-- `getDb()` — creates/returns a singleton `@libsql/client/web` client
+Helpers comunes:
+- `nextSeq("table_name")` — obtiene `COALESCE(MAX(seq), 0) + 1` de una tabla vía SQL crudo
+- `getDb()` — crea/devuelve un cliente singleton de `@libsql/client/web`
 
-## Auth & Middleware
+## Auth y middleware
 
-- Uses `@clerk/astro` with `clerkMiddleware` in `src/middleware.ts`
-- **Clerk user sync**: on every request, `needsSync()` checks if `email`/`display_name` are empty OR `updated_at` is older than 5 min. If so, calls Clerk API (`users.getUser`) and updates `email`/`display_name` in the local DB.
-- React hooks from Clerk: import from `@clerk/astro/react` (e.g. `useAuth`), NOT from `@clerk/clerk-react` (not installed).
-- The `UserButton` + "Mi cuenta" area is clickable as a whole via a forwarded click script.
+- Usa `@clerk/astro` con `clerkMiddleware` en `src/middleware.ts`
+- **Sincronización de usuario Clerk**: en cada request, `needsSync()` verifica si `email`/`display_name` están vacíos O si `updated_at` tiene más de 5 min. Si es así, llama a la API de Clerk (`users.getUser`) y actualiza `email`/`display_name` en la DB local.
+- Los hooks de React de Clerk se importan desde `@clerk/astro/react` (ej. `useAuth`), NO desde `@clerk/clerk-react` (no instalado).
+- `UserButton` de `@clerk/astro/components` en el Sidebar con `afterSignOutUrl="/app/login"` y `client:load`.
 
-## UI / Components
+## UI / Componentes
 
-### Select & MultiSelect
+### Tema / Colores
 
-- `Select.tsx` — combobox accesible con teclado. Used throughout the app.
-- `MultiSelect.tsx` — multi-selection with checkboxes and "Todas las secciones" option.
-- **Dark mode**: selected options use `bg-indigo-100/50 dark:bg-indigo-900/30` instead of hardcoded light colors.
+- Toggle de modo oscuro vía `ThemeToggle.tsx`, guarda la preferencia en localStorage.
+- Las variables CSS en `global.css` manejan el tema claro/oscuro mediante tokens `@theme`.
+- **Colores semánticos**: `primary`, `success`, `danger`, `warning`, `info` — cada uno con variantes `-hover`, `-text`, `-bg`, `-border`; los valores oscuros se definen en la clase `.dark`.
+- **Colores base**: `surface`, `surface-alt`, `panel`, `border`, `border-light`, `string`, `string-muted`, `nav`, `nav-hover`, `nav-active`, `nav-active-text`, `overlay`.
+- Los componentes de Clerk se adaptan automáticamente vía `color-scheme: light` en `:root` y `color-scheme: dark` en `.dark`.
+
+### Select y MultiSelect
+
+- `Select.tsx` — combobox accesible con teclado. Usado en toda la app.
+- `MultiSelect.tsx` — selección múltiple con checkboxes y opción "Todas las secciones".
 
 ### CrudModal
 
-- `CrudModal.tsx` renders a generic CRUD form modal. Triggered by `data-create="{module}"` and `data-edit-{module}="{id}"` attributes.
-- The `data-create` attribute uses `=` syntax (e.g. `data-create="categories"`), NOT hyphenated (`data-create-categories`).
-- After save, calls `window.location.reload()`. Components using `history.replaceState` must preserve `location.pathname` (not fallback to `"/"`) to avoid reloading to root.
+- `CrudModal.tsx` renderiza un modal de formulario CRUD genérico. Se dispara con los atributos `data-create="{module}"` y `data-edit-{module}="{id}"`.
+- El atributo `data-create` usa sintaxis con `=` (ej. `data-create="categories"`), NO con guiones (`data-create-categories`).
+- Después de guardar, llama a `window.location.reload()`. Los componentes que usan `history.replaceState` deben preservar `location.pathname` (no usar `"/"` como fallback) para evitar recargar a la raíz.
 
-### Events & Tasks (cards layout)
+### PageHeader
 
-- **Events** and **Tasks** pages use a grid of cards instead of DataTable.
-- **Events** have no `title` field — only `description`. Cards show: description, status badge (with color + icon), start/end dates, category with icon, location.
-- **Tasks** have no `title` field — only `description`. Cards show: checkbox, description, priority badge (with color + icon), category with icon, due date.
+- `PageHeader.astro` renderiza título + botón de crear opcional. Cuando la página tiene filtros debajo del header, el botón de crear debe moverse a la fila de filtros (usar `flex items-center justify-between gap-2 flex-wrap`) en vez de estar en el header.
 
-### Theme
+### Eventos y Tareas (layout de cards)
 
-- Dark mode toggle via `ThemeToggle.tsx`, stores preference in localStorage.
-- CSS variables in `global.css` handle light/dark theming.
-- Clerk components adapt automatically via `color-scheme: light` on `:root` and `color-scheme: dark` on `.dark`.
+- Las páginas de **Eventos** y **Tareas** usan un grid de cards en vez de DataTable.
+- Los **Eventos** no tienen campo `title` — solo `description`. Las cards muestran: descripción, badge de estado (con color + icono), fechas de inicio/fin, categoría con icono, ubicación.
+- Las **Tareas** no tienen campo `title` — solo `description`. Las cards muestran: checkbox, descripción, badge de prioridad (con color + icono), categoría con icono, fecha de vencimiento.
 
-## Deployment
+### Dashboard
 
-Adaptador de Netlify configurado en `astro.config.mjs`. Conectar el repo en Netlify y configurar variables de entorno en el dashboard.
+- `DashboardContent.tsx` renderiza 6 tabs (Resumen, Tarjetas de crédito, Plazos, Eventos, Tareas, Historial) con el MonthSelector a la derecha. No contiene lógica de fetch — todos los datos vienen de `src/lib/dashboard/api.ts` en un único estado `monthData` (`DashboardMonthData`).
+- Las cards de resumen usan `StatCard.tsx` (`label`, `value`, `colorClass`, `sub` opcional).
+- La barra de tabs usa `flex items-end justify-between border-b border-border pb-0`; el MonthSelector tiene `pb-2` para alinearse con la línea del borde.
+- Los links de filtro de las páginas usan rutas con prefijo `/app/` (ej. `/app/transactions?type=expense`) y el componente compartido `FilterLinks.astro` (`filters: { value, label, href }[]` + `active`).
+
+### Landing Page
+
+- `LandingLayout.astro` envuelve Header + slot + Footer.
+- `Header.astro`: los links de texto son data-driven vía la constante `LANDING_LINKS` (`{ href, label, external? }[]`) renderizada con `.map()`; luego CTA "Ir a la app", icono de GitHub, ThemeToggle.
+- Cards de características: `FeatureCard.astro` (props `title` + `description`, icono vía slot) renderizadas desde el array `FEATURES_INFO` en `index.astro`.
+- `Footer.astro`: link de GitHub + link de marcvspt.tech.
+
+## Despliegue
+
+Adaptador de Netlify configurado en `astro.config.mjs`. Conectar el repo en Netlify y configurar las variables de entorno en el dashboard.
 
 El cliente de BD (`@libsql/client/web`) funciona en Netlify Functions sin cambios.
 
-## Documentation
+## Documentación
 
-Full documentation: https://docs.astro.build
+Documentación completa: https://docs.astro.build
 
-Consult these guides before working on related tasks:
+Consulta estas guías antes de trabajar en tareas relacionadas:
 
 - [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
 - [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)

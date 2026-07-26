@@ -116,9 +116,9 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
             <div key={f.name}>
               <label className="block text-sm font-medium text-string">{f.label}</label>
               {f.type === "multiselect" ? (
-                <MultiSelect value={String(form[f.name] ?? "[]")} onChange={v => setVal(f.name, v)} options={f.options ?? []} placeholder={f.placeholder} />
+                <div className="mt-1"><MultiSelect value={String(form[f.name] ?? "[]")} onChange={v => setVal(f.name, v)} options={f.options ?? []} placeholder={f.placeholder} /></div>
               ) : f.type === "select" ? (
-                <Select value={String(form[f.name] ?? "")} onChange={v => setVal(f.name, v)} options={f.options ?? []} required={f.required} />
+                <div className="mt-1"><Select value={String(form[f.name] ?? "")} onChange={v => setVal(f.name, v)} options={f.options ?? []} required={f.required} /></div>
               ) : f.type === "textarea" ? (
                 <textarea value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} rows={4} className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm" placeholder={f.placeholder} required={f.required} />
               ) : f.type === "checkbox" ? (

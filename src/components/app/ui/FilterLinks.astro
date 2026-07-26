@@ -1,0 +1,31 @@
+---
+export interface FilterLink {
+  value: string;
+  label: string;
+  href: string;
+}
+
+export interface Props {
+  filters: FilterLink[];
+  active: string;
+}
+
+const { filters, active } = Astro.props;
+---
+
+<div class="flex gap-2 flex-wrap">
+  {
+    filters.map(({ value, label, href }) => (
+      <a
+        href={href}
+        class={`px-3 py-1.5 text-sm rounded-lg ${
+          active === value
+            ? "bg-primary-bg text-primary-text font-medium"
+            : "bg-surface-alt text-nav hover:bg-nav-hover"
+        }`}
+      >
+        {label}
+      </a>
+    ))
+  }
+</div>

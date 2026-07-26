@@ -3,6 +3,7 @@ import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
+import FilterLinks from "@/components/app/ui/FilterLinks.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { InstallmentRepository } from "@/lib/modules/installments/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
@@ -28,15 +29,17 @@ const fields = [
   { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...instCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
 ];
 const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_amount: 0, currency: "MXN", total_months: 1, payment_method_id: "", category_id: "" };
+const instFilters = [
+  { value: "active", label: "Solo activos", href: "/app/installments" },
+  { value: "all", label: "Todos", href: "/app/installments?active_only=false" },
+];
 ---
 
 <AppLayout title="Plazos - Open PRP">
   <div data-module="installments" class="space-y-4">
     <PageHeader title="Plazos / Cuotas" />
     <div class="flex items-center justify-between gap-2 flex-wrap">
-      <a href={activeOnly ? "/app/installments?active_only=false" : "/app/installments"} class={`px-3 py-1.5 text-sm rounded-lg ${activeOnly ? "bg-primary-bg text-primary-text font-medium" : "bg-surface-alt text-nav hover:bg-nav-hover"}`}>
-        {activeOnly ? "Mostrando solo activos" : "Mostrando todos"}
-      </a>
+      <FilterLinks filters={instFilters} active={activeOnly ? "active" : "all"} />
       <button data-create="installments" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nuevo plazo</button>
     </div>
     <DataTable columns={[{ label: "Fecha de inicio", align: "center" }, "Descripción", { label: "Total", align: "right" }, { label: "Cuota", align: "right" }, "Moneda", { label: "Progreso", align: "center" }, "Método", "Categoría", { label: "Acciones", align: "right" }]} emptyMessage="Sin plazos">

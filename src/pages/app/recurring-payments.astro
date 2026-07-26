@@ -66,33 +66,8 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", payment_meth
 </AppLayout>
 
 <script>
-  const container = document.querySelector(".tabs-container");
-  if (container) {
-    const buttons = container.querySelectorAll("[data-tab]");
-    const contents = container.querySelectorAll("[data-tab-content]");
+  import { initTabs } from "@/lib/ui/tabs.ts";
 
-    function activateTab(tabId) {
-      buttons.forEach(function(btn) {
-        var isActive = btn.getAttribute("data-tab") === tabId;
-        btn.classList.toggle("text-primary", isActive);
-        btn.classList.toggle("border-primary", isActive);
-        btn.classList.toggle("text-string-muted", !isActive);
-        btn.classList.toggle("border-transparent", !isActive);
-      });
-      contents.forEach(function(c) {
-        c.classList.toggle("hidden", c.getAttribute("data-tab-content") !== tabId);
-      });
-      history.replaceState(null, "", location.pathname + "#" + tabId + location.search);
-    }
-
-    buttons.forEach(function(btn) {
-      btn.addEventListener("click", function() {
-        var tabId = btn.getAttribute("data-tab");
-        activateTab(tabId);
-      });
-    });
-
-    var initialTab = location.hash.replace("#", "") || "monthly";
-    activateTab(initialTab);
-  }
+  const container = document.querySelector<HTMLElement>(".tabs-container");
+  if (container) initTabs(container, "monthly");
 </script>

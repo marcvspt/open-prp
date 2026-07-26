@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useId } from "react";
-import ChevronIcon from "@/assets/ChevronIcon.svg?react";
+import ChevronIcon from "@/assets/chevron.svg?react";
 
 export interface MultiSelectOption {
   value: string;
@@ -112,7 +112,7 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
         aria-controls={`${id}-listbox`}
         disabled={disabled}
         onClick={() => setOpen(p => !p)}
-        className={`mt-1 flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
+        className={`flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary"}
           ${open ? "border-primary ring-1 ring-primary" : "border-border"}
           ${selectedValues.length === 0 && !allSelected ? "text-string-muted" : "text-string"}

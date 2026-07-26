@@ -15,11 +15,11 @@ function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
 
-function getPeriod(closingDay: number, year: number, month: number): { start: string; end: string } {
-  const endDay = Math.min(closingDay, daysInMonth(year, month));
+function getPeriod(cutoffDay: number, year: number, month: number): { start: string; end: string } {
+  const endDay = Math.min(cutoffDay, daysInMonth(year, month));
   const prevMonth = month === 1 ? 12 : month - 1;
   const prevYear = month === 1 ? year - 1 : year;
-  const startDay = Math.min(closingDay + 1, daysInMonth(prevYear, prevMonth));
+  const startDay = Math.min(cutoffDay + 1, daysInMonth(prevYear, prevMonth));
   return {
     start: `${prevYear}-${String(prevMonth).padStart(2, "0")}-${String(startDay).padStart(2, "0")}`,
     end: `${year}-${String(month).padStart(2, "0")}-${String(endDay).padStart(2, "0")}`,
@@ -30,15 +30,15 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
   const db = getDb();
 
   const cardRes = await db.execute({
-    sql: "SELECT closing_day FROM credit_cards WHERE id = ? AND user_id = ?",
+    sql: "SELECT cutoff_day FROM credit_cards WHERE id = ? AND user_id = ?",
     args: [cardId, userId],
   });
-  const card = cardRes.rows[0] as { closing_day: number | null } | undefined;
+  const card = cardRes.rows[0] as { cutoff_day: number | null } | undefined;
   if (!card) throw new Error("Card not found");
 
   const [year, mon] = month.split("-").map(Number);
-  const closingDay = card.closing_day ?? daysInMonth(year, mon);
-  const period = getPeriod(closingDay, year, mon);
+  const cutoffDay = card.cutoff_day ?? daysInMonth(year, mon);
+  const period = getPeriod(cutoffDay, year, mon);
 
   const txResult = await db.execute({
     sql: `SELECT COALESCE(SUM(t.amount), 0) AS total FROM transactions t
