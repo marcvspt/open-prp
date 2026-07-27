@@ -15,7 +15,23 @@ const LANDING_LINKS = [
     <a href="/" class="flex items-center gap-2">
       <span class="text-lg font-bold text-primary">Open PRP</span>
     </a>
-    <nav class="flex items-center gap-6">
+    <button
+      id="mobile-menu-btn"
+      class="flex lg:hidden items-center justify-center w-8 h-8 text-string-muted hover:text-string transition-colors cursor-pointer"
+      aria-label="Menú"
+      aria-expanded="false"
+    >
+      <svg id="hamburger-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+      <svg id="close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+    <nav
+      id="mobile-menu"
+      class="hidden lg:flex items-center gap-6"
+    >
       {
         LANDING_LINKS.map(({ href, label, external }) => (
           <a
@@ -45,4 +61,76 @@ const LANDING_LINKS = [
       <ThemeToggle client:load />
     </nav>
   </div>
+  <div
+    id="mobile-dropdown"
+    class="lg:hidden overflow-hidden transition-all duration-300 max-h-0 border-transparent"
+  >
+    <div class="border-t border-border bg-surface/95 backdrop-blur-sm px-6 py-4 flex flex-col items-center space-y-3 text-center">
+      {LANDING_LINKS.map(({ href, label, external }) => (
+        <a
+          href={href}
+          {...(external ? { target: "_blank", rel: "noopener" } : {})}
+          class="text-sm text-string-muted hover:text-string transition-colors"
+        >
+          {label}
+        </a>
+      ))}
+      <div class="flex flex-col items-center space-y-3 pt-2">
+        <a
+          href="https://github.com/marcvspt/open-prp"
+          target="_blank"
+          rel="noopener"
+          class="flex items-center gap-2 text-sm text-string-muted hover:text-string transition-colors"
+          aria-label="GitHub"
+        >
+          <GithubIcon class="h-5 w-5" />
+          GitHub
+        </a>
+        <a
+          href="/app"
+          class="inline-block rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
+        >
+          Login
+        </a>
+        <div class="w-36"><ThemeToggle client:load /></div>
+      </div>
+    </div>
+  </div>
 </header>
+
+<style>
+  #mobile-dropdown.open {
+    max-height: 300px;
+    border-color: var(--color-border);
+  }
+</style>
+
+<script>
+  const btn = document.getElementById("mobile-menu-btn");
+  const dropdown = document.getElementById("mobile-dropdown");
+  const hamburger = document.getElementById("hamburger-icon");
+  const closeIcon = document.getElementById("close-icon");
+  if (btn && dropdown && hamburger && closeIcon) {
+    function open() {
+      btn.setAttribute("aria-expanded", "true");
+      dropdown.classList.add("open");
+      hamburger.classList.add("hidden");
+      closeIcon.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+    }
+    function close() {
+      btn.setAttribute("aria-expanded", "false");
+      dropdown.classList.remove("open");
+      hamburger.classList.remove("hidden");
+      closeIcon.classList.add("hidden");
+      document.body.style.overflow = "";
+    }
+    btn.addEventListener("click", () => {
+      const expanded = btn.getAttribute("aria-expanded") === "true";
+      expanded ? close() : open();
+    });
+    dropdown.querySelectorAll("a").forEach(a => {
+      a.addEventListener("click", close);
+    });
+  }
+</script>
