@@ -87,7 +87,7 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
   const rpRes = await db.execute({
     sql: `SELECT COALESCE(SUM(rpm.amount), 0) AS total FROM recurring_payment_monthly rpm
           JOIN payment_methods pm ON pm.id = rpm.payment_method_id
-          WHERE pm.card_id = ? AND rpm.user_id = ? AND rpm.month = ? AND rpm.is_paid = 1`,
+          WHERE pm.card_id = ? AND rpm.user_id = ? AND rpm.month = ? AND rpm.is_paid = 1 AND rpm.type = 'expense'`,
     args: [cardId, userId, month],
   });
   const totalRecurring = Number((rpRes.rows[0] as { total: number }).total);

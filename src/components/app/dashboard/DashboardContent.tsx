@@ -144,8 +144,11 @@ export default function DashboardContent() {
             <StatCard label="Tarjetas" value={String(cards.length)} colorClass="text-primary" />
             <StatCard label="Plazos" value={formatCurrency(installmentTotal)} colorClass="text-warning" />
           </div>
-          {installmentTotal > 0 && (
-            <p className="text-xs text-string-muted -mt-4">* Incluye {formatCurrency(installmentTotal)} en plazos y {formatCurrency(servicePayments.reduce((s, sp) => s + Number(sp.amount), 0))} en pagos recurrentes</p>
+          {(installmentTotal > 0 || servicePayments.length > 0) && (
+            <p className="text-xs text-string-muted -mt-4">* Incluye {formatCurrency(installmentTotal)} en plazos
+              {servicePayments.filter(sp => sp.type === "expense").length > 0 && ` y ${formatCurrency(servicePayments.filter(sp => sp.type === "expense").reduce((s, sp) => s + Number(sp.amount), 0))} en gastos recurrentes`}
+              {servicePayments.filter(sp => sp.type === "income").length > 0 && `, más ${formatCurrency(servicePayments.filter(sp => sp.type === "income").reduce((s, sp) => s + Number(sp.amount), 0))} en ingresos recurrentes`}
+            </p>
           )}
 
           {/* Organización */}
@@ -192,11 +195,32 @@ export default function DashboardContent() {
             </div>
           )}
 
-          {servicePayments.length > 0 && (
+          {servicePayments.filter(sp => sp.type === "income").length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-string mb-3">Pagos recurrentes del mes</h2>
+              <h2 className="text-base font-semibold text-string mb-3">💵 Ingresos recurrentes</h2>
               <div className="space-y-2">
-                {servicePayments.map(sp => {
+                {servicePayments.filter(sp => sp.type === "income").map(sp => {
+                  const svc = services.find(s => s.id === sp.payment_id);
+                  return (
+                    <div key={sp.id} className="flex items-center justify-between text-sm py-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${sp.is_paid ? "bg-success" : "bg-warning"}`} />
+                        <span>{svc?.name ?? "?"}</span>
+                      </div>
+                      <span className="font-mono text-success">
+                        +{formatCurrency(sp.amount)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {servicePayments.filter(sp => sp.type === "expense").length > 0 && (
+            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+              <h2 className="text-base font-semibold text-string mb-3">💰 Gastos recurrentes</h2>
+              <div className="space-y-2">
+                {servicePayments.filter(sp => sp.type === "expense").map(sp => {
                   const svc = services.find(s => s.id === sp.payment_id);
                   return (
                     <div key={sp.id} className="flex items-center justify-between text-sm py-1">

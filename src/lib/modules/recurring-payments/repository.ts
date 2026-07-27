@@ -33,9 +33,9 @@ export class RecurringPaymentRepository {
     const now = localISOString();
 
     await db.execute({
-      sql: `INSERT INTO recurring_payments (id, user_id, name, default_amount, currency, category_id, payment_method_id, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, data.name, data.default_amount, data.currency ?? "MXN", data.category_id ?? null, data.payment_method_id ?? null, seq, now, now],
+      sql: `INSERT INTO recurring_payments (id, user_id, name, default_amount, currency, type, category_id, payment_method_id, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, userId, data.name, data.default_amount, data.currency ?? "MXN", data.type ?? "expense", data.category_id ?? null, data.payment_method_id ?? null, seq, now, now],
     });
 
     const result = await db.execute({ sql: "SELECT * FROM recurring_payments WHERE id = ?", args: [id] });
@@ -55,6 +55,7 @@ export class RecurringPaymentRepository {
     if (data.currency !== undefined) { sets.push("currency = ?"); args.push(data.currency); }
     if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id ?? null); }
     if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id ?? null); }
+    if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }
 
     if (sets.length === 0) return existing;
 
@@ -111,19 +112,20 @@ export class RecurringPaymentRepository {
 
     const id = crypto.randomUUID();
     const svc = await db.execute({
-      sql: "SELECT default_amount, category_id, payment_method_id FROM recurring_payments WHERE id = ?",
+      sql: "SELECT default_amount, category_id, payment_method_id, type FROM recurring_payments WHERE id = ?",
       args: [paymentId],
     });
     const defaultAmount = Number(svc.rows[0]?.default_amount ?? data.amount ?? 0);
     const categoryId = (svc.rows[0] as Record<string, unknown>)?.category_id ?? null;
     const paymentMethodId = (svc.rows[0] as Record<string, unknown>)?.payment_method_id ?? null;
+    const paymentType = (svc.rows[0] as Record<string, unknown>)?.type ?? "expense";
     const seq = await nextSeq("recurring_payment_monthly");
     const now = localISOString();
 
     await db.execute({
-      sql: `INSERT INTO recurring_payment_monthly (id, user_id, payment_id, month, amount, category_id, payment_method_id, is_active, is_paid, seq, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, paymentId, month, data.amount ?? defaultAmount, categoryId, paymentMethodId, data.is_active !== false ? 1 : 0, data.is_paid ? 1 : 0, seq, now],
+      sql: `INSERT INTO recurring_payment_monthly (id, user_id, payment_id, month, amount, type, category_id, payment_method_id, is_active, is_paid, seq, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, userId, paymentId, month, data.amount ?? defaultAmount, paymentType, categoryId, paymentMethodId, data.is_active !== false ? 1 : 0, data.is_paid ? 1 : 0, seq, now],
     });
 
     return (await this.getMonthly(paymentId, month))!;
