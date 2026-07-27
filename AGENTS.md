@@ -49,7 +49,7 @@ Gestiona el servidor en background con `astro dev stop`, `astro dev status` y `a
 - Fija `w-64` en escritorio, oculta fuera de pantalla (`-translate-x-full`) en móvil
 - Drawer deslizante en móvil: hamburguesa flotante arriba a la izquierda, backdrop con overlay, se cierra al hacer clic en un link de navegación
 - Sección inferior: link de GitHub, ThemeToggle, CurrencySelect, UserButton (de `@clerk/astro/components`) + texto "Mi cuenta" con clic reenviado
-- El área del logo muestra "OPRP" (sin icono)
+- El área del logo muestra "Open PRP" (sin icono)
 - Los links de navegación son data-driven: constante `APP_LINKS` (array de grupos `{ title?, links: [{ href, label, icon }] }`) renderizada con `.map()` anidados. El estado activo usa `currentPath.startsWith(href)`. Para añadir una sección/link nuevo, basta con agregar una entrada al array.
 
 ## TypeScript

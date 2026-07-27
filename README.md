@@ -31,7 +31,7 @@
 - **Modal CRUD genérico**: `CrudModal.tsx` que escucha eventos `data-create` / `data-edit` y renderiza formularios dinámicamente
 - **Componentes compartidos**: `StatCard.tsx` (cards de métricas del dashboard), `FilterLinks.astro` (filtros tipo pill de las páginas), `FeatureCard.astro` (landing)
 - **Tema oscuro/claro/sistema** con persistencia en localStorage; Clerk se adapta vía `color-scheme`
-- **Título**: `"Open PRP | {title}"` generado por BaseLayout; sidebar muestra "OPRP"
+- **Título**: `"Open PRP | {title}"` generado por BaseLayout; sidebar muestra "Open PRP"
 - **Iconos SVG**: 18 archivos en `src/assets/` (kebab-case: `card.svg`, `home.svg`, etc.), importados vía `@/assets/*` con `vite-plugin-svgr`; el identificador importado es PascalCase con sufijo `Icon`
 - **Landing page**: header con links data-driven (`LANDING_LINKS`), CTA "Ir a la app", GitHub icon, ThemeToggle; features renderizadas desde `FEATURES_INFO`; footer con GitHub + marcvspt.tech
 - **Colores semánticos**: `primary`, `success`, `danger`, `warning`, `info` como `@theme` tokens con variantes `-hover`, `-text`, `-bg`, `-border` y valores oscuros
