@@ -6,7 +6,7 @@ import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
 import { CardRepository } from "@/lib/modules/cards/repository.ts";
-import { FIELD_TYPE_CURRENCY, cardField, CURRENCY_SYMBOL } from "@/lib/form-fields.ts";
+import { FIELD_TYPE_CURRENCY, cardField, CURRENCY_SYMBOL, dateField } from "@/lib/form-fields.ts";
 const userId = Astro.locals.userId;
 const items = await new CashbackRepository().findAll(userId);
 const allCards = await new CardRepository().findAll(userId);
@@ -15,7 +15,7 @@ const cardMap = Object.fromEntries(allCards.map(c => [c.id, c]));
 const cardEmoji = (type: string) => type === "credit" ? "💳" : type === "debit" ? "🏦" : "🎫";
 const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
-  { name: "date", label: "Fecha", type: "date" as const, required: true },
+  dateField(),
   { name: "description", label: "Descripción", type: "text" as const },
   { name: "amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
   FIELD_TYPE_CURRENCY,

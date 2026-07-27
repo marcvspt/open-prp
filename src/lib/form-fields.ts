@@ -58,6 +58,15 @@ export function categoryField(categories: Category[]) {
   };
 }
 
+export function dateField(name: string = "date") {
+  return {
+    name,
+    label: "Fecha",
+    type: "date" as const,
+    required: true,
+  };
+}
+
 export function cardField(cards: Card[]) {
   const emoji = (type: string) =>
     type === "credit" ? "💳" : type === "debit" ? "🏦" : "🎫";

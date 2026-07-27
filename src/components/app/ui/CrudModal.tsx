@@ -121,7 +121,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
         <form onSubmit={handleSubmit} className="space-y-4">
           {fields.filter(f => !f.showIf || String(form[f.showIf.field]) === f.showIf.value).map(f => (
             <div key={f.name}>
-              <label className="block text-sm font-medium text-string">{f.label}</label>
+              <label className="block text-sm font-medium text-string">{f.label}{f.required && <span className="text-danger ml-1">*</span>}</label>
               {f.type === "multiselect" ? (
                 <div className="mt-1"><MultiSelect value={String(form[f.name] ?? "[]")} onChange={v => setVal(f.name, v)} options={f.options ?? []} placeholder={f.placeholder} /></div>
               ) : f.type === "select" ? (

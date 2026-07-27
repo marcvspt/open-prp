@@ -8,7 +8,7 @@ import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { TransactionRepository } from "@/lib/modules/transactions/repository.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
-import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, CURRENCY_SYMBOL } from "@/lib/form-fields.ts";
+import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, CURRENCY_SYMBOL, dateField } from "@/lib/form-fields.ts";
 const userId = Astro.locals.userId;
 const filterType = Astro.url.searchParams.get("type") || "all";
 const repo = new TransactionRepository();
@@ -26,7 +26,7 @@ const fields = [
   FIELD_TYPE_CURRENCY,
   paymentMethodField(paymentMethods),
   categoryField(txCategories),
-  { name: "date", label: "Fecha", type: "date" as const, required: true },
+  dateField(),
 ];
 const defaultForm = { type: "expense", description: "", amount: 0, currency: "MXN", payment_method_id: paymentMethods[0]?.id ?? "", category_id: "", date: "" };
 const txFilters = [

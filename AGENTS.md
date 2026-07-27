@@ -23,6 +23,10 @@ Gestiona el servidor en background con `astro dev stop`, `astro dev status` y `a
   - `src/lib/dashboard/api.ts` — carga de datos del dashboard (`fetchDashboardMonth`, `fetchDashboardHistory`) y mutaciones (`payCardDebtFull`, `payCardDebtPartial`) + `EMPTY_DASHBOARD_MONTH`
   - `src/lib/format.ts` — `formatCurrency`
   - `src/lib/safeFetch.ts` — `safeFetch` (nunca lanza excepciones) + `fetchList` (normaliza arrays planos y `PaginatedResponse`)
+  - `src/lib/form-fields.ts` — configuraciones compartidas de campos de formulario para CrudModal: `CURRENCY_OPTIONS`, `TYPE_OPTIONS`, `CURRENCY_SYMBOL`, `FIELD_TYPE_CURRENCY`, `FIELD_TYPE`, `paymentMethodField()`, `categoryField()`, `cardField()`, `dateField()`.
+    - **Siempre** usar estos helpers en lugar de definir fields inline en las páginas.
+    - Si se necesita una moneda, tipo, método de pago, categoría, tarjeta o fecha nueva, se actualiza aquí y se refleja en todos los CRUDs.
+    - Los campos obligatorios (`required: true`) muestran un `*` rojo junto a la label automáticamente en el CrudModal.
 - **Tags `<script>` de Astro**: importar funciones init desde `src/lib/ui/` en vez de JS imperativo inline (Astro los empaqueta como módulos)
 - **UI compartida vs UI de app**: `src/components/ui/` para componentes usados en toda la app (ThemeToggle, Select, MultiSelect, ErrorBoundary); `src/components/app/ui/` para UI exclusiva de la app (CrudModal, DataTable, FormModal, FilterLinks, etc.)
 
