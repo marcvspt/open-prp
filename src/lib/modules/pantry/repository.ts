@@ -33,11 +33,11 @@ export class PantryRepository {
     const now = localISOString();
 
     await db.execute({
-      sql: `INSERT INTO pantry_items (id, user_id, category_id, description, default_quantity, unit, notes, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO pantry_items (id, user_id, category_id, description, default_quantity, notes, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id, userId, data.category_id || null,
-        data.description, data.default_quantity ?? 1, data.unit ?? null,
+        data.description, data.default_quantity ?? 1,
         data.notes ?? null, seq, now, now,
       ],
     });
@@ -56,7 +56,6 @@ export class PantryRepository {
 
     if (data.description !== undefined) { sets.push("description = ?"); args.push(data.description); }
     if (data.default_quantity !== undefined) { sets.push("default_quantity = ?"); args.push(data.default_quantity); }
-    if (data.unit !== undefined) { sets.push("unit = ?"); args.push(data.unit); }
     if (data.notes !== undefined) { sets.push("notes = ?"); args.push(data.notes); }
     if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id); }
 

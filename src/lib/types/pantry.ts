@@ -4,7 +4,6 @@ export interface PantryItem {
   category_id: string | null;
   description: string;
   default_quantity: number;
-  unit: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -13,7 +12,6 @@ export interface PantryItem {
 export interface PantryItemInput {
   description: string;
   default_quantity?: number;
-  unit?: string;
   notes?: string;
   category_id?: string;
 }
@@ -21,7 +19,6 @@ export interface PantryItemInput {
 export interface PantryItemUpdate {
   description?: string;
   default_quantity?: number;
-  unit?: string;
   notes?: string;
   category_id?: string;
 }

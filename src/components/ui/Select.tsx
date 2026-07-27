@@ -4,6 +4,7 @@ import ChevronIcon from "@/assets/chevron.svg?react";
 export interface SelectOption {
   value: string;
   label: string;
+  icon?: React.ReactNode;
 }
 
 interface SelectProps {
@@ -14,10 +15,9 @@ interface SelectProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
-  icon?: React.ReactNode;
 }
 
-export default function Select({ value, onChange, options, placeholder, required, disabled, className, icon }: SelectProps) {
+export default function Select({ value, onChange, options, placeholder, required, disabled, className }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
@@ -98,7 +98,7 @@ export default function Select({ value, onChange, options, placeholder, required
           ${!selected && placeholder ? "text-string-muted" : "text-string"}
           bg-panel`}
       >
-        {icon && <span className="w-4 h-4 shrink-0">{icon}</span>}
+        {selected?.icon && <span className="w-4 h-4 shrink-0">{selected.icon}</span>}
         <span className="flex-1 text-left">{display}</span>
         <ChevronIcon className={`w-4 h-4 text-string-muted transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
@@ -116,13 +116,14 @@ export default function Select({ value, onChange, options, placeholder, required
               id={`${id}-opt-${i}`}
               role="option"
               aria-selected={o.value === value}
-               className={`px-3 py-2 text-sm cursor-pointer transition-colors
+               className={`flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors
                 ${o.value === value ? "bg-primary-bg text-primary-text font-medium" : ""}
                 ${highlighted === i ? "bg-nav-hover" : ""}
                 text-string`}
               onClick={() => select(o.value)}
               onMouseEnter={() => setHighlighted(i)}
             >
+              {o.icon && <span className="w-4 h-4 shrink-0">{o.icon}</span>}
               {o.label}
             </li>
           ))}
