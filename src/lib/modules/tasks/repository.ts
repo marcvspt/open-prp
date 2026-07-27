@@ -10,7 +10,6 @@ export class TaskRepository {
 
     if (filter?.is_completed !== undefined) { conditions.push("is_completed = ?"); args.push(filter.is_completed ? 1 : 0); }
     if (filter?.category) { conditions.push("category = ?"); args.push(filter.category); }
-    if (filter?.event_id) { conditions.push("event_id = ?"); args.push(filter.event_id); }
     if (filter?.due_date_from) { conditions.push("due_date >= ?"); args.push(filter.due_date_from); }
     if (filter?.due_date_to) { conditions.push("due_date <= ?"); args.push(filter.due_date_to); }
 
@@ -36,12 +35,12 @@ export class TaskRepository {
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: `INSERT INTO tasks (id, user_id, description, priority, due_date, category, event_id, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO tasks (id, user_id, description, priority, due_date, category, seq, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id, userId, data.description,
         data.priority ?? 0, data.due_date ?? null, data.category ?? null,
-        data.event_id ?? null, seq, now, now,
+        seq, now, now,
       ],
     });
 
@@ -62,7 +61,6 @@ export class TaskRepository {
     if (data.due_date !== undefined) { sets.push("due_date = ?"); args.push(data.due_date ?? null); }
     if (data.is_completed !== undefined) { sets.push("is_completed = ?"); args.push(data.is_completed ? 1 : 0); }
     if (data.category !== undefined) { sets.push("category = ?"); args.push(data.category ?? null); }
-    if (data.event_id !== undefined) { sets.push("event_id = ?"); args.push(data.event_id ?? null); }
 
     if (sets.length === 0) return existing;
 

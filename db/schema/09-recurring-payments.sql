@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS recurring_payments (
   currency TEXT NOT NULL DEFAULT 'MXN',
   type TEXT NOT NULL DEFAULT 'expense' CHECK(type IN ('income','expense')),
   category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
-  payment_method_id TEXT REFERENCES payment_methods(id) ON DELETE SET NULL,
+  payment_method_id TEXT NOT NULL REFERENCES payment_methods(id),
   seq INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS recurring_payment_monthly (
   amount REAL NOT NULL,
   type TEXT NOT NULL DEFAULT 'expense' CHECK(type IN ('income','expense')),
   category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
-  payment_method_id TEXT REFERENCES payment_methods(id) ON DELETE SET NULL,
+  payment_method_id TEXT NOT NULL REFERENCES payment_methods(id),
   is_active INTEGER NOT NULL DEFAULT 1,
   is_paid INTEGER NOT NULL DEFAULT 0,
   paid_at TEXT,

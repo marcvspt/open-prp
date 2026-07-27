@@ -21,8 +21,8 @@ export const POST: APIRoute = async (context) => {
   if (uid instanceof Response) return uid;
 
   const body = await context.request.json();
-  if (!body.description || !body.total_amount || !body.monthly_amount || !body.total_months || !body.start_date) {
-    return errorResponse("description, total_amount, monthly_amount, total_months, and start_date are required");
+  if (!body.description || !body.total_amount || !body.monthly_amount || !body.total_months || !body.start_date || !body.payment_method_id) {
+    return errorResponse("description, total_amount, monthly_amount, total_months, start_date, and payment_method_id are required");
   }
 
   const installment = await repo.create(body, uid);

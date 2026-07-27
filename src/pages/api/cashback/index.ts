@@ -18,8 +18,8 @@ export const POST: APIRoute = async (context) => {
   if (uid instanceof Response) return uid;
 
   const body = await context.request.json();
-  if (!body.amount || !body.date) {
-    return errorResponse("amount and date are required");
+  if (!body.amount || !body.date || !body.card_id) {
+    return errorResponse("amount, date, and card_id are required");
   }
 
   const cashback = await repo.create(body, uid);

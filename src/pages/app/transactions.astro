@@ -8,6 +8,7 @@ import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { TransactionRepository } from "@/lib/modules/transactions/repository.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
+import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, CURRENCY_SYMBOL, dateField } from "@/lib/form-fields.ts";
 const userId = Astro.locals.userId;
 const filterType = Astro.url.searchParams.get("type") || "all";
 const repo = new TransactionRepository();
@@ -17,17 +18,17 @@ const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
 const catRepo = new CategoryRepository();
 const txCategories = await catRepo.findBySections(userId, ["transacciones"]);
-const currencySymbol: Record<string, string> = { EUR: "€", MXN: "$", USD: "$" };
+const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
-  { name: "type", label: "Tipo", type: "select" as const, required: true, options: [{ value: "expense", label: "Gasto" }, { value: "income", label: "Ingreso" }] },
+  dateField(),
+  FIELD_TYPE,
   { name: "description", label: "Descripción", type: "text" as const },
   { name: "amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
-  { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "€ EUR" }, { value: "MXN", label: "$ MXN" }, { value: "USD", label: "$ USD" }] },
-  { name: "payment_method_id", label: "Método de pago", type: "select" as const, options: [{ value: "", label: "Sin método" }, ...paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` }))] },
-  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...txCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
-  { name: "date", label: "Fecha", type: "date" as const, required: true },
+  FIELD_TYPE_CURRENCY,
+  paymentMethodField(paymentMethods),
+  categoryField(txCategories),
 ];
-const defaultForm = { type: "expense", description: "", amount: 0, currency: "MXN", payment_method_id: "", category_id: "", date: "" };
+const defaultForm = { type: "expense", description: "", amount: 0, currency: "MXN", payment_method_id: paymentMethods[0]?.id ?? "", category_id: "", date: "" };
 const txFilters = [
   { value: "all", label: "Todas", href: "/app/transactions" },
   { value: "income", label: "Ingresos", href: "/app/transactions?type=income" },
@@ -51,7 +52,7 @@ const catMap = Object.fromEntries(txCategories.map(c => [c.id, c]));
           <td class="px-4 py-3">{tx.description || "-"}</td>
           <td class={`px-4 py-3 text-right font-mono ${tx.type === "income" ? "text-success" : "text-danger"}`}>{tx.currency === "EUR" ? "€" : "$"}{Number(tx.amount).toFixed(2)}</td>
           <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[tx.currency] || "$"} {tx.currency || "MXN"}</td>
-          <td class="px-4 py-3 text-xs text-string-muted">{tx.payment_method_id ? (pmMap[tx.payment_method_id] ? `${pmMap[tx.payment_method_id].icon || "💳"} ${pmMap[tx.payment_method_id].name}` : "-") : "-"}</td>
+          <td class="px-4 py-3"><span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[tx.payment_method_id] ? `${pmMap[tx.payment_method_id].icon || "💳"} ${pmMap[tx.payment_method_id].name}` : "-"}</span></td>
           <td class="px-4 py-3"><span class={`text-xs font-medium px-2 py-0.5 rounded ${tx.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>{tx.type === "income" ? "Ingreso" : "Gasto"}</span></td>
           <td class="px-4 py-3">{tx.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[tx.category_id] ? `${catMap[tx.category_id].icon || "📂"} ${catMap[tx.category_id].name}` : "-"}</span> : "-"}</td>
           <td class="px-4 py-3 text-right space-x-2">

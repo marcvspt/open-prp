@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS pantry_items (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
-  name TEXT NOT NULL,
+  description TEXT NOT NULL,
   default_quantity REAL NOT NULL DEFAULT 1,
   unit TEXT,
   notes TEXT,

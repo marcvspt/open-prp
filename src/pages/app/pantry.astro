@@ -12,22 +12,22 @@ const categories = await new CategoryRepository().findBySections(userId, ["despe
 const catMap = Object.fromEntries(categories.map(c => [c.id, c]));
 const catOptions = [{ value: "", label: "Sin categoría" }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📦"} ${c.name}` }))];
 const fields = [
-  { name: "name", label: "Nombre", type: "text" as const, required: true },
+  { name: "description", label: "Artículo", type: "text" as const, required: true },
   { name: "category_id", label: "Categoría", type: "select" as const, options: catOptions },
   { name: "default_quantity", label: "Cantidad por defecto", type: "number" as const, min: 0, step: "0.01" },
   { name: "unit", label: "Unidad", type: "text" as const, placeholder: "uds, kg, lts" },
   { name: "notes", label: "Notas", type: "textarea" as const },
 ];
-const defaultForm = { name: "", category_id: "", default_quantity: 1, unit: "", notes: "" };
+const defaultForm = { description: "", category_id: "", default_quantity: 1, unit: "", notes: "" };
 ---
 
 <AppLayout title="Despensa - Open PRP">
   <div data-module="pantry" class="space-y-4">
     <PageHeader title="Despensa" createLabel="Nuevo producto" createModule="pantry" />
-    <DataTable columns={["Nombre", "Cant.", "Unidad", "Categoría", "Notas", { label: "Acciones", align: "right" }]} emptyMessage="Sin productos en la despensa">
+    <DataTable columns={["Artículo", "Cant.", "Unidad", "Categoría", "Notas", { label: "Acciones", align: "right" }]} emptyMessage="Sin productos en la despensa">
       {items.map(i => (
         <tr key={i.id} class="hover:bg-nav-hover">
-          <td class="px-4 py-3 font-medium">{i.name}</td>
+          <td class="px-4 py-3 font-medium">{i.description}</td>
           <td class="px-4 py-3">{i.default_quantity}</td>
           <td class="px-4 py-3">{i.unit || "-"}</td>
           <td class="px-4 py-3">{i.category_id ? (catMap[i.category_id] ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[i.category_id].icon || "📦"} {catMap[i.category_id].name}</span> : "-") : "-"}</td>

@@ -75,8 +75,8 @@ async function seed() {
     { name: "Salud", sections: ["transacciones", "eventos", "plazos"], icon: "🏥", color: "#ef4444" },
     { name: "Ocio", sections: ["transacciones"], icon: "🎮", color: "#8b5cf6" },
     { name: "Vivienda", sections: ["transacciones", "plazos", "pagos-recurrentes"], icon: "🏠", color: "#22c55e" },
-    { name: "Salario", sections: ["transacciones", "ingresos-recurrentes"], icon: "💰", color: "#22c55e" },
-    { name: "Freelance", sections: ["transacciones", "ingresos-recurrentes"], icon: "💻", color: "#6366f1" },
+    { name: "Salario", sections: ["transacciones", "pagos-recurrentes"], icon: "💰", color: "#22c55e" },
+    { name: "Freelance", sections: ["transacciones", "pagos-recurrentes"], icon: "💻", color: "#6366f1" },
     // Plazos
     { name: "Electrónica", sections: ["plazos", "transacciones"], icon: "📱", color: "#3b82f6" },
     { name: "Muebles", sections: ["plazos", "transacciones", "pagos-recurrentes"], icon: "🪑", color: "#f97316" },

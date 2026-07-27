@@ -60,4 +60,19 @@ export class UserRepository {
     });
     return (result.rows[0] as unknown as User | undefined) ?? null;
   }
+
+  async getPreferredCurrency(userId: string): Promise<string> {
+    const result = await getDb().execute({
+      sql: "SELECT preferred_currency FROM users WHERE id = ?",
+      args: [userId],
+    });
+    return (result.rows[0] as Record<string, string> | undefined)?.preferred_currency ?? "MXN";
+  }
+
+  async setPreferredCurrency(userId: string, currency: string): Promise<void> {
+    await getDb().execute({
+      sql: "UPDATE users SET preferred_currency = ?, updated_at = datetime('now') WHERE id = ?",
+      args: [currency, userId],
+    });
+  }
 }

@@ -6,21 +6,22 @@ import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
 import { CardRepository } from "@/lib/modules/cards/repository.ts";
+import { FIELD_TYPE_CURRENCY, cardField, CURRENCY_SYMBOL, dateField } from "@/lib/form-fields.ts";
 const userId = Astro.locals.userId;
 const items = await new CashbackRepository().findAll(userId);
 const allCards = await new CardRepository().findAll(userId);
 const creditCards = allCards.filter(c => c.type === "credit");
 const cardMap = Object.fromEntries(allCards.map(c => [c.id, c]));
 const cardEmoji = (type: string) => type === "credit" ? "💳" : type === "debit" ? "🏦" : "🎫";
-const currencySymbol: Record<string, string> = { EUR: "€", MXN: "$", USD: "$" };
+const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
-  { name: "date", label: "Fecha", type: "date" as const, required: true },
+  dateField(),
   { name: "description", label: "Descripción", type: "text" as const },
   { name: "amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
-  { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "€ EUR" }, { value: "MXN", label: "$ MXN" }, { value: "USD", label: "$ USD" }] },
-  { name: "card_id", label: "Tarjeta", type: "select" as const, options: [{ value: "", label: "Sin tarjeta" }, ...creditCards.map(c => ({ value: c.id, label: `${cardEmoji(c.type)} ${c.name}` }))] },
+  FIELD_TYPE_CURRENCY,
+  cardField(creditCards),
 ];
-const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", card_id: "" };
+const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", card_id: creditCards[0]?.id ?? "" };
 ---
 
 <AppLayout title="Cashback - Open PRP">
@@ -33,7 +34,7 @@ const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", car
           <td class="px-4 py-3">{c.description || "-"}</td>
           <td class="px-4 py-3 text-right font-mono text-success">+{currencySymbol[c.currency] || "$"}{Number(c.amount).toFixed(2)}</td>
           <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[c.currency] || "$"} {c.currency || "MXN"}</td>
-          <td class="px-4 py-3">{c.card_id ? (cardMap[c.card_id] ? <span class="inline-flex items-center gap-1 text-xs bg-surface-alt px-2 py-0.5 rounded">{cardEmoji(cardMap[c.card_id].type)} {cardMap[c.card_id].name}</span> : "-") : "-"}</td>
+          <td class="px-4 py-3">{cardMap[c.card_id] ? <span class="inline-flex items-center gap-1 text-xs bg-surface-alt px-2 py-0.5 rounded">{cardEmoji(cardMap[c.card_id].type)} {cardMap[c.card_id].name}</span> : "-"}</td>
           <td class="px-4 py-3 text-right space-x-2">
             <button data-edit-cashback={c.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>
             <button data-delete-cashback={c.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">Eliminar</button>

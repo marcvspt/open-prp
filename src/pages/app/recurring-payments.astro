@@ -8,26 +8,26 @@ import RecurringPaymentsMonthly from "@/components/app/recurring-payments/Recurr
 import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
+import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, CURRENCY_SYMBOL } from "@/lib/form-fields.ts";
 const userId = Astro.locals.userId;
 const items = await new RecurringPaymentRepository().findAll(userId);
 const catRepo = new CategoryRepository();
 const svcCategories = await catRepo.findBySections(userId, ["pagos-recurrentes"]);
-const incomeCategories = await catRepo.findBySections(userId, ["ingresos-recurrentes"]);
-const allRecurringCategories = [...svcCategories, ...incomeCategories.filter(c => !svcCategories.some(sc => sc.id === c.id))];
+const allRecurringCategories = svcCategories;
 const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
 const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm]));
 const catMap = Object.fromEntries(allRecurringCategories.map(c => [c.id, c]));
-const currencySymbol: Record<string, string> = { EUR: "€", MXN: "$", USD: "$" };
+const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
+  FIELD_TYPE,
   { name: "name", label: "Descripción", type: "text" as const, required: true },
   { name: "default_amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
-  { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "€ EUR" }, { value: "MXN", label: "$ MXN" }, { value: "USD", label: "$ USD" }] },
-  { name: "type", label: "Tipo", type: "select" as const, options: [{ value: "expense", label: "💰 Gasto" }, { value: "income", label: "💵 Ingreso" }] },
-  { name: "payment_method_id", label: "Método de pago", type: "select" as const, options: [{ value: "", label: "Sin método" }, ...paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` }))] },
-  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...allRecurringCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
+  FIELD_TYPE_CURRENCY,
+  paymentMethodField(paymentMethods),
+  categoryField(allRecurringCategories),
 ];
-const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expense", payment_method_id: "", category_id: "" };
+const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expense", payment_method_id: paymentMethods[0]?.id ?? "", category_id: "" };
 ---
 
 <AppLayout title="Pagos Recurrentes - Open PRP">
@@ -53,7 +53,7 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
               <td class={`px-4 py-3 text-right font-mono ${s.type === "income" ? "text-success" : "text-danger"}`}>{s.type === "income" ? "+" : "-"}{currencySymbol[s.currency] || "$"}{Number(s.default_amount).toFixed(2)}</td>
               <td class="px-4 py-3"><span class={`text-xs px-2 py-0.5 rounded font-medium ${s.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>{s.type === "income" ? "Ingreso" : "Gasto"}</span></td>
               <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[s.currency] || "$"} {s.currency || "MXN"}</td>
-              <td class="px-4 py-3">{s.payment_method_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[s.payment_method_id] ? `${pmMap[s.payment_method_id].icon || "💳"} ${pmMap[s.payment_method_id].name}` : "-"}</span> : "-"}</td>
+              <td class="px-4 py-3"><span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[s.payment_method_id] ? `${pmMap[s.payment_method_id].icon || "💳"} ${pmMap[s.payment_method_id].name}` : "-"}</span></td>
               <td class="px-4 py-3">{s.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[s.category_id] ? `${catMap[s.category_id].icon || "📂"} ${catMap[s.category_id].name}` : "-"}</span> : "-"}</td>
               <td class="px-4 py-3 text-right space-x-2">
                 <button data-edit-recurring-payments={s.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>

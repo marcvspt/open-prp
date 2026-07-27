@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   clerk_id TEXT UNIQUE NOT NULL,
   email TEXT,
   display_name TEXT,
+  preferred_currency TEXT NOT NULL DEFAULT 'MXN',
   seq INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
