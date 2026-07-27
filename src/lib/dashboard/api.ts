@@ -60,13 +60,17 @@ export async function fetchDashboardMonth(month: string): Promise<DashboardMonth
     .filter((i) => isInstallmentInMonth(month, i.start_date, i.total_months))
     .reduce((sum, i) => sum + Number(i.monthly_amount), 0);
 
+  const incomeSvcs = servicePayments.filter((sp) => sp.type === "income");
+  const expenseSvcs = servicePayments.filter((sp) => sp.type === "expense");
+
   const incomes =
     txDataArr.filter((t) => t.type === "income").reduce((sum, t) => sum + Number(t.amount), 0) +
-    cbData.reduce((sum, cb) => sum + Number(cb.amount), 0);
+    cbData.reduce((sum, cb) => sum + Number(cb.amount), 0) +
+    incomeSvcs.reduce((sum, sp) => sum + Number(sp.amount), 0);
   const expenses =
     txDataArr.filter((t) => t.type === "expense").reduce((sum, t) => sum + Number(t.amount), 0) +
     installmentTotal +
-    servicePayments.reduce((sum, sp) => sum + Number(sp.amount), 0);
+    expenseSvcs.reduce((sum, sp) => sum + Number(sp.amount), 0);
 
   const calculatedDebts: Record<string, CalculatedDebt> = {};
   await Promise.all(

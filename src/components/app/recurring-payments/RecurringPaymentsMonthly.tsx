@@ -4,6 +4,8 @@ import { safeFetch } from "@/lib/safeFetch.ts";
 import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 
+type PaymentType = "income" | "expense";
+
 export default function RecurringPaymentsMonthly() {
   const { userId } = useAuth();
   const now = new Date();
@@ -96,48 +98,111 @@ export default function RecurringPaymentsMonthly() {
     });
   };
 
-  if (loading) return <div className="p-4 text-string-muted">Cargando...</div>;
-  if (error) return <div className="p-4 text-danger">Error: {error}</div>;
-
   const monthlyMap = new Map(monthly.map(sm => [sm.payment_id, sm]));
-  const categories = [...new Set(payments.map(p => p.category_name ?? "Sin categoría"))];
 
-  const totalAmount = monthly.reduce((sum, sm) => sum + sm.amount, 0);
-  const paid = monthly.filter(sm => sm.is_paid);
-  const unpaid = monthly.filter(sm => !sm.is_paid);
+  function renderPaymentCard(payment: RecurringPayment) {
+    const entry = monthlyMap.get(payment.id);
+    const isAdded = !!entry;
+    const isPaid = entry?.is_paid ?? false;
+    const isIncome = payment.type === "income";
+    const amount = entry?.amount ?? payment.default_amount;
+    const textColor = isIncome ? "text-success" : "text-danger";
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <MonthSelector
-          value={selectedMonth}
-          onChange={handleMonthChange}
-        />
-      </div>
-
-      {monthly.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">Total</div>
-            <div className="text-lg font-semibold text-danger">${totalAmount.toLocaleString()}</div>
+    return (
+      <div key={payment.id}
+        className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all ${
+          isPaid
+            ? "border-success/30 bg-success/5"
+            : isAdded
+              ? "border-primary/40 bg-primary/5"
+              : "border-border bg-panel hover:border-primary/40 hover:shadow-sm"
+        }`}
+      >
+        {isAdded && !isPaid && (
+          <button
+            onClick={() => handleRemoveFromMonth(payment.id)}
+            className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center text-xs text-string-muted hover:text-danger hover:bg-danger/10 rounded transition-colors cursor-pointer"
+            title="Quitar del mes"
+          >
+            ✕
+          </button>
+        )}
+        <div className="space-y-2">
+          <div className={`font-medium text-sm leading-tight ${isPaid ? "text-string-muted" : "text-string"}`}>
+            {payment.name}
           </div>
-          <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">Pagados</div>
-            <div className="text-lg font-semibold text-success">{paid.length}/{monthly.length}</div>
+          <div className={`text-lg font-semibold ${isPaid ? "text-string-muted" : textColor}`}>
+            {isIncome ? "+" : "-"}${amount.toLocaleString()}
           </div>
-          <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">Pendiente</div>
-            <div className="text-lg font-semibold text-warning">${unpaid.reduce((s, sm) => s + sm.amount, 0).toLocaleString()}</div>
-          </div>
+          {payment.payment_method_name && (
+            <div className="text-xs text-string-muted">
+              {payment.payment_method_icon || "💳"} {payment.payment_method_name}
+            </div>
+          )}
         </div>
-      )}
+        {isPaid ? (
+          <div className={`mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-success-bg text-success-text text-center`}>
+            {isIncome ? "Recibido" : "Pagado"}
+          </div>
+        ) : isAdded ? (
+          <button
+            onClick={() => handleTogglePaid(payment.id)}
+            disabled={togglingId === payment.id}
+            className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-all disabled:opacity-50 cursor-pointer"
+          >
+            {togglingId === payment.id ? "..." : isIncome ? "Marcar como recibido" : "Marcar como pagado"}
+          </button>
+        ) : (
+          <button
+            onClick={() => handleAddToMonth(payment)}
+            className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-all cursor-pointer"
+          >
+            Agregar al mes
+          </button>
+        )}
+      </div>
+    );
+  }
 
-      {payments.length === 0 ? (
-        <div className="text-string-muted text-sm">No hay pagos recurrentes registrados.</div>
-      ) : (
-        <div className="space-y-6">
+  function renderTypeSection(type: PaymentType, label: string, colorClass: string, icon: string) {
+    const filtered = payments.filter(p => p.type === type);
+    if (filtered.length === 0) return null;
+
+    const typeMonthly = monthly.filter(sm => sm.type === type);
+    const typeTotal = typeMonthly.reduce((s, sm) => s + sm.amount, 0);
+    const typeReceived = typeMonthly.filter(sm => sm.is_paid);
+    const typePending = typeMonthly.filter(sm => !sm.is_paid);
+
+    const categories = [...new Set(filtered.map(p => p.category_name ?? "Sin categoría"))];
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h3 className={`text-base font-semibold ${colorClass}`}>{icon} {label}</h3>
+        </div>
+        {typeMonthly.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            <div className="p-3 rounded-lg bg-panel border border-border text-center">
+              <div className="text-xs text-string-muted mb-1">Total</div>
+              <div className={`text-lg font-semibold ${colorClass}`}>
+                ${typeTotal.toLocaleString()}
+              </div>
+            </div>
+            <div className="p-3 rounded-lg bg-panel border border-border text-center">
+              <div className="text-xs text-string-muted mb-1">{type === "income" ? "Recibidos" : "Pagados"}</div>
+              <div className="text-lg font-semibold text-success">{typeReceived.length}/{typeMonthly.length}</div>
+            </div>
+            <div className="p-3 rounded-lg bg-panel border border-border text-center">
+              <div className="text-xs text-string-muted mb-1">Pendiente</div>
+              <div className="text-lg font-semibold text-warning">
+                ${typePending.reduce((s, sm) => s + sm.amount, 0).toLocaleString()}
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="space-y-3">
           {categories.map(category => {
-            const filtered = payments.filter(p => (p.category_name ?? "Sin categoría") === category);
+            const catFiltered = filtered.filter(p => (p.category_name ?? "Sin categoría") === category);
             return (
               <div key={category}>
                 <button
@@ -151,70 +216,62 @@ export default function RecurringPaymentsMonthly() {
                 </button>
                 {!collapsedCategories.has(category) && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                    {filtered.map(payment => {
-                      const entry = monthlyMap.get(payment.id);
-                      const isAdded = !!entry;
-                      const isPaid = entry?.is_paid ?? false;
-                      return (
-                        <div key={payment.id}
-                          className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all ${
-                            isPaid
-                              ? "border-success/30 bg-success/5"
-                              : isAdded
-                                ? "border-primary/40 bg-primary/5"
-                                : "border-border bg-panel hover:border-primary/40 hover:shadow-sm"
-                          }`}
-                        >
-                          {isAdded && !isPaid && (
-                            <button
-                              onClick={() => handleRemoveFromMonth(payment.id)}
-                              className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center text-xs text-string-muted hover:text-danger hover:bg-danger/10 rounded transition-colors cursor-pointer"
-                              title="Quitar del mes"
-                            >
-                              ✕
-                            </button>
-                          )}
-                          <div className="space-y-2">
-                            <div className={`font-medium text-sm leading-tight ${isPaid ? "text-string-muted" : "text-string"}`}>
-                              {payment.name}
-                            </div>
-                            <div className={`text-lg font-semibold ${isPaid ? "text-danger" : isAdded ? "text-success" : "text-string-muted"}`}>
-                              ${(entry?.amount ?? payment.default_amount).toLocaleString()}
-                            </div>
-                            {payment.payment_method_name && (
-                              <div className="text-xs text-string-muted">
-                                {payment.payment_method_icon || "💳"} {payment.payment_method_name}
-                              </div>
-                            )}
-                          </div>
-                          {isPaid ? (
-                            <div className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-success-bg text-success-text text-center">
-                              Pagado
-                            </div>
-                          ) : isAdded ? (
-                            <button
-                              onClick={() => handleTogglePaid(payment.id)}
-                              disabled={togglingId === payment.id}
-                              className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-all disabled:opacity-50 cursor-pointer"
-                            >
-                              {togglingId === payment.id ? "..." : "Marcar como pagado"}
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleAddToMonth(payment)}
-                              className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-all cursor-pointer"
-                            >
-                              Agregar al mes
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
+                    {catFiltered.map(renderPaymentCard)}
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) return <div className="p-4 text-string-muted">Cargando...</div>;
+  if (error) return <div className="p-4 text-danger">Error: {error}</div>;
+
+  const incomeTotal = monthly.filter(sm => sm.type === "income").reduce((s, sm) => s + sm.amount, 0);
+  const expenseTotal = monthly.filter(sm => sm.type === "expense").reduce((s, sm) => s + sm.amount, 0);
+  const netTotal = incomeTotal - expenseTotal;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <MonthSelector
+          value={selectedMonth}
+          onChange={handleMonthChange}
+        />
+      </div>
+
+      {monthly.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+            <div className="text-xs text-string-muted mb-1">Ingresos</div>
+            <div className="text-lg font-semibold text-success">${incomeTotal.toLocaleString()}</div>
+          </div>
+          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+            <div className="text-xs text-string-muted mb-1">Gastos</div>
+            <div className="text-lg font-semibold text-danger">${expenseTotal.toLocaleString()}</div>
+          </div>
+          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+            <div className="text-xs text-string-muted mb-1">Neto</div>
+            <div className={`text-lg font-semibold ${netTotal >= 0 ? "text-success" : "text-danger"}`}>
+              ${netTotal.toLocaleString()}
+            </div>
+          </div>
+          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+            <div className="text-xs text-string-muted mb-1">Movimientos</div>
+            <div className="text-lg font-semibold text-primary">{monthly.length}</div>
+          </div>
+        </div>
+      )}
+
+      {payments.length === 0 ? (
+        <div className="text-string-muted text-sm">No hay pagos recurrentes registrados.</div>
+      ) : (
+        <div className="space-y-8">
+          {renderTypeSection("income", "Ingresos", "text-success", "💵")}
+          {renderTypeSection("expense", "Gastos", "text-danger", "💰")}
         </div>
       )}
     </div>
