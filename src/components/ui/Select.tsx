@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect, useId } from "react";
+import { createPortal } from "react-dom";
 import ChevronIcon from "@/assets/chevron.svg?react";
 
 export interface SelectOption {
   value: string;
   label: string;
+  icon?: React.ReactNode;
 }
 
 interface SelectProps {
@@ -14,13 +16,14 @@ interface SelectProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
-  icon?: React.ReactNode;
 }
 
-export default function Select({ value, onChange, options, placeholder, required, disabled, className, icon }: SelectProps) {
+export default function Select({ value, onChange, options, placeholder, required, disabled, className }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const id = useId();
 
@@ -28,18 +31,35 @@ export default function Select({ value, onChange, options, placeholder, required
   const display = selected?.label ?? placeholder ?? "Seleccionar...";
 
   useEffect(() => {
-    if (!open) { setHighlighted(-1); return; }
+    if (!open) { setHighlighted(-1); setPos(null); return; }
     const idx = options.findIndex(o => o.value === value);
     setHighlighted(idx >= 0 ? idx : 0);
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxHeight: Math.max(60, window.innerHeight - r.bottom - 8) });
+    }
   }, [open]);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node) && listRef.current && !listRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function reposition() {
+      if (btnRef.current) {
+        const r = btnRef.current.getBoundingClientRect();
+        setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxHeight: Math.max(60, window.innerHeight - r.bottom - 8) });
+      }
+    }
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open || !listRef.current || highlighted < 0) return;
@@ -84,6 +104,7 @@ export default function Select({ value, onChange, options, placeholder, required
   return (
     <div ref={ref} className={`relative ${className ?? ""}`} onKeyDown={onKeyDown}>
       <button
+        ref={btnRef}
         type="button"
         role="combobox"
         aria-expanded={open}
@@ -98,17 +119,18 @@ export default function Select({ value, onChange, options, placeholder, required
           ${!selected && placeholder ? "text-string-muted" : "text-string"}
           bg-panel`}
       >
-        {icon && <span className="w-4 h-4 shrink-0">{icon}</span>}
+        {selected?.icon && <span className="w-4 h-4 shrink-0">{selected.icon}</span>}
         <span className="flex-1 text-left">{display}</span>
         <ChevronIcon className={`w-4 h-4 text-string-muted transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && (
+      {open && pos && createPortal(
         <ul
           ref={listRef}
           id={`${id}-listbox`}
           role="listbox"
           aria-label="Opciones"
-          className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-panel shadow-lg max-h-60 overflow-y-auto"
+          style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight, zIndex: 9999 }}
+          className="rounded-lg border border-border bg-panel shadow-lg overflow-y-auto"
         >
           {options.map((o, i) => (
             <li
@@ -116,17 +138,19 @@ export default function Select({ value, onChange, options, placeholder, required
               id={`${id}-opt-${i}`}
               role="option"
               aria-selected={o.value === value}
-               className={`px-3 py-2 text-sm cursor-pointer transition-colors
+               className={`flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors
                 ${o.value === value ? "bg-primary-bg text-primary-text font-medium" : ""}
                 ${highlighted === i ? "bg-nav-hover" : ""}
                 text-string`}
               onClick={() => select(o.value)}
               onMouseEnter={() => setHighlighted(i)}
             >
+              {o.icon && <span className="w-4 h-4 shrink-0">{o.icon}</span>}
               {o.label}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

@@ -16,12 +16,14 @@ if (userId) return Astro.redirect("/app/dashboard");
       <div class="flex justify-center gap-2">
         <SignInButton
           mode="modal"
+          redirectUrl="/app/dashboard"
           class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover"
         >
           Iniciar sesión
         </SignInButton>
         <SignUpButton
           mode="modal"
+          redirectUrl="/app/dashboard"
           class="px-4 py-2 border border-border rounded-lg hover:bg-nav-hover text-string"
         >
           Registrarse

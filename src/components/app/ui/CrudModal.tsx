@@ -3,6 +3,7 @@ import { apiFetch } from "@/lib/api-client.ts";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
 import Select from "@/components/ui/Select.tsx";
 import MultiSelect from "@/components/ui/MultiSelect.tsx";
+import { INPUT_CLASS, COLOR_CLASS } from "@/lib/form-fields.ts";
 
 export interface Field {
   name: string;
@@ -94,6 +95,8 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
       for (const f of fields) {
         if (f.showIf && String(form[f.showIf.field]) !== f.showIf.value) {
           payload[f.name] = null;
+        } else if (f.type === "number") {
+          payload[f.name] = parseFloat(String(payload[f.name])) || 0;
         }
       }
       if (editingId) {
@@ -127,20 +130,13 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
               ) : f.type === "select" ? (
                 <div className="mt-1"><Select value={String(form[f.name] ?? "")} onChange={v => setVal(f.name, v)} options={f.options ?? []} required={f.required} /></div>
               ) : f.type === "textarea" ? (
-                <textarea value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} rows={4} className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm" placeholder={f.placeholder} required={f.required} />
+                <textarea value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} rows={4} className={INPUT_CLASS} placeholder={f.placeholder} required={f.required} />
               ) : f.type === "checkbox" ? (
                 <input type="checkbox" checked={Boolean(form[f.name])} onChange={e => setVal(f.name, e.target.checked)} className="mt-1 block w-4 h-4 accent-primary" />
               ) : f.type === "color" ? (
-                <div className="flex items-center gap-2 mt-1">
-                  <input type="color" value={form[f.name] ? String(form[f.name]) : "#6366f1"} onChange={e => setVal(f.name, e.target.value)} className="block w-10 h-10 rounded-lg border border-border cursor-pointer" />
-                  {form[f.name] ? (
-                    <button type="button" onClick={() => setVal(f.name, "")} className="text-xs text-string-muted hover:text-danger cursor-pointer">✕ Quitar</button>
-                  ) : (
-                    <span className="text-xs text-string-muted">Sin color</span>
-                  )}
-                </div>
+                <input type="color" value={form[f.name] ? String(form[f.name]) : "#6366f1"} onChange={e => setVal(f.name, e.target.value)} className={COLOR_CLASS} />
               ) : (
-                <input type={f.type} value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, f.type === "number" ? parseFloat(e.target.value) || 0 : e.target.value)} step={f.step} min={f.min} className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm" placeholder={f.placeholder} required={f.required} />
+                <input type={f.type} value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} step={f.step} min={f.min} className={INPUT_CLASS} placeholder={f.placeholder} required={f.required} />
               )}
             </div>
           ))}

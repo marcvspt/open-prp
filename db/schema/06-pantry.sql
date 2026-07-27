@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS pantry_items (
   category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
   description TEXT NOT NULL,
   default_quantity REAL NOT NULL DEFAULT 1,
-  unit TEXT,
   notes TEXT,
   seq INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),

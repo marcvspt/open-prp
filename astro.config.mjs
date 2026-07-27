@@ -14,7 +14,11 @@ export default defineConfig({
 
   adapter: netlify(),
 
-  integrations: [react(), clerk()],
+  integrations: [react(), clerk({
+    afterSignInUrl: "/app/dashboard",
+    afterSignUpUrl: "/app/dashboard",
+    afterSignOutUrl: "/app/login",
+  })],
 
   vite: {
     plugins: [tailwindcss(), svgr()],
