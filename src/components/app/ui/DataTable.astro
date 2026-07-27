@@ -4,16 +4,17 @@ type Column = string | { label: string; align?: "left" | "right" | "center" };
 export interface Props {
   columns: Column[];
   emptyMessage?: string;
+  ariaLabel?: string;
 }
 
-const { columns, emptyMessage = "Sin datos" } = Astro.props;
+const { columns, emptyMessage = "Sin datos", ariaLabel } = Astro.props;
 const colCount = columns.length;
 
 const alignMap: Record<string, string> = { left: "text-left", right: "text-right", center: "text-center" };
 ---
 
 <div class="overflow-x-auto rounded-lg border border-border">
-  <table class="min-w-full divide-y divide-border text-sm">
+  <table aria-label={ariaLabel} class="min-w-full divide-y divide-border text-sm">
     <thead class="bg-surface-alt">
       <tr>
         {columns.map(col => {

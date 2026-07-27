@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { apiFetch } from "@/lib/api-client.ts";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
 import Select from "@/components/ui/Select.tsx";
@@ -25,6 +25,7 @@ interface CrudModalProps {
 }
 
 export default function CrudModal({ module, fields: fieldsJson, defaultForm: defaultJson, titleSingular }: CrudModalProps) {
+  const id = useId();
   const fields: Field[] = JSON.parse(fieldsJson);
   const defaultForm: Record<string, unknown> = JSON.parse(defaultJson);
   const [open, setOpen] = useState(false);
@@ -124,19 +125,19 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
         <form onSubmit={handleSubmit} className="space-y-4">
           {fields.filter(f => !f.showIf || String(form[f.showIf.field]) === f.showIf.value).map(f => (
             <div key={f.name}>
-              <label className="block text-sm font-medium text-string">{f.label}{f.required && <span className="text-danger ml-1">*</span>}</label>
+              <label htmlFor={`${id}-${f.name}`} className="block text-sm font-medium text-string">{f.label}{f.required && <span className="text-danger ml-1">*</span>}</label>
               {f.type === "multiselect" ? (
-                <div className="mt-1"><MultiSelect value={String(form[f.name] ?? "[]")} onChange={v => setVal(f.name, v)} options={f.options ?? []} placeholder={f.placeholder} /></div>
+                <div id={`${id}-${f.name}`} className="mt-1"><MultiSelect value={String(form[f.name] ?? "[]")} onChange={v => setVal(f.name, v)} options={f.options ?? []} placeholder={f.placeholder} ariaLabel={f.label} /></div>
               ) : f.type === "select" ? (
-                <div className="mt-1"><Select value={String(form[f.name] ?? "")} onChange={v => setVal(f.name, v)} options={f.options ?? []} required={f.required} /></div>
+                <div id={`${id}-${f.name}`} className="mt-1"><Select value={String(form[f.name] ?? "")} onChange={v => setVal(f.name, v)} options={f.options ?? []} required={f.required} ariaLabel={f.label} /></div>
               ) : f.type === "textarea" ? (
-                <textarea value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} rows={4} className={INPUT_CLASS} placeholder={f.placeholder} required={f.required} />
+                <textarea id={`${id}-${f.name}`} value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} rows={4} className={INPUT_CLASS} placeholder={f.placeholder} required={f.required} />
               ) : f.type === "checkbox" ? (
-                <input type="checkbox" checked={Boolean(form[f.name])} onChange={e => setVal(f.name, e.target.checked)} className="mt-1 block w-4 h-4 accent-primary" />
+                <input id={`${id}-${f.name}`} type="checkbox" checked={Boolean(form[f.name])} onChange={e => setVal(f.name, e.target.checked)} className="mt-1 block w-4 h-4 accent-primary" />
               ) : f.type === "color" ? (
-                <input type="color" value={form[f.name] ? String(form[f.name]) : "#6366f1"} onChange={e => setVal(f.name, e.target.value)} className={COLOR_CLASS} />
+                <input id={`${id}-${f.name}`} type="color" value={form[f.name] ? String(form[f.name]) : "#6366f1"} onChange={e => setVal(f.name, e.target.value)} className={COLOR_CLASS} />
               ) : (
-                <input type={f.type} value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} step={f.step} min={f.min} className={INPUT_CLASS} placeholder={f.placeholder} required={f.required} />
+                <input id={`${id}-${f.name}`} type={f.type} value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} step={f.step} min={f.min} className={INPUT_CLASS} placeholder={f.placeholder} required={f.required} />
               )}
             </div>
           ))}

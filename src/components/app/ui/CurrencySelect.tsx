@@ -43,7 +43,7 @@ export default function CurrencySelect() {
       onChange={handleChange}
       options={options}
       className="w-full"
-      icon={<DollarIcon className="w-4 h-4 text-nav" />}
+      ariaLabel="Moneda"
     />
   );
 }

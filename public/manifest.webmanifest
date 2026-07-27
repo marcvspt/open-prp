@@ -1,0 +1,18 @@
+{
+  "name": "Open PRP",
+  "short_name": "Open PRP",
+  "description": "Centro de gestión financiera personal",
+  "start_url": "/app/dashboard",
+  "scope": "/app/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

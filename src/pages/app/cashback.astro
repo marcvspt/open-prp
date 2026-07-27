@@ -29,7 +29,7 @@ const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", car
     <PageHeader title="Cashback" createLabel="Nuevo cashback" createModule="cashback" />
     <DataTable columns={["Fecha", "Descripción", { label: "Monto", align: "right" }, "Moneda", "Tarjeta", { label: "Acciones", align: "right" }]} emptyMessage="Sin cashback">
       {items.map(c => (
-        <tr key={c.id} class="hover:bg-nav-hover">
+        <tr class="hover:bg-nav-hover">
           <td class="px-4 py-3 font-semibold">{new Date(c.date).toLocaleDateString("es")}</td>
           <td class="px-4 py-3">{c.description || "-"}</td>
           <td class="px-4 py-3 text-right font-mono text-success">+{currencySymbol[c.currency] || "$"}{Number(c.amount).toFixed(2)}</td>

@@ -123,8 +123,8 @@ export default function DashboardContent() {
               onClick={() => { setActiveTab(t.key); location.hash = "#" + t.key; }}
               className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 cursor-pointer ${
                 activeTab === t.key
-                  ? "text-primary border-primary -mb-[1px]"
-                  : "text-string-muted border-transparent hover:text-string -mb-[1px]"
+                  ? "text-primary border-primary -mb-px"
+                  : "text-string-muted border-transparent hover:text-string -mb-px"
               }`}
             >
               {t.label}

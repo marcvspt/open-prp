@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useId } from "react";
+import { createPortal } from "react-dom";
 import ChevronIcon from "@/assets/chevron.svg?react";
 
 export interface MultiSelectOption {
@@ -14,12 +15,15 @@ interface MultiSelectProps {
   required?: boolean;
   disabled?: boolean;
   class?: string;
+  ariaLabel?: string;
 }
 
-export default function MultiSelect({ value, onChange, options, placeholder, required, disabled, class: className }: MultiSelectProps) {
+export default function MultiSelect({ value, onChange, options, placeholder, required, disabled, class: className, ariaLabel }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const id = useId();
 
@@ -37,17 +41,34 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
         : `${selectedValues.length} secciones`;
 
   useEffect(() => {
-    if (!open) { setHighlighted(-1); return; }
+    if (!open) { setHighlighted(-1); setPos(null); return; }
     setHighlighted(0);
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxHeight: Math.max(60, window.innerHeight - r.bottom - 8) });
+    }
   }, [open]);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node) && listRef.current && !listRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function reposition() {
+      if (btnRef.current) {
+        const r = btnRef.current.getBoundingClientRect();
+        setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxHeight: Math.max(60, window.innerHeight - r.bottom - 8) });
+      }
+    }
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open || !listRef.current || highlighted < 0) return;
@@ -105,11 +126,14 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
   return (
     <div ref={ref} className={`relative ${className ?? ""}`} onKeyDown={onKeyDown}>
       <button
+        ref={btnRef}
         type="button"
         role="combobox"
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-label={ariaLabel}
         aria-controls={`${id}-listbox`}
+        aria-activedescendant={highlighted >= 0 ? `${id}-opt-${highlighted}` : undefined}
         disabled={disabled}
         onClick={() => setOpen(p => !p)}
         className={`flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
@@ -119,18 +143,20 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
           bg-panel`}
       >
         <span className="flex-1 text-left truncate">{display}</span>
-        <ChevronIcon className={`w-4 h-4 text-string-muted transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
+        <ChevronIcon aria-hidden="true" className={`w-4 h-4 text-string-muted transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && (
+      {open && pos && createPortal(
         <ul
           ref={listRef}
           id={`${id}-listbox`}
           role="listbox"
           aria-multiselectable="true"
-          aria-label="Secciones"
-          className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-panel shadow-lg max-h-60 overflow-y-auto"
+          aria-label={ariaLabel ?? "Secciones"}
+          style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight, zIndex: 9999 }}
+          className="rounded-lg border border-border bg-panel shadow-lg overflow-y-auto"
         >
           <li
+            id={`${id}-opt-0`}
             role="option"
             aria-selected={allSelected}
             className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2
@@ -139,7 +165,7 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
             onClick={() => toggle("*")}
             onMouseEnter={() => setHighlighted(0)}
           >
-            <input type="checkbox" checked={allSelected} read-only className="w-4 h-4 accent-primary pointer-events-none" />
+            <input type="checkbox" checked={allSelected} aria-hidden="true" className="w-4 h-4 accent-primary pointer-events-none" />
             <span className={allSelected ? "font-medium text-primary" : ""}>Todas las secciones</span>
           </li>
           {options.map((o, i) => {
@@ -148,6 +174,7 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
             return (
               <li
                 key={o.value}
+                id={`${id}-opt-${idx}`}
                 role="option"
                 aria-selected={isSelected}
                 className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2
@@ -157,12 +184,13 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
                 onClick={() => toggle(o.value)}
                 onMouseEnter={() => setHighlighted(idx)}
               >
-                <input type="checkbox" checked={isSelected} read-only className="w-4 h-4 accent-primary pointer-events-none" />
+                <input type="checkbox" checked={isSelected} aria-hidden="true" className="w-4 h-4 accent-primary pointer-events-none" />
                 {o.label}
               </li>
             );
           })}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );
