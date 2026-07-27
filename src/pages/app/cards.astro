@@ -4,9 +4,10 @@ import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
-import { CreditCardRepository } from "@/lib/modules/credit-cards/repository.ts";
+import { CardRepository } from "@/lib/modules/cards/repository.ts";
+import { resolvePaymentDueDate as resolvePaymentDueDateISO } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
-const items = await new CreditCardRepository().findAll(userId);
+const items = await new CardRepository().findAll(userId);
 const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonth = now.getMonth() + 1;
@@ -17,13 +18,9 @@ function resolveDate(day: number, baseYear: number, baseMonth: number): string {
 }
 
 function resolvePaymentDueDate(cutoffDay: number, paymentDueDay: number): string {
-  const today = now.getDate();
-  if (today > cutoffDay) {
-    const nextM = currentMonth === 12 ? 1 : currentMonth + 1;
-    const nextY = currentMonth === 12 ? currentYear + 1 : currentYear;
-    return resolveDate(paymentDueDay, nextY, nextM);
-  }
-  return resolveDate(paymentDueDay, currentYear, currentMonth);
+  const month = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+  const [y, m, d] = resolvePaymentDueDateISO(month, cutoffDay, paymentDueDay).split("-").map(Number);
+  return resolveDate(d, y, m);
 }
 
 function resolveCutoffDate(cutoffDay: number): string {
@@ -42,8 +39,8 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
 ---
 
 <AppLayout title="Tarjetas - Open PRP">
-  <div data-module="credit-cards" class="space-y-4">
-    <PageHeader title="Tarjetas de crédito" createLabel="Nueva tarjeta" createModule="credit-cards" />
+  <div data-module="cards" class="space-y-4">
+    <PageHeader title="Tarjetas" createLabel="Nueva tarjeta" createModule="cards" />
     <DataTable columns={["Nombre", "Tipo", { label: "Límite", align: "right" }, { label: "Corte", align: "center" }, { label: "Límite de pago", align: "center" }, { label: "Acciones", align: "right" }]} emptyMessage="Sin tarjetas">
       {items.map(c => {
         const typeLabel = c.type === "credit" ? "Crédito" : c.type === "debit" ? "Débito" : "Vales";
@@ -56,14 +53,14 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
           <td class="px-4 py-3 text-center text-xs font-semibold">{c.cutoff_day != null ? resolveCutoffDate(c.cutoff_day) : "—"}</td>
           <td class="px-4 py-3 text-center text-xs font-semibold">{c.cutoff_day != null && c.payment_due_day != null ? resolvePaymentDueDate(c.cutoff_day, c.payment_due_day) : "—"}</td>
           <td class="px-4 py-3 text-right space-x-2">
-            <button data-edit-credit-cards={c.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>
-            <button data-delete-credit-cards={c.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">Eliminar</button>
+            <button data-edit-cards={c.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>
+            <button data-delete-cards={c.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">Eliminar</button>
           </td>
         </tr>
         );
       })}
     </DataTable>
   </div>
-  <CrudModal client:load module="credit-cards" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="tarjeta" />
-  <DeleteHandler module="credit-cards" label="tarjeta" />
+  <CrudModal client:load module="cards" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="tarjeta" />
+  <DeleteHandler module="cards" label="tarjeta" />
 </AppLayout>

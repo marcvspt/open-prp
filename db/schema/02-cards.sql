@@ -1,6 +1,6 @@
-DROP TABLE IF EXISTS credit_cards;
+DROP TABLE IF EXISTS cards;
 
-CREATE TABLE IF NOT EXISTS credit_cards (
+CREATE TABLE IF NOT EXISTS cards (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -14,4 +14,4 @@ CREATE TABLE IF NOT EXISTS credit_cards (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_credit_cards_user_id ON credit_cards(user_id);
+CREATE INDEX IF NOT EXISTS idx_cards_user_id ON cards(user_id);

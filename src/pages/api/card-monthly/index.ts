@@ -35,7 +35,7 @@ export const PATCH: APIRoute = async (context) => {
   const body = await context.request.json();
   if (!body.id) return errorResponse("id is required");
 
-  const item = await repo.togglePaid(body.id, uid, body.is_paid);
+  const item = await repo.togglePaid(body.id, uid, body.is_paid, body.paid_at);
   if (!item) return errorResponse("Not found", 404);
   return jsonResponse(item);
 };

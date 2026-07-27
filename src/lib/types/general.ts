@@ -5,7 +5,7 @@ export type { PantryItem, PantryItemInput, PantryItemUpdate, PantryFilter } from
 export type { Note, CreateNoteInput, UpdateNoteInput, NoteFilter } from "@/types/note.ts";
 export type { NoteTag } from "@/types/note.ts";
 export type { Event, CreateEventInput, UpdateEventInput, EventFilter } from "@/types/event.ts";
-export type { CreditCard, CreditCardInput } from "@/types/credit-card.ts";
+export type { Card, CardInput } from "@/types/card.ts";
 export type { Installment, InstallmentInput, InstallmentFilter } from "@/types/installment.ts";
 export type { RecurringPayment, RecurringPaymentInput, RecurringPaymentMonthly, RecurringPaymentMonthlyUpdate } from "@/types/recurring-payment.ts";
 export type { Cashback, CashbackInput } from "@/types/cashback.ts";

@@ -38,13 +38,16 @@ export class InstallmentRepository {
     });
     const rows = result.rows as unknown as Installment[];
     const now = localISOString();
+    const currentMonthStart = `${now.slice(0, 7)}-01`;
     return rows.map(r => {
       const computed = computeRemaining(r.start_date, r.total_months);
       if (computed !== r.remaining_months) {
         db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now, r.id] });
       }
       return { ...r, remaining_months: computed };
-    }).filter(i => !filter?.active_only || i.remaining_months > 0);
+      // Active = its last payment falls in the current month or later, so an
+      // installment stays visible (and counted in the month's debt) during its final month.
+    }).filter(i => !filter?.active_only || addMonths(i.start_date, Math.max(0, i.total_months - 1)) >= currentMonthStart);
   }
 
   async findById(id: string, userId: string): Promise<Installment | null> {

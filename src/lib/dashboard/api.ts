@@ -42,7 +42,7 @@ export async function fetchDashboardMonth(month: string): Promise<DashboardMonth
 
   const [cards, services, cardDebtsRaw, servicePayments, txDataArr, installments, eventsData, tasksData, shoppingData, cbData, paymentMethods, categories] =
     await Promise.all([
-      fetchList<CardWithDebt>("/api/credit-cards"),
+      fetchList<CardWithDebt>("/api/cards"),
       fetchList<RecurringPayment>("/api/recurring-payments"),
       fetchList<CardMonthly>(`/api/card-monthly?month=${month}`),
       fetchList<RecurringPaymentMonthly>(`/api/recurring-payment-monthly?month=${month}`),
@@ -109,20 +109,20 @@ export async function fetchDashboardHistory(): Promise<DashboardHistory> {
   return { card, service };
 }
 
-export async function payCardDebtFull(id: string): Promise<boolean> {
+export async function payCardDebtFull(id: string, paidAt?: string): Promise<boolean> {
   return safeFetch("/api/card-monthly", {
     method: "PATCH",
     headers: JSON_HEADERS,
-    body: JSON.stringify({ id, is_paid: true }),
+    body: JSON.stringify({ id, is_paid: true, paid_at: paidAt }),
   });
 }
 
 /** Marks the debt as paid and registers the remaining balance as an expense on the next month's closing day. */
 export async function payCardDebtPartial(args: PayCardDebtPartialArgs): Promise<boolean> {
   const remaining = args.statementBalance - args.paidAmount;
-  if (remaining <= 0) return payCardDebtFull(args.id);
+  if (remaining <= 0) return payCardDebtFull(args.id, args.paidAt);
 
-  const paid = await payCardDebtFull(args.id);
+  const paid = await payCardDebtFull(args.id, args.paidAt);
   if (!paid) return false;
 
   const [year, monthNum] = args.month.split("-").map(Number);

@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS card_monthly;
 
 CREATE TABLE IF NOT EXISTS card_monthly (
   id TEXT PRIMARY KEY,
-  card_id TEXT NOT NULL REFERENCES credit_cards(id) ON DELETE CASCADE,
+  card_id TEXT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   month TEXT NOT NULL,
   statement_balance REAL NOT NULL DEFAULT 0,

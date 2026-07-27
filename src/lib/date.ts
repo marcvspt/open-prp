@@ -4,16 +4,48 @@ export function localISOString(): string {
   return new Date(d.getTime() - tzOffset).toISOString().slice(0, 19);
 }
 
-export function daysUntil(targetDay: number): number {
+/** Days from today to `date` (YYYY-MM-DD); negative when the date is in the past. */
+export function daysUntilDate(date: string): number {
+  const [y, m, d] = date.split("-").map(Number);
+  const target = new Date(y, m - 1, d);
   const now = new Date();
-  const today = now.getDate();
-  let diff = targetDay - today;
-  if (diff < 0) {
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, targetDay);
-    const todayDate = new Date(now.getFullYear(), now.getMonth(), today);
-    diff = Math.ceil((nextMonth.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((target.getTime() - today.getTime()) / 86400000);
+}
+
+/**
+ * Resolves the payment due date (YYYY-MM-DD) for a statement closing on `cutoffDay`
+ * of `month` (YYYY-MM): if the due day is after the cutoff day it falls in the same
+ * month, otherwise it falls in the following month.
+ */
+export function resolvePaymentDueDate(month: string, cutoffDay: number, paymentDueDay: number): string {
+  const [y, m] = month.split("-").map(Number);
+  let dueY = y;
+  let dueM = m;
+  if (paymentDueDay <= cutoffDay) {
+    dueM = m === 12 ? 1 : m + 1;
+    dueY = m === 12 ? y + 1 : y;
   }
-  return diff;
+  const day = Math.min(paymentDueDay, new Date(dueY, dueM, 0).getDate());
+  return `${dueY}-${String(dueM).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/** Same as `resolvePaymentDueDate` but tolerates a null cutoff (falls back to the last day of the month). */
+export function paymentDueDate(month: string, cutoffDay: number | null, paymentDueDay: number): string {
+  const [y, m] = month.split("-").map(Number);
+  const cutoff = cutoffDay ?? new Date(y, m, 0).getDate();
+  return resolvePaymentDueDate(month, cutoff, paymentDueDay);
+}
+
+/** Days until the payment due date of a statement month; negative when overdue. */
+export function daysUntilPaymentDue(month: string, cutoffDay: number | null, paymentDueDay: number): number {
+  return daysUntilDate(paymentDueDate(month, cutoffDay, paymentDueDay));
+}
+
+/** True when the payment was made after the statement month's payment due date. */
+export function isPaymentLate(month: string, cutoffDay: number | null, paymentDueDay: number | null, paidAt: string | null): boolean {
+  if (paymentDueDay == null || paidAt == null) return false;
+  return paidAt.slice(0, 10) > paymentDueDate(month, cutoffDay, paymentDueDay);
 }
 
 export function getMonthOptions(count = 12): string[] {

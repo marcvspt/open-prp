@@ -61,7 +61,6 @@ async function seed() {
     { name: "Limpieza", sections: ["despensa"], icon: "🧹", color: "#8b5cf6" },
     { name: "Comida", sections: ["despensa"], icon: "🍽️", color: "#f97316" },
     { name: "Golosinas", sections: ["despensa"], icon: "🍬", color: "#ec4899" },
-    { name: "Varios", sections: ["despensa"], icon: "📦", color: "#6b7280" },
     { name: "Escuela", sections: ["despensa", "eventos", "transacciones", "plazos", "pagos-recurrentes"], icon: "📚", color: "#3b82f6" },
     { name: "Higiene", sections: ["despensa"], icon: "🧴", color: "#06b6d4" },
     { name: "Bebidas", sections: ["despensa"], icon: "🥤", color: "#0ea5e9" },

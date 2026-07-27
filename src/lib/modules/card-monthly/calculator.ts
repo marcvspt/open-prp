@@ -30,7 +30,7 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
   const db = getDb();
 
   const cardRes = await db.execute({
-    sql: "SELECT cutoff_day FROM credit_cards WHERE id = ? AND user_id = ?",
+    sql: "SELECT cutoff_day FROM cards WHERE id = ? AND user_id = ?",
     args: [cardId, userId],
   });
   const card = cardRes.rows[0] as { cutoff_day: number | null } | undefined;
