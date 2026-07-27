@@ -8,6 +8,7 @@ import RecurringPaymentsMonthly from "@/components/app/recurring-payments/Recurr
 import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
+import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, CURRENCY_SYMBOL } from "@/lib/form-fields.ts";
 const userId = Astro.locals.userId;
 const items = await new RecurringPaymentRepository().findAll(userId);
 const catRepo = new CategoryRepository();
@@ -17,14 +18,14 @@ const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
 const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm]));
 const catMap = Object.fromEntries(allRecurringCategories.map(c => [c.id, c]));
-const currencySymbol: Record<string, string> = { EUR: "€", MXN: "$", USD: "$" };
+const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
   { name: "name", label: "Descripción", type: "text" as const, required: true },
   { name: "default_amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
-  { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "€ EUR" }, { value: "MXN", label: "$ MXN" }, { value: "USD", label: "$ USD" }] },
-  { name: "type", label: "Tipo", type: "select" as const, options: [{ value: "expense", label: "💰 Gasto" }, { value: "income", label: "💵 Ingreso" }] },
-  { name: "payment_method_id", label: "Método de pago", type: "select" as const, required: true, options: paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` })) },
-  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...allRecurringCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
+  FIELD_TYPE_CURRENCY,
+  FIELD_TYPE,
+  paymentMethodField(paymentMethods),
+  categoryField(allRecurringCategories),
 ];
 const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expense", payment_method_id: paymentMethods[0]?.id ?? "", category_id: "" };
 ---

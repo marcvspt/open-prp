@@ -8,6 +8,7 @@ import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { InstallmentRepository } from "@/lib/modules/installments/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
+import { FIELD_TYPE_CURRENCY, paymentMethodField, categoryField, CURRENCY_SYMBOL } from "@/lib/form-fields.ts";
 const userId = Astro.locals.userId;
 const activeOnly = Astro.url.searchParams.get("active_only") !== "false";
 const items = await new InstallmentRepository().findAll(userId, { active_only: activeOnly });
@@ -17,16 +18,16 @@ const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
 const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm]));
 const catMap = Object.fromEntries(instCategories.map(c => [c.id, c]));
-const currencySymbol: Record<string, string> = { EUR: "€", MXN: "$", USD: "$" };
+const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
   { name: "start_date", label: "Fecha de inicio", type: "date" as const, required: true },
   { name: "description", label: "Descripción", type: "text" as const, required: true },
   { name: "total_amount", label: "Monto total", type: "number" as const, required: true, step: "0.01" },
   { name: "monthly_amount", label: "Cuota mensual", type: "number" as const, required: true, step: "0.01" },
-  { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "€ EUR" }, { value: "MXN", label: "$ MXN" }, { value: "USD", label: "$ USD" }] },
+  FIELD_TYPE_CURRENCY,
   { name: "total_months", label: "Total de meses", type: "number" as const, required: true, min: 1 },
-  { name: "payment_method_id", label: "Método de pago", type: "select" as const, required: true, options: paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` })) },
-  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...instCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
+  paymentMethodField(paymentMethods),
+  categoryField(instCategories),
 ];
 const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_amount: 0, currency: "MXN", total_months: 1, payment_method_id: paymentMethods[0]?.id ?? "", category_id: "" };
 const instFilters = [

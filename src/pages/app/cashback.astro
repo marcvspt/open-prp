@@ -6,19 +6,20 @@ import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
 import { CardRepository } from "@/lib/modules/cards/repository.ts";
+import { FIELD_TYPE_CURRENCY, cardField, CURRENCY_SYMBOL } from "@/lib/form-fields.ts";
 const userId = Astro.locals.userId;
 const items = await new CashbackRepository().findAll(userId);
 const allCards = await new CardRepository().findAll(userId);
 const creditCards = allCards.filter(c => c.type === "credit");
 const cardMap = Object.fromEntries(allCards.map(c => [c.id, c]));
 const cardEmoji = (type: string) => type === "credit" ? "💳" : type === "debit" ? "🏦" : "🎫";
-const currencySymbol: Record<string, string> = { EUR: "€", MXN: "$", USD: "$" };
+const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
   { name: "date", label: "Fecha", type: "date" as const, required: true },
   { name: "description", label: "Descripción", type: "text" as const },
   { name: "amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
-  { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "€ EUR" }, { value: "MXN", label: "$ MXN" }, { value: "USD", label: "$ USD" }] },
-  { name: "card_id", label: "Tarjeta", type: "select" as const, required: true, options: creditCards.map(c => ({ value: c.id, label: `${cardEmoji(c.type)} ${c.name}` })) },
+  FIELD_TYPE_CURRENCY,
+  cardField(creditCards),
 ];
 const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", card_id: creditCards[0]?.id ?? "" };
 ---
