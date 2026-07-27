@@ -133,8 +133,10 @@ export class RecurringPaymentRepository {
 
   async getMonthServices(month: string, userId: string): Promise<RecurringPaymentMonthly[]> {
     const result = await getDb().execute({
-      sql: `SELECT sm.* FROM recurring_payment_monthly sm
+      sql: `SELECT sm.*, pm.name AS payment_method_name, pm.icon AS payment_method_icon
+            FROM recurring_payment_monthly sm
             INNER JOIN recurring_payments rs ON rs.id = sm.payment_id
+            LEFT JOIN payment_methods pm ON pm.id = sm.payment_method_id
             WHERE sm.month = ? AND rs.user_id = ? AND sm.is_active = 1
             ORDER BY rs.name ASC`,
       args: [month, userId],

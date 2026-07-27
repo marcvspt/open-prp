@@ -16,9 +16,10 @@ interface SelectProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  ariaLabel?: string;
 }
 
-export default function Select({ value, onChange, options, placeholder, required, disabled, className }: SelectProps) {
+export default function Select({ value, onChange, options, placeholder, required, disabled, className, ariaLabel }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const [pos, setPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
@@ -110,6 +111,7 @@ export default function Select({ value, onChange, options, placeholder, required
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-controls={`${id}-listbox`}
+        aria-label={ariaLabel}
         aria-activedescendant={highlighted >= 0 ? `${id}-opt-${highlighted}` : undefined}
         disabled={disabled}
         onClick={() => setOpen(p => !p)}
@@ -121,7 +123,7 @@ export default function Select({ value, onChange, options, placeholder, required
       >
         {selected?.icon && <span className="w-4 h-4 shrink-0">{selected.icon}</span>}
         <span className="flex-1 text-left">{display}</span>
-        <ChevronIcon className={`w-4 h-4 text-string-muted transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronIcon aria-hidden="true" className={`w-4 h-4 text-string-muted transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && pos && createPortal(
         <ul

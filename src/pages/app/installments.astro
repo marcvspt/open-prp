@@ -45,7 +45,7 @@ const instFilters = [
     </div>
     <DataTable columns={[{ label: "Fecha", align: "center" }, "Descripción", { label: "Total", align: "right" }, { label: "Cuota", align: "right" }, "Moneda", { label: "Progreso", align: "center" }, "Método", "Categoría", { label: "Acciones", align: "right" }]} emptyMessage="Sin plazos">
       {items.map(i => (
-        <tr key={i.id} class="hover:bg-nav-hover">
+        <tr class="hover:bg-nav-hover">
           <td class="px-4 py-3 text-center text-xs font-semibold">{new Date(i.start_date).toLocaleDateString("es")}</td>
           <td class="px-4 py-3 font-medium">{i.description}</td>
           <td class="px-4 py-3 text-right font-mono text-danger">{currencySymbol[i.currency] || "$"}{Number(i.total_amount).toFixed(2)}</td>

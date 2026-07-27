@@ -32,6 +32,7 @@ export default function ThemeToggle() {
       onChange={handleChange}
       options={options}
       className="w-full"
+      ariaLabel="Tema"
     />
   );
 }

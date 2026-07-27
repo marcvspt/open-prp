@@ -15,6 +15,7 @@ export default function MonthSelector({ value, onChange, count = 12 }: Props) {
         value={value}
         onChange={onChange}
         options={months.map(m => ({ value: m, label: monthLabel(m) }))}
+        ariaLabel="Mes"
       />
     </div>
   );

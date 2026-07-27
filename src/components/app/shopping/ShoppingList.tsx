@@ -64,9 +64,8 @@ export default function ShoppingList() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: d.name,
+          name: d.description,
           quantity: d.default_quantity,
-          unit: d.unit || undefined,
           category: d.category_id || undefined,
           despensa_item_id: d.id,
         }),
@@ -174,7 +173,7 @@ export default function ShoppingList() {
                                 : "bg-primary-bg text-primary-text border border-primary-border"
                             }`}
                           >
-                            {d.name}
+                            {d.description}
                           </button>
                         );
                       })}

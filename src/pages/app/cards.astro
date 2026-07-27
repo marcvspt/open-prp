@@ -46,7 +46,7 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
         const typeLabel = c.type === "credit" ? "Crédito" : c.type === "debit" ? "Débito" : "Vales";
         const typeColor = c.type === "credit" ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" : c.type === "debit" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300" : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300";
         return (
-        <tr key={c.id} class="hover:bg-nav-hover">
+        <tr class="hover:bg-nav-hover">
           <td class="px-4 py-3"><span class="flex items-center gap-2">{c.color && <span class="w-3 h-3 rounded-full" style={{ backgroundColor: c.color }} />}{c.name}</span></td>
           <td class="px-4 py-3"><span class={`text-xs font-medium px-2 py-0.5 rounded ${typeColor}`}>{typeLabel}</span></td>
           <td class="px-4 py-3 text-right font-mono text-success">{c.max_limit != null ? `$${Number(c.max_limit).toFixed(2)}` : "—"}</td>
