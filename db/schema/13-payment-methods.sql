@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS payment_methods (
   user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   type TEXT NOT NULL CHECK(type IN ('global','personal','card')) DEFAULT 'personal',
-  card_id TEXT REFERENCES credit_cards(id) ON DELETE CASCADE,
+  card_id TEXT REFERENCES cards(id) ON DELETE CASCADE,
   icon TEXT,
   color TEXT,
   seq INTEGER NOT NULL DEFAULT 0,

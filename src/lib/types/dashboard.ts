@@ -1,4 +1,4 @@
-import type { CreditCard } from "@/lib/types/credit-card.ts";
+import type { Card } from "@/lib/types/card.ts";
 import type { CardMonthly, CalculatedDebt } from "@/lib/types/card-monthly.ts";
 import type { RecurringPayment, RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 import type { Transaction } from "@/lib/types/transaction.ts";
@@ -9,7 +9,7 @@ import type { ShoppingItem } from "@/lib/types/shopping.ts";
 import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import type { Category } from "@/lib/types/category.ts";
 
-export interface CardWithDebt extends CreditCard {
+export interface CardWithDebt extends Card {
   debt?: CardMonthly;
 }
 
@@ -45,4 +45,5 @@ export interface PayCardDebtPartialArgs {
   cutoffDay: number | null;
   paymentMethodId: string | null;
   categoryId: string | null;
+  paidAt?: string;
 }

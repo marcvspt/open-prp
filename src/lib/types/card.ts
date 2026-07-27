@@ -1,6 +1,6 @@
 export type CardType = "credit" | "debit" | "voucher";
 
-export interface CreditCard {
+export interface Card {
   id: string;
   user_id: string;
   name: string;
@@ -13,7 +13,7 @@ export interface CreditCard {
   updated_at: string;
 }
 
-export interface CreditCardInput {
+export interface CardInput {
   name: string;
   type: CardType;
   max_limit?: number | null;
@@ -21,5 +21,3 @@ export interface CreditCardInput {
   payment_due_day?: number | null;
   color?: string;
 }
-
-

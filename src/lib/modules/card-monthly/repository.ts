@@ -7,7 +7,7 @@ export class CardMonthlyRepository {
     const db = getDb();
     const result = await db.execute({
       sql: `SELECT cm.* FROM card_monthly cm
-            INNER JOIN credit_cards cc ON cc.id = cm.card_id
+            INNER JOIN cards cc ON cc.id = cm.card_id
             WHERE cm.month = ? AND cm.user_id = ?
             ORDER BY cc.name ASC`,
       args: [month, userId],
@@ -59,7 +59,7 @@ export class CardMonthlyRepository {
     return { ...row, statement_balance: Number(row.statement_balance), is_paid: Boolean(row.is_paid) };
   }
 
-  async togglePaid(id: string, userId: string, isPaid: boolean): Promise<CardMonthly | null> {
+  async togglePaid(id: string, userId: string, isPaid: boolean, paidAt?: string): Promise<CardMonthly | null> {
     const db = getDb();
     const existing = await this.findById(id, userId);
     if (!existing) return null;
@@ -67,7 +67,7 @@ export class CardMonthlyRepository {
     const now = localISOString();
     await db.execute({
       sql: `UPDATE card_monthly SET is_paid = ?, paid_at = ?, updated_at = ? WHERE id = ? AND user_id = ?`,
-      args: [isPaid ? 1 : 0, isPaid ? now : null, now, id, userId],
+      args: [isPaid ? 1 : 0, isPaid ? (paidAt ?? now) : null, now, id, userId],
     });
 
     return this.findById(id, userId);
@@ -77,7 +77,7 @@ export class CardMonthlyRepository {
     const db = getDb();
     const result = await db.execute({
       sql: `SELECT cm.* FROM card_monthly cm
-            INNER JOIN credit_cards cc ON cc.id = cm.card_id
+            INNER JOIN cards cc ON cc.id = cm.card_id
             WHERE cm.user_id = ?
             ORDER BY cm.month DESC, cc.name ASC
             LIMIT ?`,

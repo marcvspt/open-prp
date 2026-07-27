@@ -89,10 +89,17 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
     e.preventDefault();
     setSaving(true);
     try {
+      // Fields hidden by showIf don't apply to the current form state — persist them as null.
+      const payload: Record<string, unknown> = { ...form };
+      for (const f of fields) {
+        if (f.showIf && String(form[f.showIf.field]) !== f.showIf.value) {
+          payload[f.name] = null;
+        }
+      }
       if (editingId) {
-        await apiFetch(`/api/${module}/${editingId}`, { method: "PUT", body: JSON.stringify(form) });
+        await apiFetch(`/api/${module}/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
       } else {
-        await apiFetch(`/api/${module}`, { method: "POST", body: JSON.stringify(form) });
+        await apiFetch(`/api/${module}`, { method: "POST", body: JSON.stringify(payload) });
       }
       setOpen(false);
       window.location.reload();

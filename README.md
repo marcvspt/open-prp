@@ -32,7 +32,7 @@
 - **Componentes compartidos**: `StatCard.tsx` (cards de métricas del dashboard), `FilterLinks.astro` (filtros tipo pill de las páginas), `FeatureCard.astro` (landing)
 - **Tema oscuro/claro/sistema** con persistencia en localStorage; Clerk se adapta vía `color-scheme`
 - **Título**: `"Open PRP | {title}"` generado por BaseLayout; sidebar muestra "OPRP"
-- **Iconos SVG**: 18 archivos en `src/assets/` (kebab-case: `credit-card.svg`, `home.svg`, etc.), importados vía `@/assets/*` con `vite-plugin-svgr`; el identificador importado es PascalCase con sufijo `Icon`
+- **Iconos SVG**: 18 archivos en `src/assets/` (kebab-case: `card.svg`, `home.svg`, etc.), importados vía `@/assets/*` con `vite-plugin-svgr`; el identificador importado es PascalCase con sufijo `Icon`
 - **Landing page**: header con links data-driven (`LANDING_LINKS`), CTA "Ir a la app", GitHub icon, ThemeToggle; features renderizadas desde `FEATURES_INFO`; footer con GitHub + marcvspt.tech
 - **Colores semánticos**: `primary`, `success`, `danger`, `warning`, `info` como `@theme` tokens con variantes `-hover`, `-text`, `-bg`, `-border` y valores oscuros
 
@@ -199,7 +199,7 @@ src/
 │   │   ├── transactions/       # Incluye categories.ts (repositorio unificado)
 │   │   ├── card-monthly/       # Incluye calculator.ts
 │   │   ├── cashback/
-│   │   ├── credit-cards/
+│   │   ├── cards/
 │   │   ├── events/
 │   │   ├── installments/
 │   │   ├── notes/              # Incluye tags.ts
@@ -219,7 +219,7 @@ src/
 │       ├── login.astro         # Pantalla de login
 │       ├── cashback.astro
 │       ├── categories.astro
-│       ├── credit-cards.astro
+│       ├── cards.astro
 │       ├── events.astro
 │       ├── installments.astro
 │       ├── notes.astro
@@ -235,7 +235,7 @@ src/
 db/
 ├── schema/                     # SQL modular, 1 archivo por módulo
 │   ├── 01-users.sql
-│   ├── 02-credit-cards.sql
+│   ├── 02-cards.sql
 │   ├── 03-categories.sql
 │   ├── 04-installments.sql
 │   ├── 05-transactions.sql

@@ -3,7 +3,7 @@ import type { Transaction } from "@/lib/types/transaction.ts";
 import type { CardMonthly } from "@/lib/types/card-monthly.ts";
 import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 import type { DashboardMonthData, CardWithDebt } from "@/lib/types/dashboard.ts";
-import { getMonthOptions, monthLabel, daysUntil } from "@/lib/date.ts";
+import { getMonthOptions, monthLabel, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
 import { fetchDashboardMonth, fetchDashboardHistory, payCardDebtFull, payCardDebtPartial, EMPTY_DASHBOARD_MONTH } from "@/lib/dashboard/api.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
@@ -35,6 +35,7 @@ export default function DashboardContent() {
   const [historyService, setHistoryService] = useState<RecurringPaymentMonthly[]>([]);
   const [payDialog, setPayDialog] = useState<{ debt: CardMonthly; card: CardWithDebt } | null>(null);
   const [payAmount, setPayAmount] = useState("");
+  const [payDate, setPayDate] = useState("");
 
   const {
     cards, services, cardDebts, servicePayments, upcomingEvents, pendingTasks,
@@ -70,15 +71,16 @@ export default function DashboardContent() {
     });
   }, [activeTab]);
 
-  function markDebtPaid(id: string) {
+  function markDebtPaid(id: string, paidAt: string) {
     setMonthData(prev => ({
       ...prev,
-      cardDebts: prev.cardDebts.map(d => d.id === id ? { ...d, is_paid: true, paid_at: new Date().toISOString() } : d),
+      cardDebts: prev.cardDebts.map(d => d.id === id ? { ...d, is_paid: true, paid_at: paidAt } : d),
     }));
   }
 
   async function handlePayFull(id: string) {
-    if (await payCardDebtFull(id)) markDebtPaid(id);
+    const paidAt = payDate || undefined;
+    if (await payCardDebtFull(id, paidAt)) markDebtPaid(id, paidAt ?? new Date().toISOString());
     setPayDialog(null);
   }
 
@@ -86,6 +88,7 @@ export default function DashboardContent() {
     if (!payDialog) return;
     const amt = parseFloat(payAmount);
     if (!(amt > 0 && amt <= payDialog.debt.statement_balance)) return;
+    const paidAt = payDate || undefined;
     const ok = await payCardDebtPartial({
       id: payDialog.debt.id,
       month: payDialog.debt.month,
@@ -94,16 +97,18 @@ export default function DashboardContent() {
       cutoffDay: payDialog.card.cutoff_day,
       paymentMethodId: paymentMethods.find(p => p.card_id === payDialog.card.id)?.id ?? null,
       categoryId: categories.find(c => c.name === "Saldo de tarjeta")?.id ?? null,
+      paidAt,
     });
-    if (ok) markDebtPaid(payDialog.debt.id);
+    if (ok) markDebtPaid(payDialog.debt.id, paidAt ?? new Date().toISOString());
     setPayDialog(null);
   }
 
   const getCardDebt = (cardId: string) => cardDebts.find(d => d.card_id === cardId);
+  const visibleCards = cards.filter(c => c.type === "credit");
 
   const tabs = [
     { key: "resumen", label: "Resumen" },
-    { key: "tarjetas", label: "Tarjetas de crédito" },
+    { key: "tarjetas", label: "Tarjetas" },
     { key: "plazos", label: "Plazos" },
     { key: "eventos", label: "Eventos" },
     { key: "tareas", label: "Tareas" },
@@ -164,15 +169,16 @@ export default function DashboardContent() {
               <div className="space-y-2">
                   {cardDebts.map(d => {
                     const card = cards.find(c => c.id === d.card_id);
-                    const dueIn = card && card.payment_due_day != null ? daysUntil(card.payment_due_day) : 0;
+                    const dueIn = card && card.payment_due_day != null ? daysUntilPaymentDue(currentMonth, card.cutoff_day, card.payment_due_day) : 0;
+                    const paidLate = d.is_paid && isPaymentLate(currentMonth, card?.cutoff_day ?? null, card?.payment_due_day ?? null, d.paid_at);
                     return (
                     <div key={d.id} className="flex items-center justify-between text-sm py-1">
                       <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${d.is_paid ? "bg-success" : "bg-warning"}`} />
+                        <span className={`w-2 h-2 rounded-full ${d.is_paid ? (paidLate ? "bg-danger" : "bg-success") : "bg-warning"}`} />
                         <span>{card?.name ?? "?"}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className={`font-mono ${d.is_paid ? "text-success line-through" : "text-danger"}`}>
+                        <span className={`font-mono ${d.is_paid ? (paidLate ? "text-danger" : "text-success line-through") : "text-danger"}`}>
                           {formatCurrency(d.statement_balance)}
                         </span>
                         {!d.is_paid && card && (
@@ -236,19 +242,21 @@ export default function DashboardContent() {
       {/* Tarjetas */}
       {activeTab === "tarjetas" && (
         <div className="space-y-4">
-          {cards.length === 0 ? (
+          {visibleCards.length === 0 ? (
             <p className="text-string-muted text-sm">No hay tarjetas registradas</p>
           ) : (
-            cards.map(card => {
+            visibleCards.map(card => {
               const debt = getCardDebt(card.id);
-              const dueIn = card.payment_due_day != null ? daysUntil(card.payment_due_day) : 0;
+              const dueIn = card.payment_due_day != null ? daysUntilPaymentDue(currentMonth, card.cutoff_day, card.payment_due_day) : 0;
+              const paidLate = debt?.is_paid === true && isPaymentLate(currentMonth, card.cutoff_day, card.payment_due_day, debt.paid_at);
               const calc = card.type === "credit" ? calculatedDebts[card.id] : null;
               const committed = calc ? calc.total_committed : (debt?.statement_balance ?? 0);
               const available = card.max_limit != null ? card.max_limit - committed : 0;
               const typeLabel = card.type === "credit" ? "Crédito" : card.type === "debit" ? "Débito" : "Vales";
               const isCredit = card.type === "credit";
+              const borderClass = isCredit && debt && !debt.is_paid ? dueDaysBorder(dueIn) : paidLate ? "border-danger" : "border-border";
               return (
-                <div key={card.id} className={`bg-panel rounded-xl border-2 p-4 shadow-sm ${isCredit && debt && !debt.is_paid ? dueDaysBorder(dueIn) : "border-border"}`}>
+                <div key={card.id} className={`bg-panel rounded-xl border-2 p-4 shadow-sm ${borderClass}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-semibold text-string">{card.name}</h3>
@@ -256,14 +264,16 @@ export default function DashboardContent() {
                     </div>
                     {debt && !debt.is_paid && (
                       <button
-                        onClick={() => { setPayDialog({ debt, card }); setPayAmount(""); }}
+                        onClick={() => { setPayDialog({ debt, card }); setPayAmount(""); setPayDate(new Date().toLocaleDateString("sv")); }}
                         className="px-3 py-1 text-xs font-medium rounded-lg bg-success text-white hover:bg-success-hover transition-colors"
                       >
                         Pagar
                       </button>
                     )}
                     {debt?.is_paid && (
-                      <span className="px-3 py-1 text-xs font-medium rounded-lg bg-success-bg text-success-text">Pagada</span>
+                      <span className={`px-3 py-1 text-xs font-medium rounded-lg ${paidLate ? "bg-danger-bg text-danger-text" : "bg-success-bg text-success-text"}`}>
+                        {paidLate ? "Pagada tarde" : "Pagada"}
+                      </span>
                     )}
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -526,6 +536,15 @@ export default function DashboardContent() {
             <h3 className="text-base font-semibold text-string mb-1">Pagar tarjeta</h3>
             <p className="text-sm text-string-muted mb-4">{payDialog.card.name} — {formatCurrency(payDialog.debt.statement_balance)}</p>
             <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-string mb-1">Fecha de pago</label>
+                <input
+                  type="date"
+                  value={payDate}
+                  onChange={e => setPayDate(e.target.value)}
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+                />
+              </div>
               <button onClick={() => handlePayFull(payDialog.debt.id)} className="w-full py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors">
                 Pagar todo ({formatCurrency(payDialog.debt.statement_balance)})
               </button>

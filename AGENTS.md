@@ -1,8 +1,10 @@
+# Open Personal Resource Planning
+
 ## Desarrollo
 
 Al iniciar el servidor de desarrollo, usa el modo background:
 
-```
+```bash
 astro dev --background
 ```
 
@@ -12,7 +14,7 @@ Gestiona el servidor en background con `astro dev stop`, `astro dev status` y `a
 
 - **Ruteo**: `/` → landing page pública con CTA a `/app`. `/app` → redirige a `/app/dashboard` (logueado) o `/app/login` (no logueado). El middleware protege `/app/*` (excepto `/app/login`). `/app/login` redirige a `/app/dashboard` si ya está autenticado.
 - **Páginas**: cada módulo tiene una página en `src/pages/app/*.astro` y rutas API en `src/pages/api/*/`
-- **Módulos** (en `src/lib/modules/`): `transactions`, `card-monthly`, `cashback`, `credit-cards`, `events`, `installments`, `notes`, `pantry`, `payment-methods`, `recurring-payments`, `shopping`, `tasks`, `users`
+- **Módulos** (en `src/lib/modules/`): `transactions`, `card-monthly`, `cards`, `cashback`, `events`, `installments`, `notes`, `pantry`, `payment-methods`, `recurring-payments`, `shopping`, `tasks`, `users`
 - **Componentes React**: usan la directiva `client:load` para la hidratación
 - **Todos los imports**: usan el alias `@/` **con extensión explícita del archivo** (ej. `@/lib/db/client.ts`, `@/components/ui/Select.tsx`, `@/assets/home.svg`)
 - **Tipos**: todos los tipos de dominio/compartidos viven en `src/lib/types/` (un archivo por dominio, ej. `dashboard.ts`, `transaction.ts`). Nunca definir tipos de dominio inline en componentes ni en módulos de API.
@@ -26,7 +28,7 @@ Gestiona el servidor en background con `astro dev stop`, `astro dev status` y `a
 
 ### Assets
 
-- 18 archivos de iconos SVG en `src/assets/` (nombres en kebab-case minúsculas: `home.svg`, `sun.svg`, `dollar.svg`, `credit-card.svg`, etc.)
+- 18 archivos de iconos SVG en `src/assets/` (nombres en kebab-case minúsculas: `home.svg`, `sun.svg`, `dollar.svg`, `card.svg`, etc.)
 - Se importan vía el alias `@/assets/*` con `vite-plugin-svgr`; el identificador importado se mantiene en PascalCase con sufijo `Icon` (ej. `import HomeIcon from "@/assets/home.svg"`)
 - En archivos `.tsx`, usar el sufijo `?react` para obtener un componente React (ej. `import SunIcon from "@/assets/sun.svg?react"`)
 
@@ -82,6 +84,7 @@ Cada módulo en `src/lib/modules/*/repository.ts` usa `getDb()` de `src/lib/db/c
 - **findAll() en recurring-payments**: LEFT JOIN con `categories` y `payment_methods` para traer `category_name`, `payment_method_name`, `payment_method_icon`.
 
 Helpers comunes:
+
 - `nextSeq("table_name")` — obtiene `COALESCE(MAX(seq), 0) + 1` de una tabla vía SQL crudo
 - `getDb()` — crea/devuelve un cliente singleton de `@libsql/client/web`
 
@@ -125,7 +128,7 @@ Helpers comunes:
 
 ### Dashboard
 
-- `DashboardContent.tsx` renderiza 6 tabs (Resumen, Tarjetas de crédito, Plazos, Eventos, Tareas, Historial) con el MonthSelector a la derecha. No contiene lógica de fetch — todos los datos vienen de `src/lib/dashboard/api.ts` en un único estado `monthData` (`DashboardMonthData`).
+- `DashboardContent.tsx` renderiza 6 tabs (Resumen, Tarjetas, Plazos, Eventos, Tareas, Historial) con el MonthSelector a la derecha. No contiene lógica de fetch — todos los datos vienen de `src/lib/dashboard/api.ts` en un único estado `monthData` (`DashboardMonthData`).
 - Las cards de resumen usan `StatCard.tsx` (`label`, `value`, `colorClass`, `sub` opcional).
 - La barra de tabs usa `flex items-end justify-between border-b border-border pb-0`; el MonthSelector tiene `pb-2` para alinearse con la línea del borde.
 - Los links de filtro de las páginas usan rutas con prefijo `/app/` (ej. `/app/transactions?type=expense`) y el componente compartido `FilterLinks.astro` (`filters: { value, label, href }[]` + `active`).
@@ -145,7 +148,7 @@ El cliente de BD (`@libsql/client/web`) funciona en Netlify Functions sin cambio
 
 ## Documentación
 
-Documentación completa: https://docs.astro.build
+Documentación completa: [https://docs.astro.build](https://docs.astro.build)
 
 Consulta estas guías antes de trabajar en tareas relacionadas:
 
