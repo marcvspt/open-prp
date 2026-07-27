@@ -95,6 +95,8 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
       for (const f of fields) {
         if (f.showIf && String(form[f.showIf.field]) !== f.showIf.value) {
           payload[f.name] = null;
+        } else if (f.type === "number") {
+          payload[f.name] = parseFloat(String(payload[f.name])) || 0;
         }
       }
       if (editingId) {
@@ -134,7 +136,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
               ) : f.type === "color" ? (
                 <input type="color" value={form[f.name] ? String(form[f.name]) : "#6366f1"} onChange={e => setVal(f.name, e.target.value)} className={COLOR_CLASS} />
               ) : (
-                <input type={f.type} value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, f.type === "number" ? parseFloat(e.target.value) || 0 : e.target.value)} step={f.step} min={f.min} className={INPUT_CLASS} placeholder={f.placeholder} required={f.required} />
+                <input type={f.type} value={String(form[f.name] ?? "")} onChange={e => setVal(f.name, e.target.value)} step={f.step} min={f.min} className={INPUT_CLASS} placeholder={f.placeholder} required={f.required} />
               )}
             </div>
           ))}
