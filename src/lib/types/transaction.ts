@@ -2,7 +2,7 @@ export interface Transaction {
   id: string;
   user_id: string;
   category_id: string | null;
-  payment_method_id: string | null;
+  payment_method_id: string;
   type: "income" | "expense";
   amount: number;
   currency: string;
@@ -14,7 +14,7 @@ export interface Transaction {
 
 export interface CreateTransactionInput {
   category_id?: string;
-  payment_method_id?: string;
+  payment_method_id: string;
   type: "income" | "expense";
   amount: number;
   currency?: string;

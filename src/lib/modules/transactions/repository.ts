@@ -39,7 +39,7 @@ export class TransactionRepository {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id, userId, data.type, data.amount, data.description ?? null,
-        data.category_id || null, data.payment_method_id || null,
+        data.category_id || null, data.payment_method_id,
         data.date, data.currency ?? "USD",
         seq, now, now,
       ],
@@ -62,7 +62,7 @@ export class TransactionRepository {
     if (data.description !== undefined) { sets.push("description = ?"); args.push(data.description ?? null); }
     if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id || null); }
     if (data.date !== undefined) { sets.push("date = ?"); args.push(data.date); }
-    if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id || null); }
+    if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id); }
     if (data.currency !== undefined) { sets.push("currency = ?"); args.push(data.currency); }
 
     if (sets.length === 0) return existing;

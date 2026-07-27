@@ -17,8 +17,8 @@ export const POST: APIRoute = async (context) => {
   if (uid instanceof Response) return uid;
 
   const body = await context.request.json();
-  if (!body.name || !body.default_amount) {
-    return errorResponse("name y default_amount son requeridos");
+  if (!body.name || !body.default_amount || !body.payment_method_id) {
+    return errorResponse("name, default_amount, y payment_method_id son requeridos");
   }
 
   const payment = await repo.create(body, uid);

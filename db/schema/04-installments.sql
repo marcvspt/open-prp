@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS installments (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
-  payment_method_id TEXT REFERENCES payment_methods(id) ON DELETE SET NULL,
+  payment_method_id TEXT NOT NULL REFERENCES payment_methods(id),
   description TEXT NOT NULL,
   total_amount REAL NOT NULL,
   monthly_amount REAL NOT NULL,

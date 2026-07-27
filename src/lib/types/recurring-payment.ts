@@ -6,7 +6,7 @@ export interface RecurringPayment {
   currency: string;
   type: "income" | "expense";
   category_id: string | null;
-  payment_method_id: string | null;
+  payment_method_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -17,7 +17,7 @@ export interface RecurringPaymentInput {
   currency?: string;
   type?: "income" | "expense";
   category_id?: string;
-  payment_method_id?: string;
+  payment_method_id: string;
 }
 
 export interface RecurringPaymentMonthly {
@@ -28,7 +28,7 @@ export interface RecurringPaymentMonthly {
   amount: number;
   type: "income" | "expense";
   category_id: string | null;
-  payment_method_id: string | null;
+  payment_method_id: string;
   is_active: boolean;
   is_paid: boolean;
   paid_at: string | null;

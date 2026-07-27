@@ -23,11 +23,11 @@ const fields = [
   { name: "description", label: "Descripción", type: "text" as const },
   { name: "amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
   { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "€ EUR" }, { value: "MXN", label: "$ MXN" }, { value: "USD", label: "$ USD" }] },
-  { name: "payment_method_id", label: "Método de pago", type: "select" as const, options: [{ value: "", label: "Sin método" }, ...paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` }))] },
+  { name: "payment_method_id", label: "Método de pago", type: "select" as const, required: true, options: paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` })) },
   { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...txCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
   { name: "date", label: "Fecha", type: "date" as const, required: true },
 ];
-const defaultForm = { type: "expense", description: "", amount: 0, currency: "MXN", payment_method_id: "", category_id: "", date: "" };
+const defaultForm = { type: "expense", description: "", amount: 0, currency: "MXN", payment_method_id: paymentMethods[0]?.id ?? "", category_id: "", date: "" };
 const txFilters = [
   { value: "all", label: "Todas", href: "/app/transactions" },
   { value: "income", label: "Ingresos", href: "/app/transactions?type=income" },
@@ -51,7 +51,7 @@ const catMap = Object.fromEntries(txCategories.map(c => [c.id, c]));
           <td class="px-4 py-3">{tx.description || "-"}</td>
           <td class={`px-4 py-3 text-right font-mono ${tx.type === "income" ? "text-success" : "text-danger"}`}>{tx.currency === "EUR" ? "€" : "$"}{Number(tx.amount).toFixed(2)}</td>
           <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[tx.currency] || "$"} {tx.currency || "MXN"}</td>
-          <td class="px-4 py-3 text-xs text-string-muted">{tx.payment_method_id ? (pmMap[tx.payment_method_id] ? `${pmMap[tx.payment_method_id].icon || "💳"} ${pmMap[tx.payment_method_id].name}` : "-") : "-"}</td>
+          <td class="px-4 py-3"><span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[tx.payment_method_id] ? `${pmMap[tx.payment_method_id].icon || "💳"} ${pmMap[tx.payment_method_id].name}` : "-"}</span></td>
           <td class="px-4 py-3"><span class={`text-xs font-medium px-2 py-0.5 rounded ${tx.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>{tx.type === "income" ? "Ingreso" : "Gasto"}</span></td>
           <td class="px-4 py-3">{tx.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[tx.category_id] ? `${catMap[tx.category_id].icon || "📂"} ${catMap[tx.category_id].name}` : "-"}</span> : "-"}</td>
           <td class="px-4 py-3 text-right space-x-2">

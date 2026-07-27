@@ -35,7 +35,7 @@ export class RecurringPaymentRepository {
     await db.execute({
       sql: `INSERT INTO recurring_payments (id, user_id, name, default_amount, currency, type, category_id, payment_method_id, seq, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, data.name, data.default_amount, data.currency ?? "MXN", data.type ?? "expense", data.category_id ?? null, data.payment_method_id ?? null, seq, now, now],
+      args: [id, userId, data.name, data.default_amount, data.currency ?? "MXN", data.type ?? "expense", data.category_id ?? null, data.payment_method_id, seq, now, now],
     });
 
     const result = await db.execute({ sql: "SELECT * FROM recurring_payments WHERE id = ?", args: [id] });
@@ -54,7 +54,7 @@ export class RecurringPaymentRepository {
     if (data.default_amount !== undefined) { sets.push("default_amount = ?"); args.push(data.default_amount); }
     if (data.currency !== undefined) { sets.push("currency = ?"); args.push(data.currency); }
     if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id ?? null); }
-    if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id ?? null); }
+    if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id); }
     if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }
 
     if (sets.length === 0) return existing;
@@ -117,7 +117,7 @@ export class RecurringPaymentRepository {
     });
     const defaultAmount = Number(svc.rows[0]?.default_amount ?? data.amount ?? 0);
     const categoryId = (svc.rows[0] as Record<string, unknown>)?.category_id ?? null;
-    const paymentMethodId = (svc.rows[0] as Record<string, unknown>)?.payment_method_id ?? null;
+    const paymentMethodId = (svc.rows[0] as Record<string, unknown>)?.payment_method_id as string;
     const paymentType = (svc.rows[0] as Record<string, unknown>)?.type ?? "expense";
     const seq = await nextSeq("recurring_payment_monthly");
     const now = localISOString();

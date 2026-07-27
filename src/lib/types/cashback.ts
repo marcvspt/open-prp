@@ -1,7 +1,7 @@
 export interface Cashback {
   id: string;
   user_id: string;
-  card_id: string | null;
+  card_id: string;
   amount: number;
   currency: string;
   description: string | null;
@@ -10,7 +10,7 @@ export interface Cashback {
 }
 
 export interface CashbackInput {
-  card_id?: string;
+  card_id: string;
   amount: number;
   currency?: string;
   description?: string;

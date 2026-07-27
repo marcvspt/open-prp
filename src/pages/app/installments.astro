@@ -25,10 +25,10 @@ const fields = [
   { name: "monthly_amount", label: "Cuota mensual", type: "number" as const, required: true, step: "0.01" },
   { name: "currency", label: "Moneda", type: "select" as const, options: [{ value: "EUR", label: "€ EUR" }, { value: "MXN", label: "$ MXN" }, { value: "USD", label: "$ USD" }] },
   { name: "total_months", label: "Total de meses", type: "number" as const, required: true, min: 1 },
-  { name: "payment_method_id", label: "Método de pago", type: "select" as const, options: [{ value: "", label: "Sin método" }, ...paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` }))] },
+  { name: "payment_method_id", label: "Método de pago", type: "select" as const, required: true, options: paymentMethods.map(pm => ({ value: pm.id, label: `${pm.icon || "💳"} ${pm.name}` })) },
   { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...instCategories.map(c => ({ value: c.id, label: `${c.icon || "📂"} ${c.name}` }))] },
 ];
-const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_amount: 0, currency: "MXN", total_months: 1, payment_method_id: "", category_id: "" };
+const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_amount: 0, currency: "MXN", total_months: 1, payment_method_id: paymentMethods[0]?.id ?? "", category_id: "" };
 const instFilters = [
   { value: "active", label: "Solo activos", href: "/app/installments" },
   { value: "all", label: "Todos", href: "/app/installments?active_only=false" },
@@ -51,7 +51,7 @@ const instFilters = [
           <td class="px-4 py-3 text-right font-mono text-danger">{currencySymbol[i.currency] || "$"}{Number(i.monthly_amount).toFixed(2)}</td>
           <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[i.currency] || "$"} {i.currency || "MXN"}</td>
           <td class="px-4 py-3 text-center"><span class={`text-xs px-2 py-0.5 rounded font-medium ${i.remaining_months <= 0 ? "bg-success-bg text-success-text" : i.remaining_months <= 3 ? "bg-warning-bg text-warning-text" : "bg-info-bg text-info-text"}`}>{i.remaining_months}/{i.total_months}</span></td>
-          <td class="px-4 py-3">{i.payment_method_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[i.payment_method_id] ? `${pmMap[i.payment_method_id].icon || "💳"} ${pmMap[i.payment_method_id].name}` : "-"}</span> : "-"}</td>
+          <td class="px-4 py-3"><span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[i.payment_method_id] ? `${pmMap[i.payment_method_id].icon || "💳"} ${pmMap[i.payment_method_id].name}` : "-"}</span></td>
           <td class="px-4 py-3">{i.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[i.category_id] ? `${catMap[i.category_id].icon || "📂"} ${catMap[i.category_id].name}` : "-"}</span> : "-"}</td>
           <td class="px-4 py-3 text-right space-x-2">
             <button data-edit-installments={i.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>

@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   amount REAL NOT NULL,
   currency TEXT NOT NULL DEFAULT 'MXN',
   description TEXT,
-  payment_method_id TEXT REFERENCES payment_methods(id) ON DELETE SET NULL,
+  payment_method_id TEXT NOT NULL REFERENCES payment_methods(id),
   date TEXT NOT NULL,
   seq INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),

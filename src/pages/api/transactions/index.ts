@@ -28,8 +28,8 @@ export const POST: APIRoute = async (context) => {
   if (uid instanceof Response) return uid;
 
   const body = await context.request.json();
-  if (!body.type || body.amount == null || !body.date) {
-    return errorResponse("type, amount, and date are required");
+  if (!body.type || body.amount == null || !body.date || !body.payment_method_id) {
+    return errorResponse("type, amount, date, and payment_method_id are required");
   }
 
   const transaction = await repo.create(body, uid);

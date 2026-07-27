@@ -2,7 +2,7 @@ export interface Installment {
   id: string;
   user_id: string;
   category_id: string | null;
-  payment_method_id: string | null;
+  payment_method_id: string;
   description: string;
   total_amount: number;
   monthly_amount: number;
@@ -16,7 +16,7 @@ export interface Installment {
 
 export interface InstallmentInput {
   category_id?: string;
-  payment_method_id?: string;
+  payment_method_id: string;
   description: string;
   total_amount: number;
   monthly_amount: number;
