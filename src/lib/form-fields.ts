@@ -2,6 +2,11 @@ import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import type { Category } from "@/lib/types/category.ts";
 import type { Card } from "@/lib/types/card.ts";
 
+export const INPUT_BASE = "mt-1 block w-full rounded-lg border border-border";
+export const INPUT_PADDING = "px-3 py-2 text-sm";
+export const INPUT_CLASS = `${INPUT_BASE} ${INPUT_PADDING}`;
+export const COLOR_CLASS = `${INPUT_BASE} h-10 cursor-pointer`;
+
 export const CURRENCY_SYMBOL: Record<string, string> = { EUR: "€", MXN: "$", USD: "$" };
 
 export const CURRENCY_OPTIONS = [
