@@ -10,14 +10,12 @@ import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import StatCard from "@/components/app/dashboard/StatCard.tsx";
 
 function dueDaysBorder(days: number): string {
-  if (days <= 0) return "border-border";
   if (days <= 3) return "border-danger";
   if (days <= 8) return "border-warning";
   return "border-success";
 }
 
 function dueDaysBadge(days: number): string {
-  if (days <= 0) return "bg-nav-hover text-string-muted";
   if (days <= 3) return "bg-danger-bg text-danger-text";
   if (days <= 8) return "bg-warning-bg text-warning-text";
   return "bg-success-bg text-success-text";
