@@ -20,10 +20,10 @@ const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm]));
 const catMap = Object.fromEntries(allRecurringCategories.map(c => [c.id, c]));
 const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
+  FIELD_TYPE,
   { name: "name", label: "Descripción", type: "text" as const, required: true },
   { name: "default_amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
   FIELD_TYPE_CURRENCY,
-  FIELD_TYPE,
   paymentMethodField(paymentMethods),
   categoryField(allRecurringCategories),
 ];

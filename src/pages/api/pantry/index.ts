@@ -22,7 +22,7 @@ export const POST: APIRoute = async (context) => {
 
   try {
     const body = await context.request.json();
-    if (!body.name) return errorResponse("name is required");
+    if (!body.description) return errorResponse("description is required");
 
     body.category_id = body.category_id || null;
 

@@ -2,7 +2,7 @@ export interface PantryItem {
   id: string;
   user_id: string;
   category_id: string | null;
-  name: string;
+  description: string;
   default_quantity: number;
   unit: string | null;
   notes: string | null;
@@ -11,7 +11,7 @@ export interface PantryItem {
 }
 
 export interface PantryItemInput {
-  name: string;
+  description: string;
   default_quantity?: number;
   unit?: string;
   notes?: string;
@@ -19,7 +19,7 @@ export interface PantryItemInput {
 }
 
 export interface PantryItemUpdate {
-  name?: string;
+  description?: string;
   default_quantity?: number;
   unit?: string;
   notes?: string;

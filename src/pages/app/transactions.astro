@@ -20,13 +20,13 @@ const catRepo = new CategoryRepository();
 const txCategories = await catRepo.findBySections(userId, ["transacciones"]);
 const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
+  dateField(),
   FIELD_TYPE,
   { name: "description", label: "Descripción", type: "text" as const },
   { name: "amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
   FIELD_TYPE_CURRENCY,
   paymentMethodField(paymentMethods),
   categoryField(txCategories),
-  dateField(),
 ];
 const defaultForm = { type: "expense", description: "", amount: 0, currency: "MXN", payment_method_id: paymentMethods[0]?.id ?? "", category_id: "", date: "" };
 const txFilters = [

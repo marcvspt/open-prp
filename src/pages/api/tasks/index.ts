@@ -12,7 +12,6 @@ export const GET: APIRoute = async (context) => {
   const tasks = await repo.findAll(uid, {
     is_completed: params.is_completed === "true" ? true : params.is_completed === "false" ? false : undefined,
     category: params.category,
-    event_id: params.event_id,
     due_date_from: params.due_date_from,
     due_date_to: params.due_date_to,
   });

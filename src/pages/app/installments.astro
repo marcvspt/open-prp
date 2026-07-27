@@ -24,8 +24,8 @@ const fields = [
   { name: "description", label: "Descripción", type: "text" as const, required: true },
   { name: "total_amount", label: "Monto total", type: "number" as const, required: true, step: "0.01" },
   { name: "monthly_amount", label: "Cuota mensual", type: "number" as const, required: true, step: "0.01" },
-  FIELD_TYPE_CURRENCY,
   { name: "total_months", label: "Total de meses", type: "number" as const, required: true, min: 1 },
+  FIELD_TYPE_CURRENCY,
   paymentMethodField(paymentMethods),
   categoryField(instCategories),
 ];

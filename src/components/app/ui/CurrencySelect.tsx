@@ -13,11 +13,26 @@ export default function CurrencySelect() {
   const [currency, setCurrency] = useState<Currency>("MXN");
 
   useEffect(() => {
-    setCurrency(getCurrency());
+    fetch("/api/users/currency")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.currency && ["EUR", "MXN", "USD"].includes(data.currency)) {
+          saveCurrency(data.currency as Currency);
+          setCurrency(data.currency as Currency);
+        } else {
+          setCurrency(getCurrency());
+        }
+      })
+      .catch(() => setCurrency(getCurrency()));
   }, []);
 
   function handleChange(value: string) {
     const next = value as Currency;
+    fetch("/api/users/currency", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currency: next }),
+    }).catch(() => {});
     saveCurrency(next);
     setCurrency(next);
   }

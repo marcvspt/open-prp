@@ -27,6 +27,8 @@ Gestiona el servidor en background con `astro dev stop`, `astro dev status` y `a
     - **Siempre** usar estos helpers en lugar de definir fields inline en las páginas.
     - Si se necesita una moneda, tipo, método de pago, categoría, tarjeta o fecha nueva, se actualiza aquí y se refleja en todos los CRUDs.
     - Los campos obligatorios (`required: true`) muestran un `*` rojo junto a la label automáticamente en el CrudModal.
+    - **Orden estándar de campos** en todos los formularios CRUD: Fecha → Tipo → Descripción → Montos → Moneda → Método de pago/Tarjeta → Categoría → campos específicos del módulo. Los que no apliquen se omiten, pero el orden relativo se mantiene siempre.
+    - **NOT NULL en DB**: cualquier campo marcado como `required: true` en el formulario debe tener `NOT NULL` en el schema SQL. Si la lógica del negocio dice que siempre tendrá un valor, la DB debe reflejarlo. Las únicas excepciones son campos genuinely opcionales (ej. `description`, `category_id`).
 - **Tags `<script>` de Astro**: importar funciones init desde `src/lib/ui/` en vez de JS imperativo inline (Astro los empaqueta como módulos)
 - **UI compartida vs UI de app**: `src/components/ui/` para componentes usados en toda la app (ThemeToggle, Select, MultiSelect, ErrorBoundary); `src/components/app/ui/` para UI exclusiva de la app (CrudModal, DataTable, FormModal, FilterLinks, etc.)
 
