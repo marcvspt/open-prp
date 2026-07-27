@@ -16,6 +16,7 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <title>{pageTitle}</title>
+    <slot name="head" />
     <script is:inline>
       (function () {
         try {
