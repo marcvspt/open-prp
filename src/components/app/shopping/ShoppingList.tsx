@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { PantryItem } from "@/lib/types/pantry.ts";
 import type { ShoppingItem } from "@/lib/types/shopping.ts";
 
@@ -9,16 +9,25 @@ interface PantryCategory {
   color: string | null;
 }
 
-export default function ShoppingList() {
+interface Props {
+  initialItems: string;
+  initialPantry: string;
+  initialCategories: string;
+}
+
+export default function ShoppingList({ initialItems, initialPantry, initialCategories }: Props) {
   const [activeTab, setActiveTab] = useState<"lista" | "historial">(() =>
     typeof location !== "undefined"
       ? (location.hash.replace("#", "") as "lista" | "historial") || "lista"
       : "lista"
   );
-  const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [historyItems, setHistoryItems] = useState<ShoppingItem[]>([]);
-  const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
-  const [categories, setCategories] = useState<PantryCategory[]>([]);
+
+  // Initial data comes from SSR props; refetch only after mutations.
+  const allInitial: ShoppingItem[] = JSON.parse(initialItems);
+  const [items, setItems] = useState<ShoppingItem[]>(allInitial.filter(i => !i.is_completed));
+  const [historyItems, setHistoryItems] = useState<ShoppingItem[]>(allInitial.filter(i => i.is_completed));
+  const [pantryItems, setPantryItems] = useState<PantryItem[]>(JSON.parse(initialPantry));
+  const [categories, setCategories] = useState<PantryCategory[]>(JSON.parse(initialCategories));
   const [otroInput, setOtroInput] = useState("");
 
   const fetchData = useCallback(async () => {
@@ -41,8 +50,6 @@ export default function ShoppingList() {
       setCategories(catJson.data ?? catJson ?? []);
     } catch {}
   }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
 
   const activeItems = items.filter(i => !i.is_checked);
   const checkedItems = items.filter(i => i.is_checked);

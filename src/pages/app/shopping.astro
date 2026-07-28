@@ -1,11 +1,26 @@
 ---
 import AppLayout from "@/layouts/AppLayout.astro";
 import ShoppingList from "@/components/app/shopping/ShoppingList.tsx";
+import { ShoppingRepository } from "@/lib/modules/shopping/repository.ts";
+import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
+import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
+
+const userId = Astro.locals.userId;
+const [allItems, pantryItems, pantryCategories] = await Promise.all([
+  new ShoppingRepository().findAll(userId),
+  new PantryRepository().findAll(userId),
+  new CategoryRepository().findBySections(userId, ["despensa"]),
+]);
 ---
 
 <AppLayout title="Compras - Open PRP">
   <div class="space-y-6">
     <h1 class="text-2xl font-bold text-string">Lista de compras</h1>
-    <ShoppingList client:load />
+    <ShoppingList
+      client:load
+      initialItems={JSON.stringify(allItems)}
+      initialPantry={JSON.stringify(pantryItems)}
+      initialCategories={JSON.stringify(pantryCategories.map(c => ({ id: c.id, name: c.name, icon: c.icon, color: c.color })))}
+    />
   </div>
 </AppLayout>

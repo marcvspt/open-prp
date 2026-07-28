@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Transaction } from "@/lib/types/transaction.ts";
 import type { CardMonthly } from "@/lib/types/card-monthly.ts";
 import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 import type { DashboardMonthData, CardWithDebt } from "@/lib/types/dashboard.ts";
 import { monthLabel, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
-import { fetchDashboardMonth, fetchDashboardHistory, payCardDebtFull, payCardDebtPartial, EMPTY_DASHBOARD_MONTH } from "@/lib/dashboard/api.ts";
+import { fetchDashboardMonth, fetchDashboardHistory, payCardDebtFull, payCardDebtPartial } from "@/lib/dashboard/api.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import StatCard from "@/components/app/dashboard/StatCard.tsx";
 import Select from "@/components/ui/Select.tsx";
@@ -25,16 +25,18 @@ function dueDaysBadge(days: number): string {
 
 interface DashboardProps {
   createdAt?: string;
+  initialMonth: string;
+  initialData: string;
 }
 
-export default function DashboardContent({ createdAt }: DashboardProps) {
+export default function DashboardContent({ createdAt, initialMonth, initialData }: DashboardProps) {
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const defaultTab = "resumen";
 
   const [activeTab, setActiveTab] = useState(() => typeof location !== "undefined" ? location.hash.replace("#", "") || defaultTab : defaultTab);
-  const [currentMonth, setCurrentMonth] = useState(() => typeof location !== "undefined" ? new URLSearchParams(location.search).get("month") || defaultMonth : defaultMonth);
-  const [monthData, setMonthData] = useState<DashboardMonthData>(EMPTY_DASHBOARD_MONTH);
+  const [currentMonth, setCurrentMonth] = useState(initialMonth);
+  const [monthData, setMonthData] = useState<DashboardMonthData>(() => JSON.parse(initialData) as DashboardMonthData);
   const [historyCard, setHistoryCard] = useState<CardMonthly[]>([]);
   const [historyService, setHistoryService] = useState<RecurringPaymentMonthly[]>([]);
   const [payDialog, setPayDialog] = useState<{ debt: CardMonthly; card: CardWithDebt } | null>(null);
@@ -59,7 +61,11 @@ export default function DashboardContent({ createdAt }: DashboardProps) {
 
   const handleMonthChange = (month: string) => setCurrentMonth(month);
 
+  // Initial month data comes from SSR props; only refetch when the month changes.
+  const loadedMonthRef = useRef(initialMonth);
   useEffect(() => {
+    if (currentMonth === loadedMonthRef.current) return;
+    loadedMonthRef.current = currentMonth;
     let cancelled = false;
     fetchDashboardMonth(currentMonth).then(data => {
       if (!cancelled) setMonthData(data);
@@ -109,6 +115,7 @@ export default function DashboardContent({ createdAt }: DashboardProps) {
 
   const getCardDebt = (cardId: string) => cardDebts.find(d => d.card_id === cardId);
   const visibleCards = cards.filter(c => c.type === "credit");
+  const creditCardDebts = cardDebts.filter(d => visibleCards.some(c => c.id === d.card_id));
 
   const tabs = [
     { key: "resumen", label: "Resumen" },
@@ -161,7 +168,7 @@ export default function DashboardContent({ createdAt }: DashboardProps) {
             <StatCard label="Ingresos" value={formatCurrency(txData.incomes)} colorClass="text-success" />
             <StatCard label="Gastos" value={formatCurrency(txData.expenses)} colorClass="text-danger" />
             <StatCard label="Balance" value={formatCurrency(txData.incomes - txData.expenses)} colorClass={txData.incomes - txData.expenses >= 0 ? "text-success" : "text-danger"} />
-            <StatCard label="Tarjetas" value={String(cards.length)} colorClass="text-primary" />
+            <StatCard label="Tarjetas de crédito" value={String(visibleCards.length)} colorClass="text-primary" />
             <StatCard label="Plazos" value={formatCurrency(installmentTotal)} colorClass="text-warning" />
           </div>
           {(installmentTotal > 0 || servicePayments.length > 0) && (
@@ -184,11 +191,11 @@ export default function DashboardContent({ createdAt }: DashboardProps) {
             <StatCard label="Pagos recurrentes" value={String(services.length)} colorClass="text-purple-600" />
           </div>
 
-          {cardDebts.length > 0 && (
+          {creditCardDebts.length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-string mb-3">Deudas del mes</h2>
+              <h2 className="text-base font-semibold text-string mb-3">Deudas de tarjetas de crédito del mes</h2>
               <div className="space-y-2">
-                  {cardDebts.map(d => {
+                  {creditCardDebts.map(d => {
                     const card = cards.find(c => c.id === d.card_id);
                     const dueIn = card && card.payment_due_day != null ? daysUntilPaymentDue(currentMonth, card.cutoff_day, card.payment_due_day) : 0;
                     const paidLate = d.is_paid && isPaymentLate(currentMonth, card?.cutoff_day ?? null, card?.payment_due_day ?? null, d.paid_at);

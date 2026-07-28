@@ -6,11 +6,16 @@ import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import RecurringPaymentsMonthly from "@/components/app/recurring-payments/RecurringPaymentsMonthly.tsx";
 import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
+import { RecurringPaymentMonthlyRepository } from "@/lib/modules/recurring-payment-monthly/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, CURRENCY_SYMBOL, BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
+import { currentMonthStr } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
 const items = await new RecurringPaymentRepository().findAll(userId);
+const paramMonth = Astro.url.searchParams.get("month");
+const selectedMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : currentMonthStr();
+const monthlyItems = await new RecurringPaymentMonthlyRepository().findByMonth(selectedMonth, userId);
 const catRepo = new CategoryRepository();
 const svcCategories = await catRepo.findBySections(userId, ["pagos-recurrentes"]);
 const allRecurringCategories = svcCategories;
@@ -39,7 +44,13 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
         <button data-tab="list" class="tab-btn px-4 py-2 text-sm font-medium text-string-muted hover:text-string border-b-2 border-transparent -mb-px transition cursor-pointer">Administrar pagos</button>
       </div>
       <div data-tab-content="monthly" class="tab-content pt-4">
-        <RecurringPaymentsMonthly client:load createdAt={Astro.locals.createdAt} />
+        <RecurringPaymentsMonthly
+          client:load
+          createdAt={Astro.locals.createdAt}
+          initialMonth={selectedMonth}
+          initialPayments={JSON.stringify(items)}
+          initialMonthly={JSON.stringify(monthlyItems)}
+        />
       </div>
       <div data-tab-content="list" class="tab-content hidden pt-4">
         <div class="flex items-center justify-between mb-4">

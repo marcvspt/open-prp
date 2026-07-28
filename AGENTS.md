@@ -7,6 +7,8 @@ astro dev --background
 astro dev stop | status | logs
 ```
 
+- **Builds**: el **usuario** ejecuta el build (`pnpm build`) y comparte la salida. El agente NO corre builds (node vive en fnm, fuera del PATH del shell).
+
 ## Estructura del proyecto
 
 - **Ruteo**: `/` → landing pública. `/app` → redirige a `/app/dashboard` (logueado) o `/app/login` (no logueado). Middleware protege `/app/*` excepto `/app/login`.
@@ -18,6 +20,8 @@ astro dev stop | status | logs
 - **Separación lógica/UI**:
   - `src/lib/ui/` — lógica browser vanilla TS: `theme.ts`, `currency.ts`, `sidebar.ts`, `tabs.ts`
   - `src/lib/dashboard/api.ts` — fetch datos + mutaciones dashboard
+  - `src/lib/dashboard/load.ts` — `loadDashboardMonth()` SSR: mismas queries vía repositorios (sin HTTP), usado en `dashboard.astro`
+- **SSR initial data**: las islas React reciben datos del primer render vía props (`initialData={JSON.stringify(...)}` desde repositorios en frontmatter). Re-fetch solo al cambiar filtros (`useRef` con mes/valor cargado) o tras mutaciones. Aplica a: `DashboardContent`, `ShoppingList`, `RecurringPaymentsMonthly`, `CurrencySelect` (moneda desde `UserRepository` en Sidebar), `*Filterable` (vía `useFilteredData`)
   - `src/lib/format.ts` — `formatCurrency`
   - `src/lib/safeFetch.ts` — `safeFetch` + `fetchList`
   - `src/lib/form-fields.ts` — config campos formulario para CrudModal (`CURRENCY_OPTIONS`, `TYPE_OPTIONS`, helpers `paymentMethodField()`, `categoryField()`, `cardField()`, `dateField()`)
@@ -42,7 +46,8 @@ astro dev stop | status | logs
 
 - Fija `w-64` desktop, oculta en móvil (drawer con overlay + backdrop)
 - Navegación data-driven: `APP_LINKS` (grupos `{ title?, links: [{ href, label, icon }] }`), activo vía `currentPath.startsWith(href)`
-- Footer: GitHub icon, ThemeToggle, CurrencySelect, UserButton (`@clerk/astro/components`) + "Mi cuenta"
+- Footer: GitHub icon, ThemeToggle, CurrencySelect (moneda vía `UserRepository` SSR), UserButton (`@clerk/astro/components`) + "Mi cuenta"
+  - UserButton envuelto en caja fija `h-8 w-8 rounded-full bg-surface-alt` (placeholder) + `appearance.userButtonAvatarBox` 2rem: ClerkJS monta el avatar asíncrono (CDN); sin la caja, el footer crece tarde y salta el layout
 
 ## TypeScript
 

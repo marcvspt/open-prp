@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@clerk/astro/react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { safeFetch } from "@/lib/safeFetch.ts";
 import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
@@ -8,19 +7,21 @@ type PaymentType = "income" | "expense";
 
 interface Props {
   createdAt?: string;
+  initialMonth: string;
+  initialPayments: string;
+  initialMonthly: string;
 }
 
-export default function RecurringPaymentsMonthly({ createdAt }: Props) {
-  const { userId } = useAuth();
+export default function RecurringPaymentsMonthly({ createdAt, initialMonth, initialPayments, initialMonthly }: Props) {
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-  const [selectedMonth, setSelectedMonth] = useState(() => typeof location !== "undefined" ? new URLSearchParams(location.search).get("month") || currentMonth : currentMonth);
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
 
-  const [payments, setPayments] = useState<RecurringPayment[]>([]);
-  const [monthly, setMonthly] = useState<RecurringPaymentMonthly[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  // Initial data comes from SSR props; refetch only when the month changes or after mutations.
+  const [payments, setPayments] = useState<RecurringPayment[]>(JSON.parse(initialPayments));
+  const [monthly, setMonthly] = useState<RecurringPaymentMonthly[]>(JSON.parse(initialMonthly));
+  const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
 
@@ -41,25 +42,13 @@ export default function RecurringPaymentsMonthly({ createdAt }: Props) {
     if (data) setMonthly(data);
   }, [selectedMonth]);
 
-  const fetchAll = useCallback(async () => {
+  const loadedMonthRef = useRef(initialMonth);
+  useEffect(() => {
+    if (selectedMonth === loadedMonthRef.current) return;
+    loadedMonthRef.current = selectedMonth;
     setLoading(true);
-    setError("");
-    try {
-      await Promise.all([
-        (async () => {
-          const data = await safeFetch<RecurringPayment[]>("/api/recurring-payments");
-          if (data) setPayments(data);
-        })(),
-        fetchMonthly(),
-      ]);
-    } catch {
-      setError("Error al cargar datos");
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchMonthly]);
-
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+    fetchMonthly().finally(() => setLoading(false));
+  }, [selectedMonth, fetchMonthly]);
 
   const handleTogglePaid = async (paymentId: string) => {
     setTogglingId(paymentId);
@@ -232,7 +221,6 @@ export default function RecurringPaymentsMonthly({ createdAt }: Props) {
   }
 
   if (loading) return <div className="p-4 text-string-muted">Cargando...</div>;
-  if (error) return <div className="p-4 text-danger">Error: {error}</div>;
 
   const incomeTotal = monthly.filter(sm => sm.type === "income").reduce((s, sm) => s + sm.amount, 0);
   const expenseTotal = monthly.filter(sm => sm.type === "expense").reduce((s, sm) => s + sm.amount, 0);
