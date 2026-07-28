@@ -10,9 +10,10 @@ interface Props {
   paymentMethods: { id: string; icon: string | null; name: string }[];
   categories: { id: string; icon: string | null; name: string }[];
   initialData?: string;
+  createdAt?: string;
 }
 
-export default function InstallmentsFilterable({ initialMonth, activeOnly: initialActive, paymentMethods, categories, initialData }: Props) {
+export default function InstallmentsFilterable({ initialMonth, activeOnly: initialActive, paymentMethods, categories, initialData, createdAt }: Props) {
   const parsedInitial = initialData ? JSON.parse(initialData) as Installment[] : undefined;
   const { filters, setFilter, clearFilters, data, loading } = useFilteredData<Installment[]>("/api/installments", {
     ...(initialActive ? { active_only: "true" } : {}),
@@ -38,7 +39,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
             />
           </div>
           <div className={FILTER_WRAP_CLASS}>
-            <MonthSelector value={filters.month || initialMonth} onChange={(m) => setFilter("month", m)} />
+            <MonthSelector value={filters.month || initialMonth} onChange={(m) => setFilter("month", m)} createdAt={createdAt} />
           </div>
           <div className={FILTER_WRAP_CLASS}>
             <Select

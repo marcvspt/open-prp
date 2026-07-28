@@ -39,7 +39,7 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
         <button data-tab="list" class="tab-btn px-4 py-2 text-sm font-medium text-string-muted hover:text-string border-b-2 border-transparent -mb-px transition cursor-pointer">Administrar pagos</button>
       </div>
       <div data-tab-content="monthly" class="tab-content pt-4">
-        <RecurringPaymentsMonthly client:load />
+        <RecurringPaymentsMonthly client:load createdAt={Astro.locals.createdAt} />
       </div>
       <div data-tab-content="list" class="tab-content hidden pt-4">
         <div class="flex items-center justify-between mb-4">

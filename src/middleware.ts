@@ -22,6 +22,7 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
       }
 
       context.locals.userId = user.id;
+      context.locals.createdAt = user.created_at;
     } else if (context.url.pathname.startsWith("/app") && context.url.pathname !== "/app/login") {
       return context.redirect("/app/login");
     }

@@ -48,14 +48,36 @@ export function isPaymentLate(month: string, cutoffDay: number | null, paymentDu
   return paidAt.slice(0, 10) > paymentDueDate(month, cutoffDay, paymentDueDay);
 }
 
-export function getMonthOptions(count = 12): string[] {
+export function currentMonthStr(): string {
   const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export function getMonthOptions(count = 12, created_at?: string): string[] {
+  const now = new Date();
+  const maxPast = new Date(now.getFullYear(), now.getMonth() - (count - 1), 1);
+
+  let start: Date;
+  if (created_at) {
+    const created = new Date(created_at);
+    const createdMonth = new Date(created.getFullYear(), created.getMonth(), 1);
+    start = createdMonth > maxPast ? createdMonth : maxPast;
+  } else {
+    start = maxPast;
+  }
+
   const months: string[] = [];
-  for (let i = 0; i < count; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+  // Newest first: next, current, then past
+  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  months.push(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`);
+  const current = new Date(now.getFullYear(), now.getMonth(), 1);
+  months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`);
+  let d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  while (d >= start) {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     months.push(`${y}-${m}`);
+    d = new Date(d.getFullYear(), d.getMonth() - 1, 1);
   }
   return months;
 }
