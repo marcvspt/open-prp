@@ -30,7 +30,7 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
     if (selectedMonth !== currentMonth) params.set("month", selectedMonth);
     else params.delete("month");
     const qs = params.toString();
-    history.replaceState(null, "", (qs ? "?" + qs : location.pathname) + location.hash);
+    history.replaceState(null, "", qs ? "?" + qs : location.pathname);
   }, [selectedMonth, currentMonth]);
 
   const handleMonthChange = (month: string) => setSelectedMonth(month);

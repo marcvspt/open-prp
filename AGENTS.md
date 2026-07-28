@@ -131,7 +131,7 @@ astro dev stop | status | logs
 - `aria-hidden="true"` en iconos decorativos (Hero, Sidebar, Header, Select).
 - `aria-label` en nav, inputs, botones sin texto visible.
 - `role="dialog"`, `aria-modal`, `aria-labelledby` en modales.
-- **Tabs**: patrón APG con `<button>` (NO anchors ni `<nav>`; el hash es solo deep-link). `role="tablist"` + `aria-label`, tabs con `role="tab"`, `aria-selected`, `aria-controls`, roving `tabIndex` y navegación ←/→/Home/End; paneles `role="tabpanel"` + `aria-labelledby` + `tabindex="0"`. Implementado en `DashboardContent`, `ShoppingList` y `initTabs` (`tabs.ts`).
+- **Tabs**: patrón APG con `<button>` (NO anchors ni `<nav>`). Estado de tab en query param `?tab=` (NO `#hash` — el servidor no ve el hash y el SSR pintaría la tab default; con `?tab=` el primer paint ya trae la tab correcta). Hashes viejos `#tab` se adoptan en cliente por compatibilidad. `role="tablist"` + `aria-label`, tabs con `role="tab"`, `aria-selected`, `aria-controls`, roving `tabIndex` y navegación ←/→/Home/End; paneles `role="tabpanel"` + `aria-labelledby` + `tabindex="0"`. Implementado en `DashboardContent`, `ShoppingList` y `initTabs` (`tabs.ts`).
 
 ### Landing
 

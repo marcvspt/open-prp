@@ -17,6 +17,15 @@ function dueDaysBorder(days: number): string {
   return "border-success";
 }
 
+export const DASHBOARD_TABS = [
+  { key: "resumen", label: "Resumen" },
+  { key: "tarjetas", label: "Tarjetas" },
+  { key: "plazos", label: "Plazos" },
+  { key: "eventos", label: "Eventos" },
+  { key: "tareas", label: "Tareas" },
+  { key: "historial", label: "Historial" },
+];
+
 function dueDaysBadge(days: number): string {
   if (days <= 3) return "bg-danger-bg text-danger-text";
   if (days <= 8) return "bg-warning-bg text-warning-text";
@@ -26,26 +35,20 @@ function dueDaysBadge(days: number): string {
 interface DashboardProps {
   createdAt?: string;
   initialMonth: string;
+  initialTab: string;
   initialData: string;
 }
 
-export default function DashboardContent({ createdAt, initialMonth, initialData }: DashboardProps) {
+export default function DashboardContent({ createdAt, initialMonth, initialTab, initialData }: DashboardProps) {
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const defaultTab = "resumen";
-
-  const tabs = [
-    { key: "resumen", label: "Resumen" },
-    { key: "tarjetas", label: "Tarjetas" },
-    { key: "plazos", label: "Plazos" },
-    { key: "eventos", label: "Eventos" },
-    { key: "tareas", label: "Tareas" },
-    { key: "historial", label: "Historial" },
-  ];
+  const tabs = DASHBOARD_TABS;
 
   const [activeTab, setActiveTab] = useState(() => {
+    // Legacy #tab links: the server can't see the hash, so adopt it on the client.
     const h = typeof location !== "undefined" ? location.hash.replace("#", "") : "";
-    return tabs.some(t => t.key === h) ? h : defaultTab;
+    return tabs.some(t => t.key === h) ? h : initialTab;
   });
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
   const [monthData, setMonthData] = useState<DashboardMonthData>(() => JSON.parse(initialData) as DashboardMonthData);
@@ -66,9 +69,10 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
     const params = new URLSearchParams(location.search);
     if (currentMonth !== defaultMonth) params.set("month", currentMonth);
     else params.delete("month");
+    if (activeTab !== defaultTab) params.set("tab", activeTab);
+    else params.delete("tab");
     const qs = params.toString();
-    const hash = activeTab !== defaultTab ? `#${activeTab}` : "";
-    history.replaceState(null, "", (qs ? "?" + qs : location.pathname) + hash);
+    history.replaceState(null, "", (qs ? "?" + qs : location.pathname));
   }, [activeTab, currentMonth, defaultTab, defaultMonth]);
 
   const handleMonthChange = (month: string) => setCurrentMonth(month);
@@ -131,7 +135,6 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
 
   function selectTab(key: string) {
     setActiveTab(key);
-    location.hash = "#" + key;
   }
 
   function onTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
