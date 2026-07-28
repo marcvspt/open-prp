@@ -3,6 +3,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 
 import { SignInButton, SignUpButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
+import { BTN_LOGIN, BTN_SIGNUP } from "@/lib/form-fields.ts";
 
 const { userId } = Astro.locals.auth();
 if (userId) return Astro.redirect("/app/dashboard");
@@ -15,10 +16,10 @@ if (userId) return Astro.redirect("/app/dashboard");
       <p class="text-string-muted">Open Personal Resource Planning</p>
       <div class="flex justify-center gap-2">
         <SignInButton mode="modal" fallbackRedirectUrl="/app/dashboard" asChild>
-          <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover cursor-pointer">Iniciar sesión</button>
+          <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover cursor-pointer">{BTN_LOGIN}</button>
         </SignInButton>
         <SignUpButton mode="modal" fallbackRedirectUrl="/app/dashboard" asChild>
-          <button class="px-4 py-2 border border-border rounded-lg hover:bg-nav-hover text-string cursor-pointer">Registrarse</button>
+          <button class="px-4 py-2 border border-border rounded-lg hover:bg-nav-hover text-string cursor-pointer">{BTN_SIGNUP}</button>
         </SignUpButton>
       </div>
       <div class="flex items-center justify-center gap-3 pt-6">

@@ -1,4 +1,5 @@
 ---
+import { BTN_EDIT, BTN_DELETE, FILTER_WRAP_CLASS } from "@/lib/form-fields.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
@@ -34,8 +35,11 @@ const taskFilters = [
 
 <AppLayout title="Tareas - Open PRP">
   <div data-module="tasks" class="space-y-4">
-    <PageHeader title="Tareas" createLabel="Nueva tarea" createModule="tasks" />
-    <FilterLinks filters={taskFilters} active={filter} />
+    <PageHeader title="Tareas" createLabel="Nueva tarea" createModule="tasks" mobileOnlyCTA={true} />
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+      <FilterLinks filters={taskFilters} active={filter} class={FILTER_WRAP_CLASS} />
+      <button data-create="tasks" class="hidden sm:block sm:shrink-0 px-3 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nueva tarea</button>
+    </div>
     {items.length === 0 ? (
       <div class="text-string-muted text-sm">Sin tareas</div>
     ) : (
@@ -65,8 +69,8 @@ const taskFilters = [
                 )}
               </div>
               <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-border ml-7">
-                <button data-edit-tasks={t.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>
-                <button data-delete-tasks={t.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">Eliminar</button>
+                <button data-edit-tasks={t.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">{BTN_EDIT}</button>
+                <button data-delete-tasks={t.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">{BTN_DELETE}</button>
               </div>
             </div>
           );

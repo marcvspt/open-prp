@@ -1,4 +1,5 @@
 ---
+import { BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
@@ -53,8 +54,8 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
           <td class="px-4 py-3 text-center text-xs font-semibold">{c.cutoff_day != null ? resolveCutoffDate(c.cutoff_day) : "—"}</td>
           <td class="px-4 py-3 text-center text-xs font-semibold">{c.cutoff_day != null && c.payment_due_day != null ? resolvePaymentDueDate(c.cutoff_day, c.payment_due_day) : "—"}</td>
           <td class="px-4 py-3 text-right space-x-2">
-            <button data-edit-cards={c.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>
-            <button data-delete-cards={c.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">Eliminar</button>
+            <button data-edit-cards={c.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">{BTN_EDIT}</button>
+            <button data-delete-cards={c.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">{BTN_DELETE}</button>
           </td>
         </tr>
         );

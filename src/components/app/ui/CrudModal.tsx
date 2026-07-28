@@ -3,7 +3,7 @@ import { apiFetch } from "@/lib/api-client.ts";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
 import Select from "@/components/ui/Select.tsx";
 import MultiSelect from "@/components/ui/MultiSelect.tsx";
-import { INPUT_CLASS, COLOR_CLASS } from "@/lib/form-fields.ts";
+import { INPUT_CLASS, COLOR_CLASS, BTN_CANCEL, BTN_SAVE, BTN_CREATE, BTN_SAVING } from "@/lib/form-fields.ts";
 
 export interface Field {
   name: string;
@@ -142,8 +142,8 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
             </div>
           ))}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-sm text-nav hover:text-string">Cancelar</button>
-            <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50">{saving ? "Guardando..." : editingId ? "Guardar" : "Crear"}</button>
+            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-string hover:bg-surface-alt cursor-pointer">{BTN_CANCEL}</button>
+            <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 cursor-pointer">{saving ? BTN_SAVING : editingId ? BTN_SAVE : BTN_CREATE}</button>
           </div>
         </form>
       </FormModal>

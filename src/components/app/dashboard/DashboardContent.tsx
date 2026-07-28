@@ -9,6 +9,7 @@ import { fetchDashboardMonth, fetchDashboardHistory, payCardDebtFull, payCardDeb
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import StatCard from "@/components/app/dashboard/StatCard.tsx";
 import Select from "@/components/ui/Select.tsx";
+import { BTN_CANCEL } from "@/lib/form-fields.ts";
 
 function dueDaysBorder(days: number): string {
   if (days <= 3) return "border-danger";
@@ -618,7 +619,7 @@ export default function DashboardContent() {
                 )}
               </div>
               <button onClick={() => setPayDialog(null)} className="w-full py-2 text-sm text-nav hover:text-string transition-colors">
-                Cancelar
+                {BTN_CANCEL}
               </button>
             </div>
           </div>

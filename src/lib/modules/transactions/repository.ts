@@ -10,6 +10,13 @@ export class TransactionRepository {
 
     if (filter?.type) { conditions.push("type = ?"); args.push(filter.type); }
     if (filter?.category_id) { conditions.push("category_id = ?"); args.push(filter.category_id); }
+    if (filter?.payment_method_id) { conditions.push("payment_method_id = ?"); args.push(filter.payment_method_id); }
+    if (filter?.q) { conditions.push("description LIKE ?"); args.push(`%${filter.q}%`); }
+    if (filter?.month) {
+      conditions.push("date >= ? AND date <= ?");
+      const lastDay = new Date(Number(filter.month.slice(0, 4)), Number(filter.month.slice(5, 7)), 0).getDate();
+      args.push(`${filter.month}-01`, `${filter.month}-${String(lastDay).padStart(2, "0")}`);
+    }
     if (filter?.date_from) { conditions.push("date >= ?"); args.push(filter.date_from); }
     if (filter?.date_to) { conditions.push("date <= ?"); args.push(filter.date_to); }
 

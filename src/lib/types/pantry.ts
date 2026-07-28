@@ -25,6 +25,7 @@ export interface PantryItemUpdate {
 
 export interface PantryFilter {
   category_id?: string;
+  q?: string;
   page?: number;
   pageSize?: number;
 }

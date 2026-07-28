@@ -8,7 +8,7 @@ import RecurringPaymentsMonthly from "@/components/app/recurring-payments/Recurr
 import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
-import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, CURRENCY_SYMBOL } from "@/lib/form-fields.ts";
+import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, CURRENCY_SYMBOL, BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
 const userId = Astro.locals.userId;
 const items = await new RecurringPaymentRepository().findAll(userId);
 const catRepo = new CategoryRepository();
@@ -56,8 +56,8 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
               <td class="px-4 py-3"><span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[s.payment_method_id] ? `${pmMap[s.payment_method_id].icon || "💳"} ${pmMap[s.payment_method_id].name}` : "-"}</span></td>
               <td class="px-4 py-3">{s.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[s.category_id] ? `${catMap[s.category_id].icon || "📂"} ${catMap[s.category_id].name}` : "-"}</span> : "-"}</td>
               <td class="px-4 py-3 text-right space-x-2">
-                <button data-edit-recurring-payments={s.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>
-                <button data-delete-recurring-payments={s.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">Eliminar</button>
+                <button data-edit-recurring-payments={s.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">{BTN_EDIT}</button>
+                <button data-delete-recurring-payments={s.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">{BTN_DELETE}</button>
               </td>
             </tr>
           ))}

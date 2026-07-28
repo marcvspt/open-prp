@@ -35,6 +35,9 @@ export interface UpdateTransactionInput {
 export interface TransactionFilter {
   type?: "income" | "expense";
   category_id?: string;
+  payment_method_id?: string;
+  q?: string;
+  month?: string;
   date_from?: string;
   date_to?: string;
   page?: number;

@@ -10,6 +10,7 @@ export class PantryRepository {
     const args: (string | number | boolean | null)[] = [userId];
 
     if (filter?.category_id) { conditions.push("category_id = ?"); args.push(filter.category_id); }
+    if (filter?.q) { conditions.push("(description LIKE ? OR notes LIKE ?)"); args.push(`%${filter.q}%`, `%${filter.q}%`); }
 
     const result = await db.execute({
       sql: `SELECT * FROM pantry_items WHERE ${conditions.join(" AND ")} ORDER BY description ASC`,

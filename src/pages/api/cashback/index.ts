@@ -9,7 +9,13 @@ export const GET: APIRoute = async (context) => {
   if (uid instanceof Response) return uid;
 
   const params = getSearchParams(context);
-  const cashbacks = await repo.findAll(uid, params.card_id, params.date_from, params.date_to);
+  const cashbacks = await repo.findAll(uid, {
+    card_id: params.card_id,
+    q: params.q,
+    month: params.month,
+    date_from: params.date_from,
+    date_to: params.date_to,
+  });
   return jsonResponse(cashbacks);
 };
 

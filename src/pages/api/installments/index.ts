@@ -11,6 +11,10 @@ export const GET: APIRoute = async (context) => {
   const params = getSearchParams(context);
   const installments = await repo.findAll(uid, {
     active_only: params.active_only === "true",
+    category_id: params.category_id,
+    payment_method_id: params.payment_method_id,
+    q: params.q,
+    month: params.month,
   });
 
   return jsonResponse(installments);
