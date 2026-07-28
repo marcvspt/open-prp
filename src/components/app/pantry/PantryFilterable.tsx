@@ -1,7 +1,8 @@
 import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
 import Select from "@/components/ui/Select.tsx";
 import type { PantryItem } from "@/lib/types/pantry.ts";
-import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS } from "@/lib/form-fields.ts";
+import { FILTER_LIMPIAR_TEXT, BTN_EDIT_TEXT, BTN_DELETE_TEXT, LOADING_TEXT } from "@/lib/form-fields.ts";
+
 
 interface Props {
   categories: { id: string; icon: string | null; name: string }[];
@@ -18,7 +19,7 @@ export default function PantryFilterable({ categories, initialData }: Props) {
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap sm:items-end sm:flex-1">
-          <div className={`${FILTER_WRAP_CLASS} col-span-2 sm:col-span-1`}>
+          <div className={`$"w-full sm:w-48" col-span-2 sm:col-span-1`}>
             <Select
               value={filters.category_id || ""}
               onChange={(v) => setFilter("category_id", v)}
@@ -33,16 +34,16 @@ export default function PantryFilterable({ categories, initialData }: Props) {
             defaultValue={filters.q || ""}
             onChange={(e) => setFilter("q", e.target.value)}
             placeholder="Buscar por artículo o nota..."
-            className={FILTER_INPUT_CLASS}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-string w-full col-span-2 sm:w-48 sm:col-span-1"
           />
-          <button onClick={clearFilters} className={FILTER_LIMPIAR_CLASS}>Limpiar búsqueda</button>
+           <button onClick={clearFilters} className="w-full col-span-2 sm:col-span-1 sm:w-auto px-3 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-danger hover:bg-danger-bg cursor-pointer">{FILTER_LIMPIAR_TEXT}</button>
         </div>
         <button data-create="pantry" className="hidden sm:block sm:shrink-0 px-3 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nuevo producto</button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border">
         {loading ? (
-          <div className="p-4 text-center text-string-muted text-sm">Cargando...</div>
+          <div className="p-4 text-center text-string-muted text-sm">{LOADING_TEXT}</div>
         ) : items.length === 0 ? (
           <div className="p-4 text-center text-string-muted text-sm">Sin productos en la despensa</div>
         ) : (
@@ -66,8 +67,8 @@ export default function PantryFilterable({ categories, initialData }: Props) {
                     <td className="px-4 py-3">{cat ? <span className="text-xs bg-surface-alt px-2 py-0.5 rounded">{cat.icon || "📦"} {cat.name}</span> : "-"}</td>
                     <td className="px-4 py-3 text-string-muted text-sm">{i.notes || "-"}</td>
                     <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
-                      <button data-edit-pantry={i.id} className="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>
-                      <button data-delete-pantry={i.id} className="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">Eliminar</button>
+                      <button data-edit-pantry={i.id} className="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">{BTN_EDIT_TEXT}</button>
+                      <button data-delete-pantry={i.id} className="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">{BTN_DELETE_TEXT}</button>
                     </td>
                   </tr>
                 );
