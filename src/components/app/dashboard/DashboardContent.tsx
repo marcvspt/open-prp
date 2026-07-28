@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/format.ts";
 import { fetchDashboardMonth, fetchDashboardHistory, payCardDebtFull, payCardDebtPartial, EMPTY_DASHBOARD_MONTH } from "@/lib/dashboard/api.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import StatCard from "@/components/app/dashboard/StatCard.tsx";
+import Select from "@/components/ui/Select.tsx";
 
 function dueDaysBorder(days: number): string {
   if (days <= 3) return "border-danger";
@@ -115,7 +116,21 @@ export default function DashboardContent() {
 
   return (
     <div>
-      <div className="flex items-end justify-between mb-6 gap-2 border-b border-border pb-0">
+      {/* Mobile: tab select */}
+      <div className="flex md:hidden items-center gap-2 mb-4">
+        <div className="flex-1">
+          <Select
+            value={activeTab}
+            onChange={(v) => { setActiveTab(v); location.hash = "#" + v; }}
+            options={tabs.map(t => ({ value: t.key, label: t.label }))}
+            ariaLabel="Sección"
+          />
+        </div>
+        <div className="shrink-0"><MonthSelector value={currentMonth} onChange={handleMonthChange} /></div>
+      </div>
+
+      {/* Desktop: tab buttons */}
+      <div className="hidden md:flex items-end justify-between mb-6 gap-2 border-b border-border pb-0">
         <div className="flex gap-0">
           {tabs.map(t => (
             <button

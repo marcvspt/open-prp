@@ -3,7 +3,7 @@ export interface PantryItem {
   user_id: string;
   category_id: string | null;
   description: string;
-  default_quantity: number;
+  quantity: number;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -11,14 +11,14 @@ export interface PantryItem {
 
 export interface PantryItemInput {
   description: string;
-  default_quantity?: number;
+  quantity?: number;
   notes?: string;
   category_id?: string;
 }
 
 export interface PantryItemUpdate {
   description?: string;
-  default_quantity?: number;
+  quantity?: number;
   notes?: string;
   category_id?: string;
 }
