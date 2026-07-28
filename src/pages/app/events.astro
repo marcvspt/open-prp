@@ -1,4 +1,5 @@
 ---
+import { BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
@@ -56,8 +57,8 @@ const defaultForm = { description: "", category_id: "", location: "", start_date
                 {ev.location && <span>📍 {ev.location}</span>}
               </div>
               <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-border">
-                <button data-edit-events={ev.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>
-                <button data-delete-events={ev.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">Eliminar</button>
+                <button data-edit-events={ev.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">{BTN_EDIT}</button>
+                <button data-delete-events={ev.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">{BTN_DELETE}</button>
               </div>
             </div>
           );

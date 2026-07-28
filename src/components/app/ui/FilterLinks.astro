@@ -10,9 +10,10 @@ export interface FilterLink {
 export interface Props {
   filters: FilterLink[];
   active: string;
+  class?: string;
 }
 
-const { filters, active } = Astro.props;
+const { filters, active, class: className } = Astro.props;
 ---
 
-<FilterSelect filters={filters} active={active} client:load />
+<FilterSelect filters={filters} active={active} className={className} client:load />

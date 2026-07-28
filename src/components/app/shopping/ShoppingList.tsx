@@ -221,6 +221,7 @@ export default function ShoppingList() {
                       <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
                     </div>
                     <button onClick={() => handleDelete(i.id)} className="text-xs text-danger hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity">Eliminar</button>
+
                   </div>
                 ))}
               </div>
