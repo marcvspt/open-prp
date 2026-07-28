@@ -39,11 +39,11 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
   <div data-module="recurring-payments" class="space-y-4">
     <PageHeader title="Pagos Recurrentes" />
     <div class="tabs-container">
-      <div class="flex gap-0 border-b border-border" role="tablist">
-        <button data-tab="monthly" class="tab-btn px-4 py-2 text-sm font-medium text-string-muted hover:text-string border-b-2 border-transparent -mb-px transition cursor-pointer" data-active="true">Movimientos del mes</button>
-        <button data-tab="list" class="tab-btn px-4 py-2 text-sm font-medium text-string-muted hover:text-string border-b-2 border-transparent -mb-px transition cursor-pointer">Administrar pagos</button>
+      <div class="flex gap-0 border-b border-border" role="tablist" aria-label="Secciones de pagos recurrentes">
+        <button data-tab="monthly" role="tab" id="tab-rp-monthly" aria-selected="true" aria-controls="panel-rp-monthly" class="tab-btn px-4 py-2 text-sm font-medium text-string-muted hover:text-string border-b-2 border-transparent -mb-px transition cursor-pointer" data-active="true">Movimientos del mes</button>
+        <button data-tab="list" role="tab" id="tab-rp-list" aria-selected="false" aria-controls="panel-rp-list" tabindex="-1" class="tab-btn px-4 py-2 text-sm font-medium text-string-muted hover:text-string border-b-2 border-transparent -mb-px transition cursor-pointer">Administrar pagos</button>
       </div>
-      <div data-tab-content="monthly" class="tab-content pt-4">
+      <div data-tab-content="monthly" role="tabpanel" id="panel-rp-monthly" aria-labelledby="tab-rp-monthly" tabindex="0" class="tab-content pt-4">
         <RecurringPaymentsMonthly
           client:load
           createdAt={Astro.locals.createdAt}
@@ -52,7 +52,7 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
           initialMonthly={JSON.stringify(monthlyItems)}
         />
       </div>
-      <div data-tab-content="list" class="tab-content hidden pt-4">
+      <div data-tab-content="list" role="tabpanel" id="panel-rp-list" aria-labelledby="tab-rp-list" tabindex="0" class="tab-content hidden pt-4">
         <div class="flex items-center justify-between mb-4">
           <p class="text-sm text-string-muted">Todos tus pagos recurrentes registrados</p>
           <button data-create="recurring-payments" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nuevo pago recurrente</button>

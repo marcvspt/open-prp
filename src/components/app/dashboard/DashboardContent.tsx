@@ -34,7 +34,19 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const defaultTab = "resumen";
 
-  const [activeTab, setActiveTab] = useState(() => typeof location !== "undefined" ? location.hash.replace("#", "") || defaultTab : defaultTab);
+  const tabs = [
+    { key: "resumen", label: "Resumen" },
+    { key: "tarjetas", label: "Tarjetas" },
+    { key: "plazos", label: "Plazos" },
+    { key: "eventos", label: "Eventos" },
+    { key: "tareas", label: "Tareas" },
+    { key: "historial", label: "Historial" },
+  ];
+
+  const [activeTab, setActiveTab] = useState(() => {
+    const h = typeof location !== "undefined" ? location.hash.replace("#", "") : "";
+    return tabs.some(t => t.key === h) ? h : defaultTab;
+  });
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
   const [monthData, setMonthData] = useState<DashboardMonthData>(() => JSON.parse(initialData) as DashboardMonthData);
   const [historyCard, setHistoryCard] = useState<CardMonthly[]>([]);
@@ -117,14 +129,23 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
   const visibleCards = cards.filter(c => c.type === "credit");
   const creditCardDebts = cardDebts.filter(d => visibleCards.some(c => c.id === d.card_id));
 
-  const tabs = [
-    { key: "resumen", label: "Resumen" },
-    { key: "tarjetas", label: "Tarjetas" },
-    { key: "plazos", label: "Plazos" },
-    { key: "eventos", label: "Eventos" },
-    { key: "tareas", label: "Tareas" },
-    { key: "historial", label: "Historial" },
-  ];
+  function selectTab(key: string) {
+    setActiveTab(key);
+    location.hash = "#" + key;
+  }
+
+  function onTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    const idx = tabs.findIndex(t => t.key === activeTab);
+    let next = -1;
+    if (e.key === "ArrowRight") next = (idx + 1) % tabs.length;
+    else if (e.key === "ArrowLeft") next = (idx - 1 + tabs.length) % tabs.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = tabs.length - 1;
+    else return;
+    e.preventDefault();
+    selectTab(tabs[next].key);
+    document.getElementById(`tab-${tabs[next].key}`)?.focus();
+  }
 
   return (
     <div>
@@ -133,7 +154,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
         <div className="flex-1">
           <Select
             value={activeTab}
-            onChange={(v) => { setActiveTab(v); location.hash = "#" + v; }}
+            onChange={selectTab}
             options={tabs.map(t => ({ value: t.key, label: t.label }))}
             ariaLabel="Sección"
           />
@@ -143,11 +164,17 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
 
       {/* Desktop: tab buttons */}
       <div className="hidden md:flex items-end justify-between mb-6 gap-2 border-b border-border pb-0">
-        <div className="flex gap-0">
+        <div className="flex gap-0" role="tablist" aria-label="Secciones del dashboard">
           {tabs.map(t => (
             <button
               key={t.key}
-              onClick={() => { setActiveTab(t.key); location.hash = "#" + t.key; }}
+              role="tab"
+              id={`tab-${t.key}`}
+              aria-selected={activeTab === t.key}
+              aria-controls={`panel-${t.key}`}
+              tabIndex={activeTab === t.key ? 0 : -1}
+              onClick={() => selectTab(t.key)}
+              onKeyDown={onTabKeyDown}
               className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 cursor-pointer ${
                 activeTab === t.key
                   ? "text-primary border-primary -mb-px"
@@ -163,7 +190,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
 
       {/* Resumen */}
       {activeTab === "resumen" && (
-        <div className="space-y-6">
+        <div className="space-y-6" role="tabpanel" id="panel-resumen" aria-labelledby="tab-resumen" tabIndex={0}>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <StatCard label="Ingresos" value={formatCurrency(txData.incomes)} colorClass="text-success" />
             <StatCard label="Gastos" value={formatCurrency(txData.expenses)} colorClass="text-danger" />
@@ -290,7 +317,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
 
       {/* Tarjetas */}
       {activeTab === "tarjetas" && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="tabpanel" id="panel-tarjetas" aria-labelledby="tab-tarjetas" tabIndex={0}>
           {visibleCards.length === 0 ? (
             <p className="text-string-muted text-sm">No hay tarjetas registradas</p>
           ) : (
@@ -381,7 +408,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
 
       {/* Plazos */}
       {activeTab === "plazos" && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="tabpanel" id="panel-plazos" aria-labelledby="tab-plazos" tabIndex={0}>
           {installments.length === 0 ? (
             <p className="text-string-muted text-sm">No hay plazos activos</p>
           ) : (
@@ -433,7 +460,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
 
       {/* Eventos */}
       {activeTab === "eventos" && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="tabpanel" id="panel-eventos" aria-labelledby="tab-eventos" tabIndex={0}>
           {!Array.isArray(upcomingEvents) ? (
             <div>
               <p className="text-sm text-danger">Error: datos de eventos inválidos</p>
@@ -465,7 +492,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
 
       {/* Tareas */}
       {activeTab === "tareas" && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="tabpanel" id="panel-tareas" aria-labelledby="tab-tareas" tabIndex={0}>
           {overdueTasks.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-danger mb-2">Vencidas</h3>
@@ -503,7 +530,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
 
       {/* Historial */}
       {activeTab === "historial" && (
-        <div className="space-y-6">
+        <div className="space-y-6" role="tabpanel" id="panel-historial" aria-labelledby="tab-historial" tabIndex={0}>
           <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
             <h2 className="text-base font-semibold text-string mb-3">Historial de tarjetas</h2>
             {historyCard.length === 0 ? (

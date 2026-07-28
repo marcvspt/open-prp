@@ -15,12 +15,18 @@ interface Props {
   initialCategories: string;
 }
 
+const TABS = [
+  { key: "lista", label: "Lista actual" },
+  { key: "historial", label: "Historial" },
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
+
 export default function ShoppingList({ initialItems, initialPantry, initialCategories }: Props) {
-  const [activeTab, setActiveTab] = useState<"lista" | "historial">(() =>
-    typeof location !== "undefined"
-      ? (location.hash.replace("#", "") as "lista" | "historial") || "lista"
-      : "lista"
-  );
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    const h = typeof location !== "undefined" ? location.hash.replace("#", "") : "";
+    return TABS.some(t => t.key === h) ? (h as TabKey) : "lista";
+  });
 
   // Initial data comes from SSR props; refetch only after mutations.
   const allInitial: ShoppingItem[] = JSON.parse(initialItems);
@@ -136,29 +142,48 @@ export default function ShoppingList({ initialItems, initialPantry, initialCateg
     return d.toLocaleDateString("es", { year: "numeric", month: "long" });
   }
 
+  function selectTab(key: TabKey) {
+    setActiveTab(key);
+    location.hash = "#" + key;
+  }
+
+  function onTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    const idx = TABS.findIndex(t => t.key === activeTab);
+    let next = -1;
+    if (e.key === "ArrowRight") next = (idx + 1) % TABS.length;
+    else if (e.key === "ArrowLeft") next = (idx - 1 + TABS.length) % TABS.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = TABS.length - 1;
+    else return;
+    e.preventDefault();
+    selectTab(TABS[next].key);
+    document.getElementById(`tab-${TABS[next].key}`)?.focus();
+  }
+
   return (
     <div>
-      <div className="flex gap-0 border-b border-border mb-6">
-        <button
-          onClick={() => { setActiveTab("lista"); location.hash = "#lista"; }}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer ${
-            activeTab === "lista" ? "text-primary border-primary" : "text-string-muted border-transparent hover:text-string"
-          }`}
-        >
-          Lista actual
-        </button>
-        <button
-          onClick={() => { setActiveTab("historial"); location.hash = "#historial"; }}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer ${
-            activeTab === "historial" ? "text-primary border-primary" : "text-string-muted border-transparent hover:text-string"
-          }`}
-        >
-          Historial
-        </button>
+      <div className="flex gap-0 border-b border-border mb-6" role="tablist" aria-label="Secciones de compras">
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            role="tab"
+            id={`tab-${t.key}`}
+            aria-selected={activeTab === t.key}
+            aria-controls={`panel-${t.key}`}
+            tabIndex={activeTab === t.key ? 0 : -1}
+            onClick={() => selectTab(t.key)}
+            onKeyDown={onTabKeyDown}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer ${
+              activeTab === t.key ? "text-primary border-primary" : "text-string-muted border-transparent hover:text-string"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {activeTab === "lista" && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="tabpanel" id="panel-lista" aria-labelledby="tab-lista" tabIndex={0}>
           {Object.keys(groupedPantry).length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
               <h2 className="text-sm font-semibold text-string mb-3">Desde la despensa</h2>
@@ -274,7 +299,7 @@ export default function ShoppingList({ initialItems, initialPantry, initialCateg
       )}
 
       {activeTab === "historial" && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="tabpanel" id="panel-historial" aria-labelledby="tab-historial" tabIndex={0}>
           {Object.keys(historyByMonth).length === 0 ? (
             <div className="bg-panel rounded-xl border border-border p-8 shadow-sm text-center">
               <p className="text-string-muted text-sm">Sin compras completadas aún</p>
