@@ -15,25 +15,6 @@ import type { Category } from "@/lib/types/category.ts";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
-export const EMPTY_DASHBOARD_MONTH: DashboardMonthData = {
-  cards: [],
-  services: [],
-  cardDebts: [],
-  servicePayments: [],
-  upcomingEvents: [],
-  pendingTasks: [],
-  overdueTasks: [],
-  activeShopping: [],
-  paymentMethods: [],
-  categories: [],
-  calculatedDebts: {},
-  incomes: 0,
-  expenses: 0,
-  recentTx: [],
-  installmentTotal: 0,
-  installments: [],
-};
-
 export async function fetchDashboardMonth(month: string): Promise<DashboardMonthData> {
   const today = new Date().toLocaleDateString("sv");
   const thirtyLater = new Date(Date.now() + 30 * 86400000).toLocaleDateString("sv");

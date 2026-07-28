@@ -1,11 +1,17 @@
 ---
 import AppLayout from "@/layouts/AppLayout.astro";
 import DashboardContent from "@/components/app/dashboard/DashboardContent.tsx";
+import { loadDashboardMonth } from "@/lib/dashboard/load.ts";
+import { currentMonthStr } from "@/lib/date.ts";
+
+const paramMonth = Astro.url.searchParams.get("month");
+const initialMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : currentMonthStr();
+const initialData = await loadDashboardMonth(Astro.locals.userId, initialMonth);
 ---
 
 <AppLayout title="Dashboard - Open PRP">
   <div class="space-y-6">
     <h1 class="text-2xl font-bold text-string">Dashboard</h1>
-    <DashboardContent client:load createdAt={Astro.locals.createdAt} />
+    <DashboardContent client:load createdAt={Astro.locals.createdAt} initialMonth={initialMonth} initialData={JSON.stringify(initialData)} />
   </div>
 </AppLayout>

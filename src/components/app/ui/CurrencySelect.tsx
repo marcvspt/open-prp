@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Select from "@/components/ui/Select.tsx";
-import DollarIcon from "@/assets/dollar.svg?react";
-import { getCurrency, saveCurrency, type Currency } from "@/lib/ui/currency.ts";
+import { saveCurrency, type Currency } from "@/lib/ui/currency.ts";
 
 const options = [
   { value: "EUR", label: "EUR €" },
@@ -9,22 +8,16 @@ const options = [
   { value: "USD", label: "USD $" },
 ];
 
-export default function CurrencySelect() {
-  const [currency, setCurrency] = useState<Currency>("MXN");
+const VALID: readonly string[] = ["EUR", "MXN", "USD"];
 
-  useEffect(() => {
-    fetch("/api/users/currency")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.currency && ["EUR", "MXN", "USD"].includes(data.currency)) {
-          saveCurrency(data.currency as Currency);
-          setCurrency(data.currency as Currency);
-        } else {
-          setCurrency(getCurrency());
-        }
-      })
-      .catch(() => setCurrency(getCurrency()));
-  }, []);
+interface Props {
+  initialCurrency?: string;
+}
+
+export default function CurrencySelect({ initialCurrency }: Props) {
+  const [currency, setCurrency] = useState<Currency>(
+    initialCurrency && VALID.includes(initialCurrency) ? (initialCurrency as Currency) : "MXN"
+  );
 
   function handleChange(value: string) {
     const next = value as Currency;

@@ -2,6 +2,7 @@
 import { Show, UserButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import CurrencySelect from "@/components/app/ui/CurrencySelect.tsx";
+import { UserRepository } from "@/lib/modules/users/repository.ts";
 import HomeIcon from "@/assets/home.svg";
 import DollarIcon from "@/assets/dollar.svg";
 import CardIcon from "@/assets/card.svg";
@@ -20,6 +21,7 @@ export interface Props {
 }
 
 const { currentPath } = Astro.props;
+const preferredCurrency = await new UserRepository().getPreferredCurrency(Astro.locals.userId);
 
 interface AppLink {
   url: string;
@@ -114,14 +116,23 @@ const APP_LINKS: { title?: string; links: AppLink[] }[] = [
       <ThemeToggle client:load />
     </div>
     <div class="px-3">
-      <CurrencySelect client:load />
+      <CurrencySelect client:load initialCurrency={preferredCurrency} />
     </div>
     <Show when="signed-in">
       <div
         class="flex items-center gap-3 px-3 py-2 cursor-pointer"
         data-user-area
       >
-        <UserButton />
+        {/* Caja fija: reserva el espacio del avatar (ClerkJS lo monta asíncrono) para evitar layout shift en el footer */}
+        <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-alt">
+          <UserButton
+            appearance={{
+              elements: {
+                userButtonAvatarBox: { width: "2rem", height: "2rem" },
+              },
+            }}
+          />
+        </div>
         <span class="text-xs text-string-muted">Mi cuenta</span>
       </div>
     </Show>
