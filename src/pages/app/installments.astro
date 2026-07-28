@@ -8,8 +8,9 @@ import { InstallmentRepository } from "@/lib/modules/installments/repository.ts"
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { FIELD_TYPE_CURRENCY, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
-import { getMonthOptions } from "@/lib/date.ts";
+import { currentMonthStr } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
+const currentMonth = currentMonthStr();
 const params = Astro.url.searchParams;
 const activeOnly = params.get("active_only") !== "false";
 const filterMonth = params.get("month") || "";
@@ -20,7 +21,6 @@ const catRepo = new CategoryRepository();
 const instCategories = await catRepo.findBySections(userId, ["plazos"]);
 const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
-const months = getMonthOptions();
 const instFilter: Record<string, unknown> = { active_only: activeOnly };
 if (filterMonth) instFilter.month = filterMonth;
 if (filterQ) instFilter.q = filterQ;
@@ -45,7 +45,8 @@ const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_
     <PageHeader title="Plazos / Cuotas" createLabel="Nuevo plazo" createModule="installments" mobileOnlyCTA={true} />
     <InstallmentsFilterable
       client:load
-      initialMonth={filterMonth || months[0]}
+      initialMonth={filterMonth || currentMonth}
+      createdAt={Astro.locals.createdAt}
       activeOnly={activeOnly}
       paymentMethods={paymentMethods.map(pm => ({ id: pm.id, icon: pm.icon, name: pm.name }))}
       categories={instCategories.map(c => ({ id: c.id, icon: c.icon, name: c.name }))}

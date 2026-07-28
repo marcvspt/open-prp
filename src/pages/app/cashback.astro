@@ -5,17 +5,18 @@ import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import CashbackFilterable from "@/components/app/cashback/CashbackFilterable.tsx";
 import { CardRepository } from "@/lib/modules/cards/repository.ts";
+import { UserRepository } from "@/lib/modules/users/repository.ts";
 import { FIELD_TYPE_CURRENCY, cardField, dateField } from "@/lib/form-fields.ts";
-import { getMonthOptions } from "@/lib/date.ts";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
+import { currentMonthStr } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
+const currentMonth = currentMonthStr();
 const params = Astro.url.searchParams;
 const filterMonth = params.get("month") || "";
 const filterQ = params.get("q") || "";
 const filterCard = params.get("card_id") || "";
 const allCards = await new CardRepository().findAll(userId);
 const creditCards = allCards.filter(c => c.type === "credit");
-const months = getMonthOptions();
 const cbFilter: Record<string, unknown> = {};
 if (filterMonth) cbFilter.month = filterMonth;
 if (filterQ) cbFilter.q = filterQ;
@@ -36,7 +37,8 @@ const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", car
     <PageHeader title="Cashback" createLabel="Nuevo cashback" createModule="cashback" mobileOnlyCTA={true} />
     <CashbackFilterable
       client:load
-      initialMonth={filterMonth || months[0]}
+      initialMonth={filterMonth || currentMonth}
+      createdAt={Astro.locals.createdAt}
       cards={creditCards.map(c => ({ id: c.id, name: c.name, type: c.type }))}
       initialData={JSON.stringify(initialData)}
     />

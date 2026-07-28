@@ -8,8 +8,9 @@ import { TransactionRepository } from "@/lib/modules/transactions/repository.ts"
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
-import { getMonthOptions } from "@/lib/date.ts";
+import { currentMonthStr } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
+const currentMonth = currentMonthStr();
 const params = Astro.url.searchParams;
 const filterType = params.get("type") || "all";
 const filterMonth = params.get("month") || "";
@@ -20,7 +21,6 @@ const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
 const catRepo = new CategoryRepository();
 const txCategories = await catRepo.findBySections(userId, ["transacciones"]);
-const months = getMonthOptions();
 const repo = new TransactionRepository();
 const txFilter: Record<string, unknown> = {};
 if (filterType !== "all") txFilter.type = filterType;
@@ -46,7 +46,8 @@ const defaultForm = { type: "expense", description: "", amount: 0, currency: "MX
     <PageHeader title="Transacciones" createLabel="Nueva transacción" createModule="transactions" mobileOnlyCTA={true} />
     <TransactionsFilterable
       client:load
-      initialMonth={filterMonth || months[0]}
+      initialMonth={filterMonth || currentMonth}
+      createdAt={Astro.locals.createdAt}
       filterType={filterType}
       paymentMethods={paymentMethods.map(pm => ({ id: pm.id, icon: pm.icon, name: pm.name }))}
       categories={txCategories.map(c => ({ id: c.id, icon: c.icon, name: c.name }))}

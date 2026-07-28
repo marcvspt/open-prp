@@ -8,11 +8,12 @@ interface Props {
   initialMonth: string;
   cards: { id: string; name: string; type: string }[];
   initialData?: string;
+  createdAt?: string;
 }
 
 const cardEmoji = (type: string) => type === "credit" ? "💳" : type === "debit" ? "🏦" : "🎫";
 
-export default function CashbackFilterable({ initialMonth, cards, initialData }: Props) {
+export default function CashbackFilterable({ initialMonth, cards, initialData, createdAt }: Props) {
   const parsedInitial = initialData ? JSON.parse(initialData) as Cashback[] : undefined;
   const { filters, setFilter, clearFilters, data, loading } = useFilteredData<Cashback[]>("/api/cashback", {
     month: initialMonth,
@@ -25,7 +26,7 @@ export default function CashbackFilterable({ initialMonth, cards, initialData }:
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className={FILTER_GRID_CLASS}>
           <div className={FILTER_WRAP_CLASS}>
-            <MonthSelector value={filters.month || initialMonth} onChange={(m) => setFilter("month", m)} />
+            <MonthSelector value={filters.month || initialMonth} onChange={(m) => setFilter("month", m)} createdAt={createdAt} />
           </div>
           <div className={FILTER_WRAP_CLASS}>
             <Select

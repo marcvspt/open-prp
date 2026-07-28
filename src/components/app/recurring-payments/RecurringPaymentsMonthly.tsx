@@ -6,7 +6,11 @@ import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 
 type PaymentType = "income" | "expense";
 
-export default function RecurringPaymentsMonthly() {
+interface Props {
+  createdAt?: string;
+}
+
+export default function RecurringPaymentsMonthly({ createdAt }: Props) {
   const { userId } = useAuth();
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -240,6 +244,7 @@ export default function RecurringPaymentsMonthly() {
         <MonthSelector
           value={selectedMonth}
           onChange={handleMonthChange}
+          createdAt={createdAt}
         />
       </div>
 

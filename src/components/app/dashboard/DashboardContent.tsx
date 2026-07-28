@@ -3,7 +3,7 @@ import type { Transaction } from "@/lib/types/transaction.ts";
 import type { CardMonthly } from "@/lib/types/card-monthly.ts";
 import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 import type { DashboardMonthData, CardWithDebt } from "@/lib/types/dashboard.ts";
-import { getMonthOptions, monthLabel, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
+import { monthLabel, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
 import { fetchDashboardMonth, fetchDashboardHistory, payCardDebtFull, payCardDebtPartial, EMPTY_DASHBOARD_MONTH } from "@/lib/dashboard/api.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
@@ -23,9 +23,13 @@ function dueDaysBadge(days: number): string {
   return "bg-success-bg text-success-text";
 }
 
-export default function DashboardContent() {
-  const months = useMemo(() => getMonthOptions(), []);
-  const defaultMonth = months[0];
+interface DashboardProps {
+  createdAt?: string;
+}
+
+export default function DashboardContent({ createdAt }: DashboardProps) {
+  const now = new Date();
+  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const defaultTab = "resumen";
 
   const [activeTab, setActiveTab] = useState(() => typeof location !== "undefined" ? location.hash.replace("#", "") || defaultTab : defaultTab);
@@ -127,7 +131,7 @@ export default function DashboardContent() {
             ariaLabel="Sección"
           />
         </div>
-        <div className="shrink-0"><MonthSelector value={currentMonth} onChange={handleMonthChange} /></div>
+        <div className="shrink-0"><MonthSelector value={currentMonth} onChange={handleMonthChange} createdAt={createdAt} /></div>
       </div>
 
       {/* Desktop: tab buttons */}
@@ -147,7 +151,7 @@ export default function DashboardContent() {
             </button>
           ))}
         </div>
-        <div className="shrink-0 pb-2"><MonthSelector value={currentMonth} onChange={handleMonthChange} /></div>
+        <div className="shrink-0 pb-2"><MonthSelector value={currentMonth} onChange={handleMonthChange} createdAt={createdAt} /></div>
       </div>
 
       {/* Resumen */}
