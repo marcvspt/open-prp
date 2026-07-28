@@ -8,10 +8,12 @@ export function initSidebar(): void {
   const open = () => {
     sidebar.classList.remove("-translate-x-full");
     overlay.classList.remove("hidden");
+    toggleBtn.classList.add("opacity-0", "pointer-events-none");
   };
   const close = () => {
     sidebar.classList.add("-translate-x-full");
     overlay.classList.add("hidden");
+    toggleBtn.classList.remove("opacity-0", "pointer-events-none");
   };
 
   toggleBtn.addEventListener("click", open);
