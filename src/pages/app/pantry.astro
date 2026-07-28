@@ -14,10 +14,10 @@ const catOptions = [{ value: "", label: "Sin categoría" }, ...categories.map(c 
 const fields = [
   { name: "description", label: "Artículo", type: "text" as const, required: true },
   { name: "category_id", label: "Categoría", type: "select" as const, options: catOptions },
-  { name: "default_quantity", label: "Cantidad por defecto", type: "number" as const, min: 0, step: "0.01" },
+  { name: "quantity", label: "Cantidad", type: "number" as const, min: 0, step: "0.01" },
   { name: "notes", label: "Notas", type: "textarea" as const },
 ];
-const defaultForm = { description: "", category_id: "", default_quantity: 1, notes: "" };
+const defaultForm = { description: "", category_id: "", quantity: 1, notes: "" };
 ---
 
 <AppLayout title="Despensa - Open PRP">
@@ -27,7 +27,7 @@ const defaultForm = { description: "", category_id: "", default_quantity: 1, not
       {items.map(i => (
         <tr class="hover:bg-nav-hover">
           <td class="px-4 py-3 font-medium">{i.description}</td>
-          <td class="px-4 py-3">{i.default_quantity}</td>
+          <td class="px-4 py-3">{i.quantity}</td>
           <td class="px-4 py-3">{i.category_id ? (catMap[i.category_id] ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[i.category_id].icon || "📦"} {catMap[i.category_id].name}</span> : "-") : "-"}</td>
           <td class="px-4 py-3 text-string-muted text-sm">{i.notes || "-"}</td>
           <td class="px-4 py-3 text-right space-x-2">

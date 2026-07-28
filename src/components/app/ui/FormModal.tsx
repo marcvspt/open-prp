@@ -12,6 +12,8 @@ export function FormModal({ open, onClose, title, children }: FormModalProps) {
   const titleId = `form-modal-title-${id}`;
   const overlayRef = useRef<HTMLDivElement>(null);
   const prevFocus = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -26,7 +28,7 @@ export function FormModal({ open, onClose, title, children }: FormModalProps) {
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") { e.preventDefault(); onClose(); return; }
+      if (e.key === "Escape") { e.preventDefault(); onCloseRef.current(); return; }
       if (e.key !== "Tab" || !overlayRef.current) return;
       const focusable = overlayRef.current.querySelectorAll<HTMLElement>("button, input, select, textarea, [tabindex]:not([tabindex='-1'])");
       if (focusable.length === 0) return;
@@ -40,7 +42,7 @@ export function FormModal({ open, onClose, title, children }: FormModalProps) {
       document.removeEventListener("keydown", onKey);
       prevFocus.current?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
