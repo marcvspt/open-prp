@@ -254,7 +254,7 @@ export default function RecurringPaymentsMonthly() {
             <div className="text-lg font-semibold text-danger">${expenseTotal.toLocaleString()}</div>
           </div>
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">Neto</div>
+            <div className="text-xs text-string-muted mb-1">Balance</div>
             <div className={`text-lg font-semibold ${netTotal >= 0 ? "text-success" : "text-danger"}`}>
               ${netTotal.toLocaleString()}
             </div>
