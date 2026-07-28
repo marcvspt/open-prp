@@ -7,6 +7,10 @@ export const INPUT_PADDING = "px-3 py-2 text-sm";
 export const INPUT_CLASS = `${INPUT_BASE} ${INPUT_PADDING}`;
 export const COLOR_CLASS = `${INPUT_BASE} h-10 cursor-pointer`;
 
+export const FILTER_WRAP_CLASS = "w-full sm:w-48";
+export const FILTER_INPUT_CLASS = "rounded-lg border border-border bg-surface px-3 py-2 text-sm text-string w-full col-span-2 sm:w-48 sm:col-span-1";
+export const FILTER_LIMPIAR_CLASS = "w-full col-span-2 sm:col-span-1 sm:w-auto px-3 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-danger hover:bg-danger-bg cursor-pointer";
+
 export const CURRENCY_SYMBOL: Record<string, string> = { EUR: "€", MXN: "$", USD: "$" };
 
 export const CURRENCY_OPTIONS = [

@@ -1,24 +1,34 @@
 ---
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
-import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
-import FilterLinks from "@/components/app/ui/FilterLinks.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
+import TransactionsFilterable from "@/components/app/transactions/TransactionsFilterable.tsx";
 import { TransactionRepository } from "@/lib/modules/transactions/repository.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
-import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, CURRENCY_SYMBOL, dateField } from "@/lib/form-fields.ts";
+import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
+import { getMonthOptions } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
-const filterType = Astro.url.searchParams.get("type") || "all";
-const repo = new TransactionRepository();
-const result = await repo.findAll(userId, { page: 1, pageSize: 200, ...(filterType !== "all" ? { type: filterType as "income" | "expense" } : {}) });
-const items = result ?? [];
+const params = Astro.url.searchParams;
+const filterType = params.get("type") || "all";
+const filterMonth = params.get("month") || "";
+const filterQ = params.get("q") || "";
+const filterPm = params.get("payment_method_id") || "";
+const filterCat = params.get("category_id") || "";
 const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
 const catRepo = new CategoryRepository();
 const txCategories = await catRepo.findBySections(userId, ["transacciones"]);
-const currencySymbol = CURRENCY_SYMBOL;
+const months = getMonthOptions();
+const repo = new TransactionRepository();
+const txFilter: Record<string, unknown> = {};
+if (filterType !== "all") txFilter.type = filterType;
+if (filterMonth) txFilter.month = filterMonth;
+if (filterQ) txFilter.q = filterQ;
+if (filterPm) txFilter.payment_method_id = filterPm;
+if (filterCat) txFilter.category_id = filterCat;
+const initialData = await repo.findAll(userId, txFilter);
 const fields = [
   dateField(),
   FIELD_TYPE,
@@ -29,39 +39,19 @@ const fields = [
   categoryField(txCategories),
 ];
 const defaultForm = { type: "expense", description: "", amount: 0, currency: "MXN", payment_method_id: paymentMethods[0]?.id ?? "", category_id: "", date: "" };
-const txFilters = [
-  { value: "all", label: "Todas", href: "/app/transactions" },
-  { value: "income", label: "Ingresos", href: "/app/transactions?type=income" },
-  { value: "expense", label: "Gastos", href: "/app/transactions?type=expense" },
-];
-const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm]));
-const catMap = Object.fromEntries(txCategories.map(c => [c.id, c]));
 ---
 
 <AppLayout title="Transacciones - Open PRP">
   <div data-module="transactions" class="space-y-4">
-    <PageHeader title="Transacciones" />
-    <div class="flex items-center justify-between gap-2 flex-wrap">
-      <FilterLinks filters={txFilters} active={filterType} />
-      <button data-create="transactions" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nueva transacción</button>
-    </div>
-    <DataTable columns={["Fecha", "Descripción", { label: "Monto", align: "right" }, "Moneda", "Método", "Tipo", "Categoría", { label: "Acciones", align: "right" }]} emptyMessage="Sin transacciones">
-      {items.map(tx => (
-        <tr class="hover:bg-nav-hover">
-          <td class="px-4 py-3 font-semibold">{new Date(tx.date).toLocaleDateString("es")}</td>
-          <td class="px-4 py-3">{tx.description || "-"}</td>
-          <td class={`px-4 py-3 text-right font-mono ${tx.type === "income" ? "text-success" : "text-danger"}`}>{tx.currency === "EUR" ? "€" : "$"}{Number(tx.amount).toFixed(2)}</td>
-          <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[tx.currency] || "$"} {tx.currency || "MXN"}</td>
-          <td class="px-4 py-3"><span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[tx.payment_method_id] ? `${pmMap[tx.payment_method_id].icon || "💳"} ${pmMap[tx.payment_method_id].name}` : "-"}</span></td>
-          <td class="px-4 py-3"><span class={`text-xs font-medium px-2 py-0.5 rounded ${tx.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>{tx.type === "income" ? "Ingreso" : "Gasto"}</span></td>
-          <td class="px-4 py-3">{tx.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[tx.category_id] ? `${catMap[tx.category_id].icon || "📂"} ${catMap[tx.category_id].name}` : "-"}</span> : "-"}</td>
-          <td class="px-4 py-3 text-right space-x-2">
-            <button data-edit-transactions={tx.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">Editar</button>
-            <button data-delete-transactions={tx.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">Eliminar</button>
-          </td>
-        </tr>
-      ))}
-    </DataTable>
+    <PageHeader title="Transacciones" createLabel="Nueva transacción" createModule="transactions" mobileOnlyCTA={true} />
+    <TransactionsFilterable
+      client:load
+      initialMonth={filterMonth || months[0]}
+      filterType={filterType}
+      paymentMethods={paymentMethods.map(pm => ({ id: pm.id, icon: pm.icon, name: pm.name }))}
+      categories={txCategories.map(c => ({ id: c.id, icon: c.icon, name: c.name }))}
+      initialData={JSON.stringify(initialData)}
+    />
   </div>
   <CrudModal client:load module="transactions" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="transacción" />
   <DeleteHandler module="transactions" label="transacción" />

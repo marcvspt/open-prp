@@ -32,6 +32,10 @@ export class InstallmentRepository {
     const conditions: string[] = ["user_id = ?"];
     const args: (string | number | boolean | null)[] = [userId];
 
+    if (filter?.category_id) { conditions.push("category_id = ?"); args.push(filter.category_id); }
+    if (filter?.payment_method_id) { conditions.push("payment_method_id = ?"); args.push(filter.payment_method_id); }
+    if (filter?.q) { conditions.push("description LIKE ?"); args.push(`%${filter.q}%`); }
+
     const result = await db.execute({
       sql: `SELECT * FROM installments WHERE ${conditions.join(" AND ")} ORDER BY start_date DESC`,
       args,
@@ -39,15 +43,26 @@ export class InstallmentRepository {
     const rows = result.rows as unknown as Installment[];
     const now = localISOString();
     const currentMonthStart = `${now.slice(0, 7)}-01`;
+    const monthFilter = filter?.month || (filter?.active_only ? undefined : undefined);
+    const targetMonthStart = monthFilter ? `${monthFilter}-01` : currentMonthStart;
     return rows.map(r => {
       const computed = computeRemaining(r.start_date, r.total_months);
       if (computed !== r.remaining_months) {
         db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now, r.id] });
       }
       return { ...r, remaining_months: computed };
-      // Active = its last payment falls in the current month or later, so an
-      // installment stays visible (and counted in the month's debt) during its final month.
-    }).filter(i => !filter?.active_only || addMonths(i.start_date, Math.max(0, i.total_months - 1)) >= currentMonthStart);
+      // Active = its last payment falls in the month or later, so an
+      // installment stays visible during its final month.
+    }).filter(i => {
+      const lastPaymentDate = addMonths(i.start_date, Math.max(0, i.total_months - 1));
+      if (filter?.month) {
+        const lastDay = new Date(Number(filter.month.slice(0, 4)), Number(filter.month.slice(5, 7)), 0).getDate();
+        const monthEnd = `${filter.month}-${String(lastDay).padStart(2, "0")}`;
+        return i.start_date <= monthEnd && lastPaymentDate >= targetMonthStart;
+      }
+      if (filter?.active_only) return lastPaymentDate >= targetMonthStart;
+      return true;
+    });
   }
 
   async findById(id: string, userId: string): Promise<Installment | null> {

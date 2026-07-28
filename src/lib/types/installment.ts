@@ -28,4 +28,8 @@ export interface InstallmentInput {
 
 export interface InstallmentFilter {
   active_only?: boolean;
+  category_id?: string;
+  payment_method_id?: string;
+  q?: string;
+  month?: string;
 }

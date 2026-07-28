@@ -12,6 +12,7 @@ export const GET: APIRoute = async (context) => {
   const params = getSearchParams(context);
   const filter: PantryFilter = {};
   if (params.category_id) filter.category_id = params.category_id;
+  if (params.q) filter.q = params.q;
   const items = await repo.findAll(uid, filter);
   return jsonResponse(items);
 };

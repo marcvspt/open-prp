@@ -3,14 +3,20 @@ import { nextSeq } from "@/lib/db/utils.ts";
 import type { Cashback, CashbackInput } from "@/lib/types/cashback.ts";
 
 export class CashbackRepository {
-  async findAll(userId: string, cardId?: string, dateFrom?: string, dateTo?: string): Promise<Cashback[]> {
+  async findAll(userId: string, filter?: { card_id?: string; q?: string; month?: string; date_from?: string; date_to?: string }): Promise<Cashback[]> {
     const db = getDb();
     const conditions = ["user_id = ?"];
     const args: (string | number | boolean | null)[] = [userId];
 
-    if (cardId) { conditions.push("card_id = ?"); args.push(cardId); }
-    if (dateFrom) { conditions.push("date >= ?"); args.push(dateFrom); }
-    if (dateTo) { conditions.push("date <= ?"); args.push(dateTo); }
+    if (filter?.card_id) { conditions.push("card_id = ?"); args.push(filter.card_id); }
+    if (filter?.q) { conditions.push("description LIKE ?"); args.push(`%${filter.q}%`); }
+    if (filter?.month) {
+      conditions.push("date >= ? AND date <= ?");
+      const lastDay = new Date(Number(filter.month.slice(0, 4)), Number(filter.month.slice(5, 7)), 0).getDate();
+      args.push(`${filter.month}-01`, `${filter.month}-${String(lastDay).padStart(2, "0")}`);
+    }
+    if (filter?.date_from) { conditions.push("date >= ?"); args.push(filter.date_from); }
+    if (filter?.date_to) { conditions.push("date <= ?"); args.push(filter.date_to); }
 
     const result = await db.execute({
       sql: `SELECT * FROM cashback WHERE ${conditions.join(" AND ")} ORDER BY date DESC`,

@@ -14,6 +14,9 @@ export const GET: APIRoute = async (context) => {
   const result = await repo.findAll(uid, {
     type: params.type as "income" | "expense" | undefined,
     category_id: params.category_id,
+    payment_method_id: params.payment_method_id,
+    q: params.q,
+    month: params.month,
     date_from: params.date_from,
     date_to: params.date_to,
     page,
