@@ -181,7 +181,6 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
         <div className="flex items-center gap-2">
           <h3 className={`text-base font-semibold ${colorClass}`}>{icon} {label}</h3>
         </div>
-        {typeMonthly.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
             <div className="p-3 rounded-lg bg-panel border border-border text-center">
               <div className="text-xs text-string-muted mb-1">Total</div>
@@ -200,7 +199,6 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
               </div>
             </div>
           </div>
-        )}
         <div className="space-y-3">
           {categories.map(category => {
             const catFiltered = filtered.filter(p => (p.category_name ?? "Sin categoría") === category);
@@ -228,44 +226,41 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
     );
   }
 
-  if (loading) return <div className="p-4 text-string-muted">Cargando...</div>;
-
   const incomeTotal = monthly.filter(sm => sm.type === "income").reduce((s, sm) => s + sm.amount, 0);
   const expenseTotal = monthly.filter(sm => sm.type === "expense").reduce((s, sm) => s + sm.amount, 0);
   const netTotal = incomeTotal - expenseTotal;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex items-center justify-between">
         <MonthSelector
           value={selectedMonth}
           onChange={handleMonthChange}
           createdAt={createdAt}
         />
+        {loading && <span className="text-xs text-string-muted">Cargando...</span>}
       </div>
 
-      {monthly.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">Ingresos</div>
-            <div className="text-lg font-semibold text-success">${incomeTotal.toLocaleString()}</div>
-          </div>
-          <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">Gastos</div>
-            <div className="text-lg font-semibold text-danger">${expenseTotal.toLocaleString()}</div>
-          </div>
-          <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">Balance</div>
-            <div className={`text-lg font-semibold ${netTotal >= 0 ? "text-success" : "text-danger"}`}>
-              ${netTotal.toLocaleString()}
-            </div>
-          </div>
-          <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">Movimientos</div>
-            <div className="text-lg font-semibold text-primary">{monthly.length}</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="p-3 rounded-lg bg-panel border border-border text-center">
+          <div className="text-xs text-string-muted mb-1">Ingresos</div>
+          <div className="text-lg font-semibold text-success">${incomeTotal.toLocaleString()}</div>
+        </div>
+        <div className="p-3 rounded-lg bg-panel border border-border text-center">
+          <div className="text-xs text-string-muted mb-1">Gastos</div>
+          <div className="text-lg font-semibold text-danger">${expenseTotal.toLocaleString()}</div>
+        </div>
+        <div className="p-3 rounded-lg bg-panel border border-border text-center">
+          <div className="text-xs text-string-muted mb-1">Balance</div>
+          <div className={`text-lg font-semibold ${netTotal >= 0 ? "text-success" : "text-danger"}`}>
+            ${netTotal.toLocaleString()}
           </div>
         </div>
-      )}
+        <div className="p-3 rounded-lg bg-panel border border-border text-center">
+          <div className="text-xs text-string-muted mb-1">Movimientos</div>
+          <div className="text-lg font-semibold text-primary">{monthly.length}</div>
+        </div>
+      </div>
 
       {payments.length === 0 ? (
         <div className="text-string-muted text-sm">No hay pagos recurrentes registrados.</div>

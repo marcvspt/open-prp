@@ -25,6 +25,7 @@ export interface DashboardMonthData {
   paymentMethods: PaymentMethod[];
   categories: Category[];
   calculatedDebts: Record<string, CalculatedDebt>;
+  cardTotals: Record<string, { income: number; expense: number }>;
   incomes: number;
   expenses: number;
   recentTx: Transaction[];

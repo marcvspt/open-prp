@@ -4,11 +4,15 @@ import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import InstallmentsFilterable from "@/components/app/installments/InstallmentsFilterable.tsx";
+import InstallmentsSummary from "@/components/app/installments/InstallmentsSummary.tsx";
 import { InstallmentRepository } from "@/lib/modules/installments/repository.ts";
+import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
+import { RecurringPaymentMonthlyRepository } from "@/lib/modules/recurring-payment-monthly/repository.ts";
 import { FIELD_TYPE_CURRENCY, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
-import { currentMonthStr } from "@/lib/date.ts";
+import { currentMonthStr, monthLabel } from "@/lib/date.ts";
+import { formatCurrency } from "@/lib/format.ts";
 const userId = Astro.locals.userId;
 const currentMonth = currentMonthStr();
 const params = Astro.url.searchParams;
@@ -17,6 +21,12 @@ const filterMonth = params.get("month") || "";
 const filterQ = params.get("q") || "";
 const filterPm = params.get("payment_method_id") || "";
 const filterCat = params.get("category_id") || "";
+const paramTab = params.get("tab");
+const activeTab = paramTab === "admin" ? "admin" : paramTab === "historial" ? "historial" : "resumen";
+const tabBtnClass = (t: string) =>
+  `tab-btn px-4 py-2 text-sm font-medium border-b-2 -mb-px transition cursor-pointer ${
+    activeTab === t ? "text-primary border-primary" : "text-string-muted hover:text-string border-transparent"
+  }`;
 const catRepo = new CategoryRepository();
 const instCategories = await catRepo.findBySections(userId, ["plazos"]);
 const pmRepo = new PaymentMethodRepository();
@@ -27,6 +37,8 @@ if (filterQ) instFilter.q = filterQ;
 if (filterPm) instFilter.payment_method_id = filterPm;
 if (filterCat) instFilter.category_id = filterCat;
 const initialData = await new InstallmentRepository().findAll(userId, instFilter);
+const allCards = await new CardRepository().findAll(userId);
+const recurringHistory = await new RecurringPaymentMonthlyRepository().getHistory(currentMonth, userId);
 const fields = [
   dateField("start_date"),
   { name: "description", label: "Descripción", type: "text" as const, required: true },
@@ -43,16 +55,81 @@ const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_
 <AppLayout title="Plazos - Open PRP">
   <div data-module="installments" class="space-y-4">
     <PageHeader title="Plazos / Cuotas" createLabel="Nuevo plazo" createModule="installments" mobileOnlyCTA={true} />
-    <InstallmentsFilterable
-      client:load
-      initialMonth={filterMonth || currentMonth}
-      createdAt={Astro.locals.createdAt}
-      activeOnly={activeOnly}
-      paymentMethods={paymentMethods.map(pm => ({ id: pm.id, icon: pm.icon, name: pm.name }))}
-      categories={instCategories.map(c => ({ id: c.id, icon: c.icon, name: c.name }))}
-      initialData={JSON.stringify(initialData)}
-    />
+    <div class="tabs-container">
+      <div class="flex gap-0 border-b border-border" role="tablist" aria-label="Secciones de plazos">
+        <button data-tab="resumen" role="tab" id="tab-resumen" aria-selected={activeTab === "resumen"} aria-controls="panel-resumen" tabindex={activeTab === "resumen" ? 0 : -1} class={tabBtnClass("resumen")}>Resumen</button>
+        <button data-tab="admin" role="tab" id="tab-admin" aria-selected={activeTab === "admin"} aria-controls="panel-admin" tabindex={activeTab === "admin" ? 0 : -1} class={tabBtnClass("admin")}>Administrar Plazos</button>
+        <button data-tab="historial" role="tab" id="tab-historial" aria-selected={activeTab === "historial"} aria-controls="panel-historial" tabindex={activeTab === "historial" ? 0 : -1} class={tabBtnClass("historial")}>Historial</button>
+      </div>
+      <div data-tab-content="resumen" role="tabpanel" id="panel-resumen" aria-labelledby="tab-resumen" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "resumen" }]}>
+        <InstallmentsSummary
+          client:load
+          initialData={JSON.stringify(initialData)}
+          initialCards={JSON.stringify(allCards)}
+          initialPaymentMethods={JSON.stringify(paymentMethods)}
+        />
+      </div>
+      <div data-tab-content="admin" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "admin" }]}>
+        <InstallmentsFilterable
+          client:load
+          initialMonth={filterMonth || currentMonth}
+          createdAt={Astro.locals.createdAt}
+          activeOnly={activeOnly}
+          paymentMethods={paymentMethods.map(pm => ({ id: pm.id, icon: pm.icon, name: pm.name }))}
+          categories={instCategories.map(c => ({ id: c.id, icon: c.icon, name: c.name }))}
+          initialData={JSON.stringify(initialData)}
+        />
+      </div>
+      <div data-tab-content="historial" role="tabpanel" id="panel-historial" aria-labelledby="tab-historial" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "historial" }]}>
+        <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+          <h2 class="text-base font-semibold text-string mb-3">Historial de pagos recurrentes</h2>
+          {recurringHistory.length === 0 ? (
+            <p class="text-sm text-string-muted">Sin datos históricos</p>
+          ) : (
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-string-muted text-xs uppercase border-b border-border">
+                    <th class="text-left px-3 py-2">Mes</th>
+                    <th class="text-left px-3 py-2">Pago</th>
+                    <th class="text-right px-3 py-2">Monto</th>
+                    <th class="text-center px-3 py-2">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recurringHistory.map(sp => (
+                    <tr class="border-b border-border/50">
+                      <td class="px-3 py-2 text-string-muted">{monthLabel(sp.month)}</td>
+                      <td class="px-3 py-2 font-medium text-string">{sp.name ?? "?"}</td>
+                      <td class="px-3 py-2 text-right font-mono text-string">{formatCurrency(sp.amount)}</td>
+                      <td class="px-3 py-2 text-center">
+                        <span class={`text-xs px-2 py-0.5 rounded-full ${sp.is_paid ? "bg-success-bg text-success-text" : "bg-warning-bg text-warning-text"}`}>
+                          {sp.is_paid ? "Pagado" : "Pendiente"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   </div>
   <CrudModal client:load module="installments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="plazo" />
   <DeleteHandler module="installments" label="plazo" />
 </AppLayout>
+
+<script>
+  import { initTabs } from "@/lib/ui/tabs.ts";
+
+  const container = document.querySelector<HTMLElement>(".tabs-container");
+  if (container) {
+    const isTab = (v: string | null): v is "resumen" | "admin" | "historial" => v === "resumen" || v === "admin" || v === "historial";
+    const paramTab = new URLSearchParams(location.search).get("tab");
+    const hashTab = location.hash.replace("#", "");
+    const initialTab = isTab(paramTab) ? paramTab : isTab(hashTab) ? hashTab : "resumen";
+    initTabs(container, { initialTab, defaultTab: "resumen" });
+  }
+</script>
