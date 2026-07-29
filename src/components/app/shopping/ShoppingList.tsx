@@ -17,8 +17,8 @@ interface Props {
 }
 
 export const SHOPPING_TABS = [
-  { key: "lista", label: "Lista actual" },
-  { key: "historial", label: "Historial" },
+  { key: "list", label: "Lista actual" },
+  { key: "history", label: "Historial" },
 ] as const;
 
 type TabKey = (typeof SHOPPING_TABS)[number]["key"];
@@ -32,7 +32,7 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (activeTab !== "lista") params.set("tab", activeTab);
+    if (activeTab !== "list") params.set("tab", activeTab);
     else params.delete("tab");
     const qs = params.toString();
     history.replaceState(null, "", qs ? "?" + qs : location.pathname);
@@ -88,7 +88,7 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: d.description,
-          quantity: d.default_quantity,
+          quantity: d.quantity,
           category: d.category_id || undefined,
           despensa_item_id: d.id,
         }),
@@ -191,8 +191,8 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
         ))}
       </div>
 
-      {activeTab === "lista" && (
-        <div className="space-y-4" role="tabpanel" id="panel-lista" aria-labelledby="tab-lista" tabIndex={0}>
+      {activeTab === "list" && (
+        <div className="space-y-4" role="tabpanel" id="panel-list" aria-labelledby="tab-list" tabIndex={0}>
           {Object.keys(groupedPantry).length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
               <h2 className="text-sm font-semibold text-string mb-3">Desde la despensa</h2>
@@ -307,8 +307,8 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
         </div>
       )}
 
-      {activeTab === "historial" && (
-        <div className="space-y-4" role="tabpanel" id="panel-historial" aria-labelledby="tab-historial" tabIndex={0}>
+      {activeTab === "history" && (
+        <div className="space-y-4" role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabIndex={0}>
           {Object.keys(historyByMonth).length === 0 ? (
             <div className="bg-panel rounded-xl border border-border p-8 shadow-sm text-center">
               <p className="text-string-muted text-sm">Sin compras completadas aún</p>

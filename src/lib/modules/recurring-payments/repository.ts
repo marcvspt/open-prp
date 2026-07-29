@@ -131,6 +131,20 @@ export class RecurringPaymentRepository {
     return (await this.getMonthly(paymentId, month))!;
   }
 
+  async getHistory(userId: string, fromMonth: string, toMonth: string): Promise<RecurringPaymentMonthly[]> {
+    const result = await getDb().execute({
+      sql: `SELECT sm.*, rs.name, rs.default_amount, rs.currency
+            FROM recurring_payment_monthly sm
+            INNER JOIN recurring_payments rs ON rs.id = sm.payment_id
+            WHERE sm.user_id = ? AND sm.month >= ? AND sm.month <= ?
+            ORDER BY sm.month DESC, rs.name ASC`,
+      args: [userId, fromMonth, toMonth],
+    });
+    return (result.rows as unknown as RecurringPaymentMonthly[]).map(r => ({
+      ...r, amount: Number(r.amount), is_active: Boolean(r.is_active), is_paid: Boolean(r.is_paid),
+    }));
+  }
+
   async getMonthServices(month: string, userId: string): Promise<RecurringPaymentMonthly[]> {
     const result = await getDb().execute({
       sql: `SELECT sm.*, pm.name AS payment_method_name, pm.icon AS payment_method_icon

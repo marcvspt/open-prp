@@ -17,7 +17,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
   const parsedInitial = initialData ? JSON.parse(initialData) as Installment[] : undefined;
   const { filters, setFilter, clearFilters, data, loading } = useFilteredData<Installment[]>("/api/installments", {
     ...(initialActive ? { active_only: "true" } : {}),
-    month: initialMonth,
+    ...(initialMonth ? { month: initialMonth } : {}),
   }, parsedInitial);
 
   const items = data ?? [];
@@ -39,7 +39,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
             />
           </div>
           <div className={FILTER_WRAP_CLASS}>
-            <MonthSelector value={filters.month || initialMonth} onChange={(m) => setFilter("month", m)} createdAt={createdAt} />
+            <MonthSelector value={filters.month || ""} onChange={(m) => setFilter("month", m)} createdAt={createdAt} allLabel="Último año" />
           </div>
           <div className={FILTER_WRAP_CLASS}>
             <Select

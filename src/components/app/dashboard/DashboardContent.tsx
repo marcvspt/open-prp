@@ -15,10 +15,10 @@ function dueDaysBadge(days: number): string {
 }
 
 export const DASHBOARD_TABS = [
-  { key: "resumen", label: "Resumen" },
+  { key: "summary", label: "Resumen" },
 
-  { key: "eventos", label: "Eventos" },
-  { key: "tareas", label: "Tareas" },
+  { key: "events", label: "Eventos" },
+  { key: "tasks", label: "Tareas" },
 ];
 
 interface DashboardProps {
@@ -30,7 +30,7 @@ interface DashboardProps {
 
 export default function DashboardContent({ createdAt, initialMonth, initialTab, initialData }: DashboardProps) {
   const defaultMonth = currentMonthStr();
-  const defaultTab = "resumen";
+  const defaultTab = "summary";
   const tabs = DASHBOARD_TABS;
 
   const [activeTab, setActiveTab] = useState(() => {
@@ -134,8 +134,8 @@ export default function DashboardContent({ createdAt, initialMonth, initialTab, 
       </div>
 
       {/* Resumen */}
-      {activeTab === "resumen" && (
-        <div className="space-y-6" role="tabpanel" id="panel-resumen" aria-labelledby="tab-resumen" tabIndex={0}>
+      {activeTab === "summary" && (
+        <div className="space-y-6" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabIndex={0}>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <StatCard label="Ingresos" value={formatCurrency(txData.incomes)} colorClass="text-success" />
             <StatCard label="Gastos" value={formatCurrency(txData.expenses)} colorClass="text-danger" />
@@ -263,8 +263,8 @@ export default function DashboardContent({ createdAt, initialMonth, initialTab, 
 
 
       {/* Eventos */}
-      {activeTab === "eventos" && (
-        <div className="space-y-4" role="tabpanel" id="panel-eventos" aria-labelledby="tab-eventos" tabIndex={0}>
+      {activeTab === "events" && (
+        <div className="space-y-4" role="tabpanel" id="panel-events" aria-labelledby="tab-events" tabIndex={0}>
           {!Array.isArray(upcomingEvents) ? (
             <div>
               <p className="text-sm text-danger">Error: datos de eventos inválidos</p>
@@ -295,8 +295,8 @@ export default function DashboardContent({ createdAt, initialMonth, initialTab, 
       )}
 
       {/* Tareas */}
-      {activeTab === "tareas" && (
-        <div className="space-y-4" role="tabpanel" id="panel-tareas" aria-labelledby="tab-tareas" tabIndex={0}>
+      {activeTab === "tasks" && (
+        <div className="space-y-4" role="tabpanel" id="panel-tasks" aria-labelledby="tab-tasks" tabIndex={0}>
           {overdueTasks.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-danger mb-2">Vencidas</h3>

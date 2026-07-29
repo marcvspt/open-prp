@@ -17,7 +17,7 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
   const parsedInitial = initialData ? JSON.parse(initialData) as Transaction[] : undefined;
   const { filters, setFilter, clearFilters, data, loading } = useFilteredData<Transaction[]>("/api/transactions", {
     ...(initialType !== "all" ? { type: initialType } : {}),
-    month: initialMonth,
+    ...(initialMonth ? { month: initialMonth } : {}),
   }, parsedInitial);
 
   const items = data ?? [];
@@ -40,7 +40,7 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
             />
           </div>
           <div className={FILTER_WRAP_CLASS}>
-            <MonthSelector value={filters.month || initialMonth} onChange={(m) => setFilter("month", m)} createdAt={createdAt} />
+            <MonthSelector value={filters.month || ""} onChange={(m) => setFilter("month", m)} createdAt={createdAt} allLabel="Último año" />
           </div>
           <div className={FILTER_WRAP_CLASS}>
             <Select

@@ -5,6 +5,7 @@ import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import RecurringPaymentsMonthly from "@/components/app/recurring-payments/RecurringPaymentsMonthly.tsx";
+import RecurringPaymentsHistory from "@/components/app/recurring-payments/RecurringPaymentsHistory.tsx";
 import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
 import { RecurringPaymentMonthlyRepository } from "@/lib/modules/recurring-payment-monthly/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
@@ -12,12 +13,29 @@ import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repositor
 import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, CURRENCY_SYMBOL, BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
 import { currentMonthStr } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
-const items = await new RecurringPaymentRepository().findAll(userId);
+const rpRepo = new RecurringPaymentRepository();
+const items = await rpRepo.findAll(userId);
 const paramMonth = Astro.url.searchParams.get("month");
 const selectedMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : currentMonthStr();
 const monthlyItems = await new RecurringPaymentMonthlyRepository().findByMonth(selectedMonth, userId);
+const today = currentMonthStr();
+const [curY, curM] = today.split("-").map(Number);
+const nextMY = curM === 12 ? curY + 1 : curY;
+const nextMM = curM === 12 ? 1 : curM + 1;
+const nextMonth = `${nextMY}-${String(nextMM).padStart(2, "0")}`;
+const startMonth = Astro.locals.createdAt
+  ? (() => { const d = new Date(Astro.locals.createdAt!); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; })()
+  : today;
+const twelveMonthsAgo = (() => {
+  const total = curY * 12 + curM - 13;
+  const y = Math.floor(total / 12);
+  const m = total % 12 + 1;
+  return `${y}-${String(m).padStart(2, "0")}`;
+})();
+const fromMonth = startMonth > twelveMonthsAgo ? startMonth : twelveMonthsAgo;
+const recurringHistory = await rpRepo.getHistory(userId, fromMonth, nextMonth);
 const paramTab = Astro.url.searchParams.get("tab");
-const activeTab = paramTab === "list" ? "list" : "monthly";
+const activeTab = paramTab === "list" ? "list" : paramTab === "history" ? "history" : "monthly";
 const tabBtnClass = (t: string) =>
   `tab-btn px-4 py-2 text-sm font-medium border-b-2 -mb-px transition cursor-pointer ${
     activeTab === t ? "text-primary border-primary" : "text-string-muted hover:text-string border-transparent"
@@ -48,6 +66,7 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
       <div class="flex gap-0 border-b border-border" role="tablist" aria-label="Secciones de pagos recurrentes">
         <button data-tab="monthly" role="tab" id="tab-rp-monthly" aria-selected={activeTab === "monthly"} aria-controls="panel-rp-monthly" tabindex={activeTab === "monthly" ? 0 : -1} class={tabBtnClass("monthly")}>Movimientos del mes</button>
         <button data-tab="list" role="tab" id="tab-rp-list" aria-selected={activeTab === "list"} aria-controls="panel-rp-list" tabindex={activeTab === "list" ? 0 : -1} class={tabBtnClass("list")}>Administrar pagos</button>
+        <button data-tab="history" role="tab" id="tab-rp-history" aria-selected={activeTab === "history"} aria-controls="panel-rp-history" tabindex={activeTab === "history" ? 0 : -1} class={tabBtnClass("history")}>Historial</button>
       </div>
       <div data-tab-content="monthly" role="tabpanel" id="panel-rp-monthly" aria-labelledby="tab-rp-monthly" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "monthly" }]}>
         <RecurringPaymentsMonthly
@@ -80,6 +99,14 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
           ))}
         </DataTable>
       </div>
+      <div data-tab-content="history" role="tabpanel" id="panel-rp-history" aria-labelledby="tab-rp-history" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "history" }]}>
+        <RecurringPaymentsHistory
+          client:load
+          initialData={JSON.stringify(recurringHistory)}
+          categories={JSON.stringify(catMap)}
+          createdAt={Astro.locals.createdAt}
+        />
+      </div>
     </div>
   </div>
   <CrudModal client:load module="recurring-payments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="pago recurrente" />
@@ -92,7 +119,7 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
   const container = document.querySelector<HTMLElement>(".tabs-container");
   if (container) {
     // Resolve initial tab: ?tab= param, legacy #hash, or default.
-    const isTab = (v: string | null): v is "monthly" | "list" => v === "monthly" || v === "list";
+    const isTab = (v: string | null): v is "monthly" | "list" | "history" => v === "monthly" || v === "list" || v === "history";
     const paramTab = new URLSearchParams(location.search).get("tab");
     const hashTab = location.hash.replace("#", "");
     const initialTab = isTab(paramTab) ? paramTab : isTab(hashTab) ? hashTab : "monthly";
