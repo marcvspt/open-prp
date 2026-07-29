@@ -1,13 +1,20 @@
 const ACTIVE_CLASSES = ["text-primary", "border-primary"] as const;
 const INACTIVE_CLASSES = ["text-string-muted", "border-transparent"] as const;
 
+interface TabsOptions {
+  /** Tab activated on init (already resolved from ?tab= or a legacy #hash). */
+  initialTab: string;
+  /** Default tab: the one that leaves no ?tab= param in the URL. */
+  defaultTab: string;
+}
+
 /**
  * Generic accessible tab switcher (APG tabs pattern). Expects a container with
  * `[data-tab]` buttons (role="tab") and `[data-tab-content]` panels (role="tabpanel").
  * Manages aria-selected + roving tabIndex, arrow keys/Home/End navigation,
- * and syncs the active tab with the URL hash.
+ * and syncs the active tab with the ?tab= query param (SSR-visible, unlike #hash).
  */
-export function initTabs(container: HTMLElement, defaultTab: string): void {
+export function initTabs(container: HTMLElement, { initialTab, defaultTab }: TabsOptions): void {
   const buttons = [...container.querySelectorAll<HTMLElement>("[data-tab]")];
   const contents = container.querySelectorAll<HTMLElement>("[data-tab-content]");
   if (buttons.length === 0) return;
@@ -26,7 +33,11 @@ export function initTabs(container: HTMLElement, defaultTab: string): void {
     contents.forEach((panel) => {
       panel.classList.toggle("hidden", panel.dataset.tabContent !== tabId);
     });
-    history.replaceState(null, "", `${location.pathname}#${tabId}${location.search}`);
+    const params = new URLSearchParams(location.search);
+    if (tabId !== defaultTab) params.set("tab", tabId);
+    else params.delete("tab");
+    const qs = params.toString();
+    history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
   }
 
   buttons.forEach((btn, idx) => {
@@ -46,6 +57,5 @@ export function initTabs(container: HTMLElement, defaultTab: string): void {
     });
   });
 
-  const hashTab = location.hash.replace("#", "");
-  activate(buttons.some(b => b.dataset.tab === hashTab) ? hashTab : defaultTab);
+  activate(buttons.some(b => b.dataset.tab === initialTab) ? initialTab : defaultTab);
 }

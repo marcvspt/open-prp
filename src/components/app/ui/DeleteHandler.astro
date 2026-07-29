@@ -1,4 +1,6 @@
 ---
+import ConfirmDelete from "@/components/app/ui/ConfirmDelete.tsx";
+
 export interface Props {
   module: string;
   label?: string;
@@ -7,12 +9,4 @@ export interface Props {
 const { module, label = "elemento" } = Astro.props;
 ---
 
-<script define:vars={{ module, label }}>
-  document.addEventListener('click', async (e) => {
-    const del = /** @type {HTMLElement} */(e.target).closest(`[data-delete-${module}]`);
-    if (del && del.getAttribute(`data-delete-${module}`) && confirm(`¿Eliminar ${label}?`)) {
-      await fetch(`/api/${module}/${del.getAttribute(`data-delete-${module}`)}`, { method: 'DELETE' });
-      window.location.reload();
-    }
-  });
-</script>
+<ConfirmDelete client:load module={module} label={label} />

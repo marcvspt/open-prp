@@ -1,21 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import type { Transaction } from "@/lib/types/transaction.ts";
-import type { CardMonthly } from "@/lib/types/card-monthly.ts";
-import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
-import type { DashboardMonthData, CardWithDebt } from "@/lib/types/dashboard.ts";
-import { monthLabel, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
+import type { DashboardMonthData } from "@/lib/types/dashboard.ts";
+import { currentMonthStr, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
-import { fetchDashboardMonth, fetchDashboardHistory, payCardDebtFull, payCardDebtPartial } from "@/lib/dashboard/api.ts";
+import { fetchDashboardMonth } from "@/lib/dashboard/api.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import StatCard from "@/components/app/dashboard/StatCard.tsx";
 import Select from "@/components/ui/Select.tsx";
-import { BTN_CANCEL } from "@/lib/form-fields.ts";
-
-function dueDaysBorder(days: number): string {
-  if (days <= 3) return "border-danger";
-  if (days <= 8) return "border-warning";
-  return "border-success";
-}
 
 function dueDaysBadge(days: number): string {
   if (days <= 3) return "bg-danger-bg text-danger-text";
@@ -23,42 +14,37 @@ function dueDaysBadge(days: number): string {
   return "bg-success-bg text-success-text";
 }
 
+export const DASHBOARD_TABS = [
+  { key: "resumen", label: "Resumen" },
+
+  { key: "eventos", label: "Eventos" },
+  { key: "tareas", label: "Tareas" },
+];
+
 interface DashboardProps {
   createdAt?: string;
   initialMonth: string;
+  initialTab: string;
   initialData: string;
 }
 
-export default function DashboardContent({ createdAt, initialMonth, initialData }: DashboardProps) {
-  const now = new Date();
-  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+export default function DashboardContent({ createdAt, initialMonth, initialTab, initialData }: DashboardProps) {
+  const defaultMonth = currentMonthStr();
   const defaultTab = "resumen";
-
-  const tabs = [
-    { key: "resumen", label: "Resumen" },
-    { key: "tarjetas", label: "Tarjetas" },
-    { key: "plazos", label: "Plazos" },
-    { key: "eventos", label: "Eventos" },
-    { key: "tareas", label: "Tareas" },
-    { key: "historial", label: "Historial" },
-  ];
+  const tabs = DASHBOARD_TABS;
 
   const [activeTab, setActiveTab] = useState(() => {
+    // Legacy #tab links: the server can't see the hash, so adopt it on the client.
     const h = typeof location !== "undefined" ? location.hash.replace("#", "") : "";
-    return tabs.some(t => t.key === h) ? h : defaultTab;
+    return tabs.some(t => t.key === h) ? h : initialTab;
   });
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
   const [monthData, setMonthData] = useState<DashboardMonthData>(() => JSON.parse(initialData) as DashboardMonthData);
-  const [historyCard, setHistoryCard] = useState<CardMonthly[]>([]);
-  const [historyService, setHistoryService] = useState<RecurringPaymentMonthly[]>([]);
-  const [payDialog, setPayDialog] = useState<{ debt: CardMonthly; card: CardWithDebt } | null>(null);
-  const [payAmount, setPayAmount] = useState("");
-  const [payDate, setPayDate] = useState("");
 
   const {
     cards, services, cardDebts, servicePayments, upcomingEvents, pendingTasks,
     overdueTasks, activeShopping, paymentMethods, categories, calculatedDebts,
-    incomes, expenses, recentTx, installmentTotal, installments,
+    incomes, expenses, recentTx, installmentTotal,
   } = monthData;
   const txData = { incomes, expenses, recentTx };
 
@@ -66,9 +52,10 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
     const params = new URLSearchParams(location.search);
     if (currentMonth !== defaultMonth) params.set("month", currentMonth);
     else params.delete("month");
+    if (activeTab !== defaultTab) params.set("tab", activeTab);
+    else params.delete("tab");
     const qs = params.toString();
-    const hash = activeTab !== defaultTab ? `#${activeTab}` : "";
-    history.replaceState(null, "", (qs ? "?" + qs : location.pathname) + hash);
+    history.replaceState(null, "", (qs ? "?" + qs : location.pathname));
   }, [activeTab, currentMonth, defaultTab, defaultMonth]);
 
   const handleMonthChange = (month: string) => setCurrentMonth(month);
@@ -85,53 +72,11 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
     return () => { cancelled = true; };
   }, [currentMonth]);
 
-  useEffect(() => {
-    if (activeTab !== "historial") return;
-    fetchDashboardHistory().then(h => {
-      setHistoryCard(h.card);
-      setHistoryService(h.service);
-    });
-  }, [activeTab]);
-
-  function markDebtPaid(id: string, paidAt: string) {
-    setMonthData(prev => ({
-      ...prev,
-      cardDebts: prev.cardDebts.map(d => d.id === id ? { ...d, is_paid: true, paid_at: paidAt } : d),
-    }));
-  }
-
-  async function handlePayFull(id: string) {
-    const paidAt = payDate || undefined;
-    if (await payCardDebtFull(id, paidAt)) markDebtPaid(id, paidAt ?? new Date().toISOString());
-    setPayDialog(null);
-  }
-
-  async function handlePayPartial() {
-    if (!payDialog) return;
-    const amt = parseFloat(payAmount);
-    if (!(amt > 0 && amt <= payDialog.debt.statement_balance)) return;
-    const paidAt = payDate || undefined;
-    const ok = await payCardDebtPartial({
-      id: payDialog.debt.id,
-      month: payDialog.debt.month,
-      statementBalance: payDialog.debt.statement_balance,
-      paidAmount: amt,
-      cutoffDay: payDialog.card.cutoff_day,
-      paymentMethodId: paymentMethods.find(p => p.card_id === payDialog.card.id)?.id ?? null,
-      categoryId: categories.find(c => c.name === "Saldo de tarjeta")?.id ?? null,
-      paidAt,
-    });
-    if (ok) markDebtPaid(payDialog.debt.id, paidAt ?? new Date().toISOString());
-    setPayDialog(null);
-  }
-
   const getCardDebt = (cardId: string) => cardDebts.find(d => d.card_id === cardId);
-  const visibleCards = cards.filter(c => c.type === "credit");
-  const creditCardDebts = cardDebts.filter(d => visibleCards.some(c => c.id === d.card_id));
+  const creditCardDebts = cardDebts.filter(d => cards.some(c => c.id === d.card_id && c.type === "credit"));
 
   function selectTab(key: string) {
     setActiveTab(key);
-    location.hash = "#" + key;
   }
 
   function onTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
@@ -195,7 +140,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
             <StatCard label="Ingresos" value={formatCurrency(txData.incomes)} colorClass="text-success" />
             <StatCard label="Gastos" value={formatCurrency(txData.expenses)} colorClass="text-danger" />
             <StatCard label="Balance" value={formatCurrency(txData.incomes - txData.expenses)} colorClass={txData.incomes - txData.expenses >= 0 ? "text-success" : "text-danger"} />
-            <StatCard label="Tarjetas de crédito" value={String(visibleCards.length)} colorClass="text-primary" />
+            <StatCard label="Tarjetas de crédito" value={String(cards.filter(c => c.type === "credit").length)} colorClass="text-primary" />
             <StatCard label="Plazos" value={formatCurrency(installmentTotal)} colorClass="text-warning" />
           </div>
           {(installmentTotal > 0 || servicePayments.length > 0) && (
@@ -315,148 +260,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
         </div>
       )}
 
-      {/* Tarjetas */}
-      {activeTab === "tarjetas" && (
-        <div className="space-y-4" role="tabpanel" id="panel-tarjetas" aria-labelledby="tab-tarjetas" tabIndex={0}>
-          {visibleCards.length === 0 ? (
-            <p className="text-string-muted text-sm">No hay tarjetas registradas</p>
-          ) : (
-            visibleCards.map(card => {
-              const debt = getCardDebt(card.id);
-              const dueIn = card.payment_due_day != null ? daysUntilPaymentDue(currentMonth, card.cutoff_day, card.payment_due_day) : 0;
-              const paidLate = debt?.is_paid === true && isPaymentLate(currentMonth, card.cutoff_day, card.payment_due_day, debt.paid_at);
-              const calc = card.type === "credit" ? calculatedDebts[card.id] : null;
-              const committed = calc ? calc.total_committed : (debt?.statement_balance ?? 0);
-              const available = card.max_limit != null ? card.max_limit - committed : 0;
-              const typeLabel = card.type === "credit" ? "Crédito" : card.type === "debit" ? "Débito" : "Vales";
-              const isCredit = card.type === "credit";
-              const borderClass = isCredit && debt && !debt.is_paid ? dueDaysBorder(dueIn) : paidLate ? "border-danger" : "border-border";
-              return (
-                <div key={card.id} className={`bg-panel rounded-xl border-2 p-4 shadow-sm ${borderClass}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-string">{card.name}</h3>
-                      <span className="text-xs text-string-muted uppercase">{typeLabel}</span>
-                    </div>
-                    {debt && !debt.is_paid && (
-                      <button
-                        onClick={() => { setPayDialog({ debt, card }); setPayAmount(""); setPayDate(new Date().toLocaleDateString("sv")); }}
-                        className="px-3 py-1 text-xs font-medium rounded-lg bg-success text-white hover:bg-success-hover transition-colors"
-                      >
-                        Pagar
-                      </button>
-                    )}
-                    {debt?.is_paid && (
-                      <span className={`px-3 py-1 text-xs font-medium rounded-lg ${paidLate ? "bg-danger-bg text-danger-text" : "bg-success-bg text-success-text"}`}>
-                        {paidLate ? "Pagada tarde" : "Pagada"}
-                      </span>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                    <div>
-                      <p className="text-xs text-string-muted">{isCredit ? "Límite" : "Saldo"}</p>
-                      <p className="font-mono font-medium text-success">{card.max_limit != null ? formatCurrency(card.max_limit) : "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-string-muted">Deuda calculada</p>
-                      {calc ? (
-                        <div className="group relative">
-                          <p className="font-mono font-medium text-danger cursor-help">{formatCurrency(calc.statement_balance)}</p>
-                          <div className="absolute left-0 right-0 top-full mt-1 max-w-xs bg-panel border border-border rounded-lg shadow-lg p-3 text-xs z-10 hidden group-hover:block">
-                              <div className="space-y-1">
-                                <div className="flex justify-between"><span>Compras</span><span className="font-mono text-danger">-{formatCurrency(calc.total_purchases)}</span></div>
-                                <div className="flex justify-between"><span>Plazos (este mes)</span><span className="font-mono text-danger">-{formatCurrency(calc.total_installments)}</span></div>
-                                <div className="flex justify-between"><span>Pagos recurrentes</span><span className="font-mono text-danger">-{formatCurrency(calc.total_recurring)}</span></div>
-                                <div className="flex justify-between"><span>Cashback</span><span className="font-mono text-success">+{formatCurrency(calc.total_cashback)}</span></div>
-                                <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>Adeudo del mes</span><span className="font-mono">{formatCurrency(calc.statement_balance)}</span></div>
-                              <div className="flex justify-between text-string-muted"><span>Plazos futuros</span><span className="font-mono">-{formatCurrency(calc.committed_installments)}</span></div>
-                              <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>Total comprometido</span><span className="font-mono">{formatCurrency(calc.total_committed)}</span></div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : debt ? (
-                        <p className="font-mono font-medium text-danger">{formatCurrency(debt.statement_balance)}</p>
-                      ) : (
-                        <p className="text-xs text-string-muted">-</p>
-                      )}
-                    </div>
-                    {isCredit && (
-                    <div>
-                      <p className="text-xs text-string-muted">Disponible</p>
-                      <p className={`font-mono font-medium ${available < 0 ? "text-danger" : "text-success"}`}>{formatCurrency(Math.max(0, available))}</p>
-                    </div>
-                    )}
-                    <div>
-                      <p className="text-xs text-string-muted">{isCredit ? "Corte / Pago" : "Tipo"}</p>
-                      <p className="font-mono font-medium">{card.cutoff_day != null && card.payment_due_day != null ? `${card.cutoff_day} / ${card.payment_due_day}` : typeLabel}</p>
-                    </div>
-                  </div>
-                  {isCredit && debt && !debt.is_paid && (
-                    <div className="mt-3 flex items-center gap-2 text-xs">
-                      <span className="text-string-muted">Límite de pago:</span>
-                      <span className={`font-medium ${dueDaysBadge(dueIn)} px-2 py-0.5 rounded`}>
-                        {dueIn <= 0 ? "Vencido" : `En ${dueIn} días (día ${card.payment_due_day})`}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      )}
 
-      {/* Plazos */}
-      {activeTab === "plazos" && (
-        <div className="space-y-4" role="tabpanel" id="panel-plazos" aria-labelledby="tab-plazos" tabIndex={0}>
-          {installments.length === 0 ? (
-            <p className="text-string-muted text-sm">No hay plazos activos</p>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                <StatCard label="Plazos activos" value={String(installments.length)} colorClass="text-primary" />
-                <StatCard label="Restante por pagar" value={formatCurrency(installments.reduce((s, i) => s + Number(i.remaining_months) * Number(i.monthly_amount), 0))} colorClass="text-danger" />
-                <StatCard label="Total de cuotas" value={String(installments.reduce((s, i) => s + Number(i.total_months), 0))} colorClass="text-warning" />
-              </div>
-              <div className="space-y-3">
-                {installments.map(i => {
-                  const pm = paymentMethods.find(p => p.id === i.payment_method_id);
-                  const card = pm?.card_id ? cards.find(c => c.id === pm.card_id) : undefined;
-                  const remainingAmount = Number(i.remaining_months) * Number(i.monthly_amount);
-                  const totalAmount = Number(i.total_amount);
-                  return (
-                    <div key={i.id} className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="font-semibold text-string">{i.description}</h3>
-                          <span className="text-xs text-string-muted">{card?.name ?? "Sin tarjeta"}</span>
-                        </div>
-                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${i.remaining_months <= 0 ? "bg-success-bg text-success-text" : i.remaining_months <= 3 ? "bg-warning-bg text-warning-text" : "bg-info-bg text-info-text"}`}>
-                          {i.remaining_months}/{i.total_months} cuotas
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3 text-sm">
-                        <div>
-                          <p className="text-xs text-string-muted">Total</p>
-                          <p className="font-mono font-medium text-string">{formatCurrency(totalAmount)}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-string-muted">Cuota mensual</p>
-                          <p className="font-mono font-medium text-danger">{formatCurrency(Number(i.monthly_amount))}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-string-muted">Restante</p>
-                          <p className="font-mono font-medium text-warning">{formatCurrency(remainingAmount)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
       {/* Eventos */}
       {activeTab === "eventos" && (
@@ -528,141 +332,6 @@ export default function DashboardContent({ createdAt, initialMonth, initialData 
         </div>
       )}
 
-      {/* Historial */}
-      {activeTab === "historial" && (
-        <div className="space-y-6" role="tabpanel" id="panel-historial" aria-labelledby="tab-historial" tabIndex={0}>
-          <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-string mb-3">Historial de tarjetas</h2>
-            {historyCard.length === 0 ? (
-              <p className="text-sm text-string-muted">Sin datos históricos</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-string-muted text-xs uppercase border-b border-border">
-                      <th className="text-left px-3 py-2">Mes</th>
-                      <th className="text-left px-3 py-2">Tarjeta</th>
-                      <th className="text-right px-3 py-2">Deuda</th>
-                      <th className="text-center px-3 py-2">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyCard.map(d => {
-                      const card = cards.find(c => c.id === d.card_id);
-                      return (
-                        <tr key={d.id} className="border-b border-border/50">
-                          <td className="px-3 py-2 text-string-muted">{monthLabel(d.month)}</td>
-                          <td className="px-3 py-2 font-medium">{card?.name ?? "?"}</td>
-                          <td className="px-3 py-2 text-right font-mono">{formatCurrency(d.statement_balance)}</td>
-                          <td className="px-3 py-2 text-center">
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${d.is_paid ? "bg-success-bg text-success-text" : "bg-warning-bg text-warning-text"}`}>
-                              {d.is_paid ? "Pagado" : "Pendiente"}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-          <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-string mb-3">Historial de pagos recurrentes</h2>
-            {historyService.length === 0 ? (
-              <p className="text-sm text-string-muted">Sin datos históricos</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-string-muted text-xs uppercase border-b border-border">
-                      <th className="text-left px-3 py-2">Mes</th>
-                      <th className="text-left px-3 py-2">Pago</th>
-                      <th className="text-right px-3 py-2">Monto</th>
-                      <th className="text-center px-3 py-2">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyService.map(sp => {
-                      const svc = services.find(s => s.id === sp.payment_id);
-                      return (
-                        <tr key={sp.id} className="border-b border-border/50">
-                          <td className="px-3 py-2 text-string-muted">{monthLabel(sp.month)}</td>
-                          <td className="px-3 py-2 font-medium">{svc?.name ?? "?"}</td>
-                          <td className="px-3 py-2 text-right font-mono">{formatCurrency(sp.amount)}</td>
-                          <td className="px-3 py-2 text-center">
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${sp.is_paid ? "bg-success-bg text-success-text" : "bg-warning-bg text-warning-text"}`}>
-                              {sp.is_paid ? "Pagado" : "Pendiente"}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {payDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay" onClick={() => setPayDialog(null)}>
-          <div className="bg-panel rounded-xl border border-border shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-semibold text-string mb-1">Pagar tarjeta</h3>
-            <p className="text-sm text-string-muted mb-4">{payDialog.card.name} — {formatCurrency(payDialog.debt.statement_balance)}</p>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-string mb-1">Fecha de pago</label>
-                <input
-                  type="date"
-                  value={payDate}
-                  onChange={e => setPayDate(e.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-                />
-              </div>
-              <button onClick={() => handlePayFull(payDialog.debt.id)} className="w-full py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors">
-                Pagar todo ({formatCurrency(payDialog.debt.statement_balance)})
-              </button>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 border-t border-border" />
-                <span className="text-xs text-string-muted">o</span>
-                <div className="flex-1 border-t border-border" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-string mb-1">Pago parcial</label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max={payDialog.debt.statement_balance}
-                    value={payAmount}
-                    onChange={e => setPayAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="flex-1 block rounded-lg border border-border px-3 py-2 text-sm"
-                  />
-                  <button
-                    onClick={handlePayPartial}
-                    disabled={!payAmount || parseFloat(payAmount) <= 0}
-                    className="px-4 py-2 text-sm font-medium rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 transition-colors"
-                  >
-                    Pagar
-                  </button>
-                </div>
-                {payAmount && parseFloat(payAmount) > 0 && (
-                  <p className="text-xs text-string-muted mt-1">
-                    Restante: {formatCurrency(payDialog.debt.statement_balance - parseFloat(payAmount))} — se agregará como gasto al mes siguiente
-                  </p>
-                )}
-              </div>
-              <button onClick={() => setPayDialog(null)} className="w-full py-2 text-sm text-nav hover:text-string transition-colors">
-                {BTN_CANCEL}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

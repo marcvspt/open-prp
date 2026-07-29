@@ -56,6 +56,20 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
     installmentTotal +
     expenseSvcs.reduce((sum, sp) => sum + Number(sp.amount), 0);
 
+  const cardTotals: Record<string, { income: number; expense: number }> = {};
+  const pmToCard = new Map(paymentMethods.filter(pm => pm.card_id).map(pm => [pm.id, pm.card_id]));
+  for (const tx of txDataArr) {
+    const cardId = pmToCard.get(tx.payment_method_id ?? "");
+    if (!cardId) continue;
+    if (!cardTotals[cardId]) cardTotals[cardId] = { income: 0, expense: 0 };
+    if (tx.type === "income") cardTotals[cardId].income += Number(tx.amount);
+    else cardTotals[cardId].expense += Number(tx.amount);
+  }
+  for (const cb of cbData) {
+    if (!cardTotals[cb.card_id]) cardTotals[cb.card_id] = { income: 0, expense: 0 };
+    cardTotals[cb.card_id].income += Number(cb.amount);
+  }
+
   const calculatedDebts: Record<string, CalculatedDebt> = {};
   await Promise.all(
     cards
@@ -86,6 +100,7 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
     paymentMethods,
     categories,
     calculatedDebts,
+    cardTotals,
     incomes,
     expenses,
     recentTx: txDataArr.slice(0, 5),

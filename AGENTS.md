@@ -29,7 +29,7 @@ astro dev stop | status | logs
     - **Orden estándar**: Fecha → Tipo → Descripción → Montos → Moneda → Método pago/Tarjeta → Categoría → específicos
     - **required=true** → `NOT NULL` en schema SQL (auditado, todo OK)
 - **Tags `<script>`**: importar funciones init desde `src/lib/ui/`
-- **UI compartida vs app**: `src/components/ui/` (ThemeToggle, Select, MultiSelect, ErrorBoundary); `src/components/app/ui/` (CrudModal, DataTable, FormModal, FilterLinks, CurrencySelect, MonthSelector, etc.)
+- **UI compartida vs app**: `src/components/ui/` (ThemeToggle, Select, MultiSelect, ErrorBoundary); `src/components/app/ui/` (CrudModal, DataTable, FormModal, ConfirmDelete, FilterLinks, CurrencySelect, MonthSelector, etc.)
 
 ### Assets
 
@@ -131,7 +131,7 @@ astro dev stop | status | logs
 - `aria-hidden="true"` en iconos decorativos (Hero, Sidebar, Header, Select).
 - `aria-label` en nav, inputs, botones sin texto visible.
 - `role="dialog"`, `aria-modal`, `aria-labelledby` en modales.
-- **Tabs**: patrón APG con `<button>` (NO anchors ni `<nav>`; el hash es solo deep-link). `role="tablist"` + `aria-label`, tabs con `role="tab"`, `aria-selected`, `aria-controls`, roving `tabIndex` y navegación ←/→/Home/End; paneles `role="tabpanel"` + `aria-labelledby` + `tabindex="0"`. Implementado en `DashboardContent`, `ShoppingList` y `initTabs` (`tabs.ts`).
+- **Tabs**: patrón APG con `<button>` (NO anchors ni `<nav>`). Estado de tab en query param `?tab=` (NO `#hash` — el servidor no ve el hash y el SSR pintaría la tab default; con `?tab=` el primer paint ya trae la tab correcta). Hashes viejos `#tab` se adoptan en cliente por compatibilidad. `role="tablist"` + `aria-label`, tabs con `role="tab"`, `aria-selected`, `aria-controls`, roving `tabIndex` y navegación ←/→/Home/End; paneles `role="tabpanel"` + `aria-labelledby` + `tabindex="0"`. Implementado en `DashboardContent`, `ShoppingList` y `initTabs` (`tabs.ts`).
 
 ### Landing
 
@@ -152,3 +152,4 @@ astro dev stop | status | logs
 - Sin `key={}` en elementos HTML en `.astro`.
 - `data-create` usa sintaxis con `=` (`data-create="categories"`), no con guiones.
 - `FetchEvent` de service worker usa `new URL(e.request.url)` para examinar path.
+- **Sin `alert()`/`confirm()`/`prompt()` nativos**: confirmación de borrado con `ConfirmDelete` (vía `DeleteHandler.astro`); errores de formulario inline dentro del modal con `role="alert"`.

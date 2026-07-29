@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { PantryItem } from "@/lib/types/pantry.ts";
 import type { ShoppingItem } from "@/lib/types/shopping.ts";
 
@@ -10,23 +10,33 @@ interface PantryCategory {
 }
 
 interface Props {
+  initialTab: string;
   initialItems: string;
   initialPantry: string;
   initialCategories: string;
 }
 
-const TABS = [
+export const SHOPPING_TABS = [
   { key: "lista", label: "Lista actual" },
   { key: "historial", label: "Historial" },
 ] as const;
 
-type TabKey = (typeof TABS)[number]["key"];
+type TabKey = (typeof SHOPPING_TABS)[number]["key"];
 
-export default function ShoppingList({ initialItems, initialPantry, initialCategories }: Props) {
+export default function ShoppingList({ initialTab, initialItems, initialPantry, initialCategories }: Props) {
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    // Legacy #tab links: the server can't see the hash, so adopt it on the client.
     const h = typeof location !== "undefined" ? location.hash.replace("#", "") : "";
-    return TABS.some(t => t.key === h) ? (h as TabKey) : "lista";
+    return SHOPPING_TABS.some(t => t.key === h) ? (h as TabKey) : (initialTab as TabKey);
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (activeTab !== "lista") params.set("tab", activeTab);
+    else params.delete("tab");
+    const qs = params.toString();
+    history.replaceState(null, "", qs ? "?" + qs : location.pathname);
+  }, [activeTab]);
 
   // Initial data comes from SSR props; refetch only after mutations.
   const allInitial: ShoppingItem[] = JSON.parse(initialItems);
@@ -144,26 +154,25 @@ export default function ShoppingList({ initialItems, initialPantry, initialCateg
 
   function selectTab(key: TabKey) {
     setActiveTab(key);
-    location.hash = "#" + key;
   }
 
   function onTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
-    const idx = TABS.findIndex(t => t.key === activeTab);
+    const idx = SHOPPING_TABS.findIndex(t => t.key === activeTab);
     let next = -1;
-    if (e.key === "ArrowRight") next = (idx + 1) % TABS.length;
-    else if (e.key === "ArrowLeft") next = (idx - 1 + TABS.length) % TABS.length;
+    if (e.key === "ArrowRight") next = (idx + 1) % SHOPPING_TABS.length;
+    else if (e.key === "ArrowLeft") next = (idx - 1 + SHOPPING_TABS.length) % SHOPPING_TABS.length;
     else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = TABS.length - 1;
+    else if (e.key === "End") next = SHOPPING_TABS.length - 1;
     else return;
     e.preventDefault();
-    selectTab(TABS[next].key);
-    document.getElementById(`tab-${TABS[next].key}`)?.focus();
+    selectTab(SHOPPING_TABS[next].key);
+    document.getElementById(`tab-${SHOPPING_TABS[next].key}`)?.focus();
   }
 
   return (
     <div>
       <div className="flex gap-0 border-b border-border mb-6" role="tablist" aria-label="Secciones de compras">
-        {TABS.map(t => (
+        {SHOPPING_TABS.map(t => (
           <button
             key={t.key}
             role="tab"

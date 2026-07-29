@@ -20,6 +20,7 @@ export const BTN_CANCEL = "Cancelar";
 export const BTN_SAVE = "Guardar";
 export const BTN_CREATE = "Crear";
 export const BTN_SAVING = "Guardando…";
+export const BTN_DELETING = "Eliminando…";
 export const BTN_LOGIN = "Iniciar sesión";
 export const BTN_SIGNUP = "Registrarse";
 

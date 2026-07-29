@@ -16,6 +16,12 @@ const items = await new RecurringPaymentRepository().findAll(userId);
 const paramMonth = Astro.url.searchParams.get("month");
 const selectedMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : currentMonthStr();
 const monthlyItems = await new RecurringPaymentMonthlyRepository().findByMonth(selectedMonth, userId);
+const paramTab = Astro.url.searchParams.get("tab");
+const activeTab = paramTab === "list" ? "list" : "monthly";
+const tabBtnClass = (t: string) =>
+  `tab-btn px-4 py-2 text-sm font-medium border-b-2 -mb-px transition cursor-pointer ${
+    activeTab === t ? "text-primary border-primary" : "text-string-muted hover:text-string border-transparent"
+  }`;
 const catRepo = new CategoryRepository();
 const svcCategories = await catRepo.findBySections(userId, ["pagos-recurrentes"]);
 const allRecurringCategories = svcCategories;
@@ -40,10 +46,10 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
     <PageHeader title="Pagos Recurrentes" />
     <div class="tabs-container">
       <div class="flex gap-0 border-b border-border" role="tablist" aria-label="Secciones de pagos recurrentes">
-        <button data-tab="monthly" role="tab" id="tab-rp-monthly" aria-selected="true" aria-controls="panel-rp-monthly" class="tab-btn px-4 py-2 text-sm font-medium text-string-muted hover:text-string border-b-2 border-transparent -mb-px transition cursor-pointer" data-active="true">Movimientos del mes</button>
-        <button data-tab="list" role="tab" id="tab-rp-list" aria-selected="false" aria-controls="panel-rp-list" tabindex="-1" class="tab-btn px-4 py-2 text-sm font-medium text-string-muted hover:text-string border-b-2 border-transparent -mb-px transition cursor-pointer">Administrar pagos</button>
+        <button data-tab="monthly" role="tab" id="tab-rp-monthly" aria-selected={activeTab === "monthly"} aria-controls="panel-rp-monthly" tabindex={activeTab === "monthly" ? 0 : -1} class={tabBtnClass("monthly")}>Movimientos del mes</button>
+        <button data-tab="list" role="tab" id="tab-rp-list" aria-selected={activeTab === "list"} aria-controls="panel-rp-list" tabindex={activeTab === "list" ? 0 : -1} class={tabBtnClass("list")}>Administrar pagos</button>
       </div>
-      <div data-tab-content="monthly" role="tabpanel" id="panel-rp-monthly" aria-labelledby="tab-rp-monthly" tabindex="0" class="tab-content pt-4">
+      <div data-tab-content="monthly" role="tabpanel" id="panel-rp-monthly" aria-labelledby="tab-rp-monthly" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "monthly" }]}>
         <RecurringPaymentsMonthly
           client:load
           createdAt={Astro.locals.createdAt}
@@ -52,7 +58,7 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
           initialMonthly={JSON.stringify(monthlyItems)}
         />
       </div>
-      <div data-tab-content="list" role="tabpanel" id="panel-rp-list" aria-labelledby="tab-rp-list" tabindex="0" class="tab-content hidden pt-4">
+      <div data-tab-content="list" role="tabpanel" id="panel-rp-list" aria-labelledby="tab-rp-list" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "list" }]}>
         <div class="flex items-center justify-between mb-4">
           <p class="text-sm text-string-muted">Todos tus pagos recurrentes registrados</p>
           <button data-create="recurring-payments" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nuevo pago recurrente</button>
@@ -84,5 +90,12 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
   import { initTabs } from "@/lib/ui/tabs.ts";
 
   const container = document.querySelector<HTMLElement>(".tabs-container");
-  if (container) initTabs(container, "monthly");
+  if (container) {
+    // Resolve initial tab: ?tab= param, legacy #hash, or default.
+    const isTab = (v: string | null): v is "monthly" | "list" => v === "monthly" || v === "list";
+    const paramTab = new URLSearchParams(location.search).get("tab");
+    const hashTab = location.hash.replace("#", "");
+    const initialTab = isTab(paramTab) ? paramTab : isTab(hashTab) ? hashTab : "monthly";
+    initTabs(container, { initialTab, defaultTab: "monthly" });
+  }
 </script>
