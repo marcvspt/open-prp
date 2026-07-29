@@ -3,7 +3,7 @@ import type { Transaction } from "@/lib/types/transaction.ts";
 import type { CardMonthly } from "@/lib/types/card-monthly.ts";
 import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 import type { DashboardMonthData, CardWithDebt } from "@/lib/types/dashboard.ts";
-import { monthLabel, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
+import { monthLabel, currentMonthStr, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
 import { fetchDashboardMonth, fetchDashboardHistory, payCardDebtFull, payCardDebtPartial } from "@/lib/dashboard/api.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
@@ -40,8 +40,7 @@ interface DashboardProps {
 }
 
 export default function DashboardContent({ createdAt, initialMonth, initialTab, initialData }: DashboardProps) {
-  const now = new Date();
-  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const defaultMonth = currentMonthStr();
   const defaultTab = "resumen";
   const tabs = DASHBOARD_TABS;
 

@@ -32,6 +32,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>({ ...defaultForm });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const reset = useCallback(() => {
     const base = { ...defaultForm };
@@ -66,6 +67,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
       const createBtn = target.closest<HTMLElement>(`[data-create="${module}"]`);
       if (createBtn) {
         reset();
+        setError("");
         setOpen(true);
         return;
       }
@@ -77,6 +79,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
         apiFetch<{ data: Record<string, unknown> }>(`/api/${module}/${id}`).then(r => {
           setForm({ ...r.data });
           setEditingId(id);
+          setError("");
           setOpen(true);
           setSaving(false);
         }).catch(() => setSaving(false));
@@ -90,6 +93,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setError("");
     try {
       // Fields hidden by showIf don't apply to the current form state — persist them as null.
       const payload: Record<string, unknown> = { ...form };
@@ -108,7 +112,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
       setOpen(false);
       window.location.reload();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setSaving(false);
     }
@@ -141,6 +145,11 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
               )}
             </div>
           ))}
+          {error && (
+            <p role="alert" className="rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-sm text-danger-text">
+              {error}
+            </p>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-string hover:bg-surface-alt cursor-pointer">{BTN_CANCEL}</button>
             <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 cursor-pointer">{saving ? BTN_SAVING : editingId ? BTN_SAVE : BTN_CREATE}</button>

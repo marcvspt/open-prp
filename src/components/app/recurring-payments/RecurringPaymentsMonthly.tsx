@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { safeFetch } from "@/lib/safeFetch.ts";
 import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
+import { currentMonthStr } from "@/lib/date.ts";
 
 type PaymentType = "income" | "expense";
 
@@ -13,8 +14,7 @@ interface Props {
 }
 
 export default function RecurringPaymentsMonthly({ createdAt, initialMonth, initialPayments, initialMonthly }: Props) {
-  const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const currentMonth = currentMonthStr();
 
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
 
@@ -65,10 +65,18 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
   const handleRemoveFromMonth = async (paymentId: string) => {
     const m = monthly.find(sm => sm.payment_id === paymentId);
     if (!m) return;
-    const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
-      method: "DELETE",
-    });
-    if (ok) fetchMonthly();
+    if (m.is_paid) {
+      const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ is_paid: false }),
+      });
+      if (ok) fetchMonthly();
+    } else {
+      const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
+        method: "DELETE",
+      });
+      if (ok) fetchMonthly();
+    }
   };
 
   const handleAddToMonth = async (payment: RecurringPayment) => {
@@ -111,11 +119,11 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
               : "border-border bg-panel hover:border-primary/40 hover:shadow-sm"
         }`}
       >
-        {isAdded && !isPaid && (
+        {isAdded && (
           <button
             onClick={() => handleRemoveFromMonth(payment.id)}
             className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center text-xs text-string-muted hover:text-danger hover:bg-danger/10 rounded transition-colors cursor-pointer"
-            title="Quitar del mes"
+            title={isPaid ? "Volver a pendiente" : "Eliminar del mes"}
           >
             ✕
           </button>
@@ -134,7 +142,7 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
           )}
         </div>
         {isPaid ? (
-          <div className={`mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-success-bg text-success-text text-center`}>
+          <div className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-success-bg text-success-text text-center">
             {isIncome ? "Recibido" : "Pagado"}
           </div>
         ) : isAdded ? (

@@ -29,7 +29,7 @@ astro dev stop | status | logs
     - **Orden estándar**: Fecha → Tipo → Descripción → Montos → Moneda → Método pago/Tarjeta → Categoría → específicos
     - **required=true** → `NOT NULL` en schema SQL (auditado, todo OK)
 - **Tags `<script>`**: importar funciones init desde `src/lib/ui/`
-- **UI compartida vs app**: `src/components/ui/` (ThemeToggle, Select, MultiSelect, ErrorBoundary); `src/components/app/ui/` (CrudModal, DataTable, FormModal, FilterLinks, CurrencySelect, MonthSelector, etc.)
+- **UI compartida vs app**: `src/components/ui/` (ThemeToggle, Select, MultiSelect, ErrorBoundary); `src/components/app/ui/` (CrudModal, DataTable, FormModal, ConfirmDelete, FilterLinks, CurrencySelect, MonthSelector, etc.)
 
 ### Assets
 
@@ -152,3 +152,4 @@ astro dev stop | status | logs
 - Sin `key={}` en elementos HTML en `.astro`.
 - `data-create` usa sintaxis con `=` (`data-create="categories"`), no con guiones.
 - `FetchEvent` de service worker usa `new URL(e.request.url)` para examinar path.
+- **Sin `alert()`/`confirm()`/`prompt()` nativos**: confirmación de borrado con `ConfirmDelete` (vía `DeleteHandler.astro`); errores de formulario inline dentro del modal con `role="alert"`.
