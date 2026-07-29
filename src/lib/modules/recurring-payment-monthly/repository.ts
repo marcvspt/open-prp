@@ -55,4 +55,5 @@ export class RecurringPaymentMonthlyRepository {
       ...r, amount: Number(r.amount), is_active: Boolean(r.is_active), is_paid: Boolean(r.is_paid),
     }));
   }
+
 }

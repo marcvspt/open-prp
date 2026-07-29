@@ -8,7 +8,7 @@ const paramMonth = Astro.url.searchParams.get("month");
 const initialMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : currentMonthStr();
 const initialData = await loadDashboardMonth(Astro.locals.userId, initialMonth);
 const paramTab = Astro.url.searchParams.get("tab");
-const initialTab = paramTab && DASHBOARD_TABS.some(t => t.key === paramTab) ? paramTab : "resumen";
+const initialTab = paramTab && DASHBOARD_TABS.some(t => t.key === paramTab) ? paramTab : "summary";
 ---
 
 <AppLayout title="Dashboard - Open PRP">

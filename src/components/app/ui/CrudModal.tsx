@@ -110,7 +110,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
         await apiFetch(`/api/${module}`, { method: "POST", body: JSON.stringify(payload) });
       }
       setOpen(false);
-      window.location.reload();
+      window.location.href = window.location.href;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {

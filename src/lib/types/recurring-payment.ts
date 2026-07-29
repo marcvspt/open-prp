@@ -35,6 +35,7 @@ export interface RecurringPaymentMonthly {
   created_at: string;
   name?: string;
   default_amount?: number;
+  currency?: string;
 }
 
 export interface RecurringPaymentMonthlyUpdate {

@@ -12,7 +12,7 @@ const [allItems, pantryItems, pantryCategories] = await Promise.all([
   new CategoryRepository().findBySections(userId, ["despensa"]),
 ]);
 const paramTab = Astro.url.searchParams.get("tab");
-const initialTab = paramTab && SHOPPING_TABS.some(t => t.key === paramTab) ? paramTab : "lista";
+const initialTab = paramTab && SHOPPING_TABS.some(t => t.key === paramTab) ? paramTab : "list";
 ---
 
 <AppLayout title="Compras - Open PRP">

@@ -18,7 +18,7 @@ const cards = await new CardRepository().findAll(userId);
 const currentMonth = currentMonthStr();
 
 const paramTab = Astro.url.searchParams.get("tab");
-const activeTab = paramTab === "admin" ? "admin" : paramTab === "historial" ? "historial" : "resumen";
+const activeTab = paramTab === "admin" ? "admin" : paramTab === "history" ? "history" : "summary";
 const tabBtnClass = (t: string) =>
   `tab-btn px-4 py-2 text-sm font-medium border-b-2 -mb-px transition cursor-pointer ${
     activeTab === t ? "text-primary border-primary" : "text-string-muted hover:text-string border-transparent"
@@ -27,6 +27,23 @@ const tabBtnClass = (t: string) =>
 const cardMonthlyRepo = new CardMonthlyRepository();
 const cardDebts = await cardMonthlyRepo.findByMonth(currentMonth, userId);
 const cardHistory = await cardMonthlyRepo.getHistory(userId);
+
+const [curY, curM] = currentMonth.split("-").map(Number);
+const nextMY = curM === 12 ? curY + 1 : curY;
+const nextMM = curM === 12 ? 1 : curM + 1;
+const nextMonth = `${nextMY}-${String(nextMM).padStart(2, "0")}`;
+const startMonth = Astro.locals.createdAt
+  ? (() => { const d = new Date(Astro.locals.createdAt!); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; })()
+  : currentMonth;
+const twelveMonthsAgo = (() => {
+  let y = nextMM === 1 ? curY - 1 : curY;
+  let m = nextMM === 1 ? 12 : curM + 1;
+  if (m > 12) { y++; m -= 12; }
+  return `${y}-${String(m).padStart(2, "0")}`;
+})();
+const fromMonth = startMonth > twelveMonthsAgo ? startMonth : twelveMonthsAgo;
+const visibleHistory = cardHistory.filter(d => d.month >= fromMonth && d.month <= nextMonth);
+
 const creditCards = cards.filter(c => c.type === "credit");
 const calculatedDebts: Record<string, { total_purchases: number; total_installments: number; total_recurring: number; total_cashback: number; statement_balance: number; committed_installments: number; total_committed: number }> = {};
 for (const card of creditCards) {
@@ -75,11 +92,11 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
     <PageHeader title="Tarjetas" />
     <div class="tabs-container">
       <div class="flex gap-0 border-b border-border" role="tablist" aria-label="Secciones de tarjetas">
-        <button data-tab="resumen" role="tab" id="tab-resumen" aria-selected={activeTab === "resumen"} aria-controls="panel-resumen" tabindex={activeTab === "resumen" ? 0 : -1} class={tabBtnClass("resumen")}>Resumen de tarjetas de crédito</button>
+        <button data-tab="summary" role="tab" id="tab-summary" aria-selected={activeTab === "summary"} aria-controls="panel-summary" tabindex={activeTab === "summary" ? 0 : -1} class={tabBtnClass("summary")}>Resumen de tarjetas de crédito</button>
         <button data-tab="admin" role="tab" id="tab-admin" aria-selected={activeTab === "admin"} aria-controls="panel-admin" tabindex={activeTab === "admin" ? 0 : -1} class={tabBtnClass("admin")}>Administrar tarjeta</button>
-        <button data-tab="historial" role="tab" id="tab-historial" aria-selected={activeTab === "historial"} aria-controls="panel-historial" tabindex={activeTab === "historial" ? 0 : -1} class={tabBtnClass("historial")}>Historial</button>
+        <button data-tab="history" role="tab" id="tab-history" aria-selected={activeTab === "history"} aria-controls="panel-history" tabindex={activeTab === "history" ? 0 : -1} class={tabBtnClass("history")}>Historial</button>
       </div>
-      <div data-tab-content="resumen" role="tabpanel" id="panel-resumen" aria-labelledby="tab-resumen" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "resumen" }]}>
+      <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "summary" }]}>
         <CreditCardSummary
           client:load
           createdAt={Astro.locals.createdAt}
@@ -116,10 +133,10 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
           })}
         </DataTable>
       </div>
-      <div data-tab-content="historial" role="tabpanel" id="panel-historial" aria-labelledby="tab-historial" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "historial" }]}>
+      <div data-tab-content="history" role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "history" }]}>
         <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
           <h2 class="text-base font-semibold text-string mb-3">Historial de tarjetas</h2>
-          {cardHistory.length === 0 ? (
+          {visibleHistory.length === 0 ? (
             <p class="text-sm text-string-muted">Sin datos históricos</p>
           ) : (
             <div class="overflow-x-auto">
@@ -133,7 +150,7 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
                   </tr>
                 </thead>
                 <tbody>
-                  {cardHistory.map(d => {
+                  {visibleHistory.map(d => {
                     const card = cards.find(c => c.id === d.card_id);
                     return (
                       <tr class="border-b border-border/50">
@@ -165,10 +182,11 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
 
   const container = document.querySelector<HTMLElement>(".tabs-container");
   if (container) {
-    const isTab = (v: string | null): v is "resumen" | "admin" | "historial" => v === "resumen" || v === "admin" || v === "historial";
+    const isTab = (v: string | null): v is "summary" | "admin" | "history" => v === "summary" || v === "admin" || v === "history";
     const paramTab = new URLSearchParams(location.search).get("tab");
     const hashTab = location.hash.replace("#", "");
-    const initialTab = isTab(paramTab) ? paramTab : isTab(hashTab) ? hashTab : "resumen";
-    initTabs(container, { initialTab, defaultTab: "resumen" });
+    const initialTab = isTab(paramTab) ? paramTab : isTab(hashTab) ? hashTab : "summary";
+    initTabs(container, { initialTab, defaultTab: "summary" });
   }
+
 </script>
