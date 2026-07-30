@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
-import { BTN_CANCEL, BTN_DELETE, BTN_DELETING } from "@/lib/form-fields.ts";
+import { BTN_CANCEL, BTN_DELETE, BTN_DELETING } from "@/lib/general-fields.ts";
 
 interface Props {
   module: string;

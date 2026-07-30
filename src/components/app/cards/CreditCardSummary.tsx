@@ -7,7 +7,7 @@ import { daysUntilPaymentDue, isPaymentLate, currentMonthStr } from "@/lib/date.
 import { formatCurrency } from "@/lib/format.ts";
 import { fetchList, safeFetch } from "@/lib/safeFetch.ts";
 import { payCardDebtFull, payCardDebtPartial } from "@/lib/dashboard/api.ts";
-import { BTN_CANCEL } from "@/lib/form-fields.ts";
+import { BTN_CANCEL } from "@/lib/general-fields.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 
 function dueDaysBorder(days: number): string {

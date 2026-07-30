@@ -3,7 +3,8 @@ import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Cashback } from "@/lib/types/cashback.ts";
 import { formatDate } from "@/lib/date.ts";
-import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
+import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR } from "@/lib/filter-fields.ts";
+import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
 
 interface Props {
   initialMonth: string;

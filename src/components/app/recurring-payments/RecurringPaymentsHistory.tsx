@@ -2,7 +2,7 @@ import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 import { monthLabel } from "@/lib/date.ts";
-import { CURRENCY_SYMBOL } from "@/lib/form-fields.ts";
+import { CURRENCY_SYMBOL } from "@/lib/general-fields.ts";
 
 interface Props {
   initialData: string;
