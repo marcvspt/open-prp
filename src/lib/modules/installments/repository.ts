@@ -90,7 +90,7 @@ export class InstallmentRepository {
       sql: `INSERT INTO installments (id, user_id, category_id, payment_method_id, description, total_amount, monthly_amount, total_months, remaining_months, start_date, currency, seq, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
-        id, userId, data.category_id ?? null,
+        id, userId, data.category_id || null,
         data.payment_method_id,
         data.description, data.total_amount,
         data.monthly_amount, data.total_months,
@@ -118,7 +118,7 @@ export class InstallmentRepository {
     if (data.remaining_months !== undefined) { sets.push("remaining_months = ?"); args.push(data.remaining_months); }
     if (data.start_date !== undefined) { sets.push("start_date = ?"); args.push(data.start_date); }
     if (data.currency !== undefined) { sets.push("currency = ?"); args.push(data.currency); }
-    if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id ?? null); }
+    if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id || null); }
     if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id); }
 
     if (sets.length === 0) return existing;

@@ -53,7 +53,7 @@ export class ShoppingRepository {
       args: [
         id, userId, data.name, data.quantity ?? 1,
         data.unit ?? null, data.notes ?? null, data.category ?? null,
-        data.despensa_item_id ?? null, data.event_id ?? null,
+        data.despensa_item_id || null, data.event_id || null,
         data.priority ?? 0, seq, now, now,
       ],
     });

@@ -15,13 +15,13 @@ async function nextSeq(table) {
   return Number(result.rows[0]?.next ?? 1);
 }
 
-async function runSchema() {
-  console.log("Running schema...");
-  const schemaDir = join(__dirname, "schema");
-  const files = readdirSync(schemaDir).filter(f => f.endsWith(".sql")).sort();
+async function runSchemas() {
+  console.log("Running Schemas...");
+  const schemasDir = join(__dirname, "schemas");
+  const files = readdirSync(schemasDir).filter(f => f.endsWith(".sql")).sort();
 
   for (const file of files) {
-    const sql = readFileSync(join(schemaDir, file), "utf-8");
+    const sql = readFileSync(join(schemasDir, file), "utf-8");
     const statements = sql.split(";").map(s => s.trim()).filter(s => s.length > 0 && !s.startsWith("--"));
 
     for (const stmt of statements) {
@@ -33,7 +33,7 @@ async function runSchema() {
     }
     console.log(`  ✓ ${file}`);
   }
-  console.log("Schema complete!\n");
+  console.log("Schemas complete!\n");
 }
 
 async function seed() {
@@ -107,7 +107,7 @@ async function seed() {
 }
 
 async function main() {
-  await runSchema();
+  await runSchemas();
   await seed();
 }
 

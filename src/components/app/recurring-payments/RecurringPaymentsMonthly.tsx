@@ -112,7 +112,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
     const textColor = isIncome ? "text-success" : "text-danger";
 
     return (
-      <div key={payment.id}
+      <div
         className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all ${
           isPaid
             ? "border-success/30 bg-success/5"
@@ -222,7 +222,14 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
               </button>
               {!collapsedCategories.has(category) && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {catFiltered.map(renderPaymentCard)}
+                  {catFiltered.map((payment, i) => {
+                    const isLastOdd = i === catFiltered.length - 1 && catFiltered.length % 2 !== 0;
+                    return (
+                      <div key={payment.id} className={isLastOdd ? "col-span-2 sm:col-span-1" : ""}>
+                        {renderPaymentCard(payment)}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -265,12 +272,12 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
         </div>
       </div>
 
+      {renderTypeStats("income", "Ingresos", "text-success", "📥")}
+      {renderTypeStats("expense", "Gastos", "text-danger", "💸")}
       {payments.length === 0 ? (
         <div className="text-string-muted text-sm">No hay pagos recurrentes registrados.</div>
       ) : (
         <>
-          {renderTypeStats("income", "Ingresos", "text-success", "📥")}
-          {renderTypeStats("expense", "Gastos", "text-danger", "💸")}
           {renderCategoryGroup("income")}
           {renderCategoryGroup("expense")}
         </>
