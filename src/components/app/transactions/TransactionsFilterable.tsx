@@ -2,6 +2,7 @@ import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
 import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Transaction } from "@/lib/types/transaction.ts";
+import { formatDate } from "@/lib/date.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
 
 interface Props {
@@ -98,7 +99,7 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
                 const cat = categories.find(c => c.id === tx.category_id);
                 return (
                   <tr key={tx.id} className="hover:bg-nav-hover border-b border-border/50">
-                    <td className="px-4 py-3 font-semibold whitespace-nowrap">{new Date(tx.date).toLocaleDateString("es")}</td>
+                    <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatDate(tx.date)}</td>
                     <td className="px-4 py-3">{tx.description || "-"}</td>
                     <td className={`px-4 py-3 text-right font-mono whitespace-nowrap ${tx.type === "income" ? "text-success" : "text-danger"}`}>
                       {tx.currency === "EUR" ? "€" : "$"}{Number(tx.amount).toFixed(2)}

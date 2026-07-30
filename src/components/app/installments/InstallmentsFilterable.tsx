@@ -2,6 +2,7 @@ import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
 import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Installment } from "@/lib/types/installment.ts";
+import { formatDate } from "@/lib/date.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
 
 interface Props {
@@ -99,7 +100,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
                 const progressClass = i.remaining_months <= 0 ? "bg-success-bg text-success-text" : i.remaining_months <= 3 ? "bg-warning-bg text-warning-text" : "bg-info-bg text-info-text";
                 return (
                   <tr key={i.id} className="hover:bg-nav-hover border-b border-border/50">
-                    <td className="px-4 py-3 text-center text-xs font-semibold whitespace-nowrap">{new Date(i.start_date).toLocaleDateString("es")}</td>
+                    <td className="px-4 py-3 text-center text-xs font-semibold whitespace-nowrap">{formatDate(i.start_date)}</td>
                     <td className="px-4 py-3 font-medium">{i.description}</td>
                     <td className="px-4 py-3 text-right font-mono text-danger whitespace-nowrap">{(i.currency === "EUR" ? "€" : "$")}{Number(i.total_amount).toFixed(2)}</td>
                     <td className="px-4 py-3 text-right font-mono text-danger whitespace-nowrap">{(i.currency === "EUR" ? "€" : "$")}{Number(i.monthly_amount).toFixed(2)}</td>

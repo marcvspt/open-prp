@@ -1,5 +1,6 @@
 ---
 import { BTN_EDIT, BTN_DELETE, FILTER_WRAP_CLASS } from "@/lib/form-fields.ts";
+import { formatDate } from "@/lib/date.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
@@ -65,7 +66,7 @@ const taskFilters = [
               <div class="flex items-center gap-3 text-xs text-string-muted ml-7">
                 {cat && <span>{cat.icon || "📋"} {cat.name}</span>}
                 {t.due_date && (
-                  <span class="font-semibold">📅 {new Date(t.due_date).toLocaleDateString("es")}</span>
+                  <span class="font-semibold">📅 {formatDate(t.due_date)}</span>
                 )}
               </div>
               <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-border ml-7">

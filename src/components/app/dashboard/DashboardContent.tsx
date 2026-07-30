@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Transaction } from "@/lib/types/transaction.ts";
 import type { DashboardMonthData } from "@/lib/types/dashboard.ts";
-import { currentMonthStr, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
+import { currentMonthStr, formatDate, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
 import { fetchDashboardMonth } from "@/lib/dashboard/api.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
@@ -278,8 +278,8 @@ export default function DashboardContent({ createdAt, initialMonth, initialTab, 
                 <div>
                   <h3 className="font-semibold text-string">{ev.description}</h3>
                   <p className="text-sm text-string-muted mt-1">
-                    <span className="font-semibold">{new Date(ev.start_date).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}</span>
-                    {ev.end_date && <span className="font-semibold"> — {new Date(ev.end_date).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}</span>}
+                    <span className="font-semibold">{formatDate(ev.start_date, "es-MX", { weekday: "short", day: "numeric", month: "short" })}</span>
+                    {ev.end_date && <span className="font-semibold"> — {formatDate(ev.end_date, "es-MX", { weekday: "short", day: "numeric", month: "short" })}</span>}
                   </p>
                   {ev.location && <p className="text-xs text-string-muted mt-0.5">{ev.location}</p>}
                 </div>
@@ -304,7 +304,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialTab, 
                 <div key={t.id} className="bg-panel rounded-xl border border-danger p-3 shadow-sm flex items-center justify-between mb-2">
                   <div>
                     <p className="font-medium text-string">{t.description}</p>
-                    <p className="text-xs text-danger">Vencía el <span className="font-semibold">{new Date(t.due_date!).toLocaleDateString("es-MX")}</span></p>
+                    <p className="text-xs text-danger">Vencía el <span className="font-semibold">{formatDate(t.due_date!, "es-MX")}</span></p>
                   </div>
                   {t.priority > 0 && <span className="text-xs bg-danger-bg text-danger-text px-2 py-0.5 rounded-full">Prioridad {t.priority}</span>}
                 </div>
@@ -321,7 +321,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialTab, 
                   <div>
                     <p className="font-medium text-string">{t.description}</p>
                     {t.due_date && (
-                      <p className="text-xs text-string-muted">Vence el <span className="font-semibold">{new Date(t.due_date).toLocaleDateString("es-MX")}</span></p>
+                      <p className="text-xs text-string-muted">Vence el <span className="font-semibold">{formatDate(t.due_date, "es-MX")}</span></p>
                     )}
                   </div>
                   {t.priority > 0 && <span className="text-xs bg-warning-bg text-warning-text px-2 py-0.5 rounded-full">Prioridad {t.priority}</span>}

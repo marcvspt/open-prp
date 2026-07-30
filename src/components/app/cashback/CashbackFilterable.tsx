@@ -2,6 +2,7 @@ import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
 import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Cashback } from "@/lib/types/cashback.ts";
+import { formatDate } from "@/lib/date.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
 
 interface Props {
@@ -72,7 +73,7 @@ export default function CashbackFilterable({ initialMonth, cards, initialData, c
                 const card = cards.find(ca => ca.id === c.card_id);
                 return (
                   <tr key={c.id} className="hover:bg-nav-hover border-b border-border/50">
-                    <td className="px-4 py-3 font-semibold whitespace-nowrap">{new Date(c.date).toLocaleDateString("es")}</td>
+                    <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatDate(c.date)}</td>
                     <td className="px-4 py-3">{c.description || "-"}</td>
                     <td className="px-4 py-3 text-right font-mono text-success whitespace-nowrap">+{(c.currency === "EUR" ? "€" : "$")}{Number(c.amount).toFixed(2)}</td>
                     <td className="px-4 py-3 text-xs text-string-muted">{(c.currency === "EUR" ? "€" : "$")} {c.currency || "MXN"}</td>

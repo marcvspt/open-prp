@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { PantryItem } from "@/lib/types/pantry.ts";
 import type { ShoppingItem } from "@/lib/types/shopping.ts";
+import { formatDate } from "@/lib/date.ts";
 
 interface PantryCategory {
   id: string;
@@ -148,8 +149,7 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
   }
 
   function monthLabel(m: string) {
-    const d = new Date(m + "-01");
-    return d.toLocaleDateString("es", { year: "numeric", month: "long" });
+    return new Date(Number(m.slice(0,4)), Number(m.slice(5,7)) - 1, 1).toLocaleDateString("es", { year: "numeric", month: "long" });
   }
 
   function selectTab(key: TabKey) {
@@ -325,7 +325,7 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
                         <span className="text-sm text-string">{i.name}</span>
                         <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
                       </div>
-                      <span className="text-xs text-string-muted">{i.completed_at ? new Date(i.completed_at).toLocaleDateString("es") : ""}</span>
+                      <span className="text-xs text-string-muted">{i.completed_at ? formatDate(i.completed_at) : ""}</span>
                     </div>
                   ))}
                 </div>
