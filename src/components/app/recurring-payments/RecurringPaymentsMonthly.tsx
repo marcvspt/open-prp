@@ -24,161 +24,226 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
     if (data) setMonthly(data);
   }, [initialMonth]);
 
-  async function togglePaid(monthlyItem: RecurringPaymentMonthly) {
-    setTogglingId(monthlyItem.id);
-    const ok = await safeFetch(`/api/recurring-payment-monthly`, {
+  async function handleTogglePaid(paymentId: string) {
+    setTogglingId(paymentId);
+    const m = monthly.find(sm => sm.payment_id === paymentId);
+    if (!m) return;
+    const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: monthlyItem.id, is_paid: !monthlyItem.is_paid }),
+      body: JSON.stringify({ is_paid: !m.is_paid }),
     });
     if (ok) await fetchMonthly();
     setTogglingId(null);
   }
 
-  function toggleCategory(catId: string) {
+  async function handleRemoveFromMonth(paymentId: string) {
+    const m = monthly.find(sm => sm.payment_id === paymentId);
+    if (!m) return;
+    if (m.is_paid) {
+      const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ is_paid: false }),
+      });
+      if (ok) await fetchMonthly();
+    } else {
+      const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
+        method: "DELETE",
+      });
+      if (ok) await fetchMonthly();
+    }
+  }
+
+  async function handleAddToMonth(payment: RecurringPayment) {
+    const ok = await safeFetch(`/api/recurring-payments/${payment.id}/monthly`, {
+      method: "POST",
+      body: JSON.stringify({ month: initialMonth, amount: payment.default_amount }),
+    });
+    if (ok) await fetchMonthly();
+  }
+
+  function toggleCategory(name: string) {
     setCollapsedCategories(prev => {
       const next = new Set(prev);
-      if (next.has(catId)) next.delete(catId);
-      else next.add(catId);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
       return next;
     });
   }
 
-  const categories = groupByCategory(payments, monthly);
-  const hasIncome = categories.some(c => c.type === "income" && c.items.length > 0);
-  const hasExpense = categories.some(c => c.type === "expense" && c.items.length > 0);
+  const monthlyMap = new Map(monthly.map(sm => [sm.payment_id, sm]));
 
-  return (
-    <div>
-      <div className="space-y-6">
-        {hasIncome && (
-          <div>
-            <h3 className="text-sm font-semibold text-success mb-3 flex items-center gap-2">
-              <span>Ingresos recurrentes</span>
-            </h3>
-            <div className="space-y-2">
-              {categories.filter(c => c.type === "income").map(cat => renderCategoryGroup(cat))}
-            </div>
-          </div>
-        )}
-        {hasExpense && (
-          <div>
-            <h3 className="text-sm font-semibold text-danger mb-3 flex items-center gap-2">
-              <span>Gastos recurrentes</span>
-            </h3>
-            <div className="space-y-2">
-              {categories.filter(c => c.type === "expense").map(cat => renderCategoryGroup(cat))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {(!hasIncome && !hasExpense) && (
-        <p className="text-sm text-string-muted">Sin movimientos este mes</p>
-      )}
-
-      {loading && (
-        <div className="flex justify-center py-4">
-          <span className="text-xs text-string-muted">Cargando...</span>
-        </div>
-      )}
-    </div>
-  );
-
-  function renderCategoryGroup(group: { type: PaymentType; categoryName: string; categoryId: string | null; items: RecurringPaymentMonthly[] }) {
-    const catKey = group.categoryId ?? "__uncategorized";
-    const isCollapsed = collapsedCategories.has(catKey);
-    const total = group.items.reduce((sum, item) => {
-      const payment = payments.find(p => p.id === item.payment_id);
-      return sum + Number(payment?.default_amount ?? item.amount ?? 0);
-    }, 0);
+  function renderPaymentCard(payment: RecurringPayment) {
+    const entry = monthlyMap.get(payment.id);
+    const isAdded = !!entry;
+    const isPaid = entry?.is_paid ?? false;
+    const isIncome = payment.type === "income";
+    const amount = entry?.amount ?? payment.default_amount;
+    const textColor = isIncome ? "text-success" : "text-danger";
 
     return (
-      <div key={catKey} className="bg-panel rounded-xl border border-border overflow-hidden shadow-sm">
-        <button
-          onClick={() => toggleCategory(catKey)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-string hover:bg-nav-hover transition-colors cursor-pointer"
-        >
-          <span className="flex items-center gap-2">
-            <svg className={`w-3 h-3 transition-transform ${isCollapsed ? "" : "rotate-90"}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-            </svg>
-            {group.categoryName}
-          </span>
-          <span className={`text-xs font-mono ${group.type === "income" ? "text-success" : "text-danger"}`}>
-            {group.type === "income" ? "+" : "-"}${total.toFixed(2)}
-          </span>
-        </button>
-        {!isCollapsed && (
-          <div className="divide-y divide-border/50">
-            {group.items.map(item => {
-              const payment = payments.find(p => p.id === item.payment_id);
-              return (
-                <div key={item.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <button
-                      onClick={() => togglePaid(item)}
-                      disabled={togglingId === item.id}
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer ${
-                        item.is_paid
-                          ? "bg-success border-success"
-                          : "border-border hover:border-primary"
-                      }`}
-                      aria-label={item.is_paid ? "Marcar como no pagado" : "Marcar como pagado"}
-                    >
-                      {item.is_paid && (
-                        <svg className="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                          <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </button>
-                    <span className={`truncate ${item.is_paid ? "line-through text-string-muted" : "text-string"}`}>
-                      {payment?.name ?? "?"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className={`font-mono text-xs ${group.type === "income" ? "text-success" : "text-danger"}`}>
-                      {group.type === "income" ? "+" : "-"}${Number(item.amount ?? payment?.default_amount ?? 0).toFixed(2)}
-                    </span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${
-                      item.is_paid
-                        ? "bg-success-bg text-success-text"
-                        : "bg-warning-bg text-warning-text"
-                    }`}>
-                      {item.is_paid ? "Pagado" : "Pendiente"}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+      <div key={payment.id}
+        className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all ${
+          isPaid
+            ? "border-success/30 bg-success/5"
+            : isAdded
+              ? "border-primary/40 bg-primary/5"
+              : "border-border bg-panel hover:border-primary/40 hover:shadow-sm"
+        }`}
+      >
+        {isAdded && (
+          <button
+            onClick={() => handleRemoveFromMonth(payment.id)}
+            className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center text-xs text-string-muted hover:text-danger hover:bg-danger/10 rounded transition-colors cursor-pointer"
+            title={isPaid ? "Volver a pendiente" : "Eliminar del mes"}
+          >
+            ✕
+          </button>
+        )}
+        <div className="space-y-2">
+          <div className={`font-medium text-sm leading-tight ${isPaid ? "text-string-muted" : "text-string"}`}>
+            {payment.name}
           </div>
+          <div className={`text-lg font-semibold ${isPaid ? "text-string-muted" : textColor}`}>
+            {isIncome ? "+" : "-"}${Number(amount).toLocaleString()}
+          </div>
+          {payment.payment_method_name && (
+            <div className="text-xs text-string-muted">
+              {payment.payment_method_icon || "💳"} {payment.payment_method_name}
+            </div>
+          )}
+        </div>
+        {isPaid ? (
+          <div className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-success-bg text-success-text text-center">
+            {isIncome ? "Recibido" : "Pagado"}
+          </div>
+        ) : isAdded ? (
+          <button
+            onClick={() => handleTogglePaid(payment.id)}
+            disabled={togglingId === payment.id}
+            className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-all disabled:opacity-50 cursor-pointer"
+          >
+            {togglingId === payment.id ? "..." : isIncome ? "Marcar como recibido" : "Marcar como pagado"}
+          </button>
+        ) : (
+          <button
+            onClick={() => handleAddToMonth(payment)}
+            className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-all cursor-pointer"
+          >
+            Agregar al mes
+          </button>
         )}
       </div>
     );
   }
-}
 
-interface GroupedCategory {
-  type: PaymentType;
-  categoryName: string;
-  categoryId: string | null;
-  items: RecurringPaymentMonthly[];
-}
+  function renderTypeStats(type: PaymentType, label: string, colorClass: string, icon: string) {
+    const typeMonthly = monthly.filter(sm => sm.type === type);
+    const typeTotal = typeMonthly.reduce((s, sm) => s + Number(sm.amount), 0);
+    const typeReceived = typeMonthly.filter(sm => sm.is_paid);
+    const typePending = typeMonthly.filter(sm => !sm.is_paid);
 
-function groupByCategory(payments: RecurringPayment[], monthly: RecurringPaymentMonthly[]): GroupedCategory[] {
-  const groups = new Map<string, GroupedCategory>();
-
-  for (const item of monthly) {
-    const payment = payments.find(p => p.id === item.payment_id);
-    if (!payment) continue;
-    const catId = payment.category_id ?? "__uncategorized";
-    const catName = payment.category_name ?? "Sin categoría";
-
-    if (!groups.has(catId)) {
-      groups.set(catId, { type: payment.type, categoryName: catName, categoryId: payment.category_id, items: [] });
-    }
-    groups.get(catId)!.items.push(item);
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h3 className={`text-base font-semibold ${colorClass}`}>{icon} {label}</h3>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+            <div className="text-xs text-string-muted mb-1">Total</div>
+            <div className={`text-lg font-semibold ${colorClass}`}>
+              ${Number(typeTotal).toLocaleString()}
+            </div>
+          </div>
+          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+            <div className="text-xs text-string-muted mb-1">{type === "income" ? "Recibidos" : "Pagados"}</div>
+            <div className="text-lg font-semibold text-success">{typeReceived.length}/{typeMonthly.length}</div>
+          </div>
+          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+            <div className="text-xs text-string-muted mb-1">Pendiente</div>
+            <div className="text-lg font-semibold text-warning">
+              ${Number(typePending.reduce((s, sm) => s + Number(sm.amount), 0)).toLocaleString()}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  return Array.from(groups.values()).sort((a, b) => a.categoryName.localeCompare(b.categoryName));
+  function renderCategoryGroup(type: PaymentType) {
+    const filtered = payments.filter(p => p.type === type);
+    const categories = [...new Set(filtered.map(p => p.category_name ?? "Sin categoría"))];
+    if (categories.length === 0) return null;
+
+    return (
+      <div className="space-y-3">
+        {categories.map(category => {
+          const catFiltered = filtered.filter(p => (p.category_name ?? "Sin categoría") === category);
+          return (
+            <div key={category}>
+              <button
+                onClick={() => toggleCategory(category)}
+                className="flex items-center gap-2 text-sm font-medium text-string-muted mb-2 hover:text-string transition-colors"
+              >
+                <span className={`transition-transform ${collapsedCategories.has(category) ? "" : "rotate-90"}`}>
+                  ▶
+                </span>
+                {category}
+              </button>
+              {!collapsedCategories.has(category) && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {catFiltered.map(renderPaymentCard)}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const incomeTotal = monthly.filter(sm => sm.type === "income").reduce((s, sm) => s + Number(sm.amount), 0);
+  const expenseTotal = monthly.filter(sm => sm.type === "expense").reduce((s, sm) => s + Number(sm.amount), 0);
+  const netTotal = incomeTotal - expenseTotal;
+
+  return (
+    <div className="space-y-6 relative">
+      {loading && (
+        <div className="absolute top-0 right-0">
+          <span className="text-xs text-string-muted">Cargando...</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="p-3 rounded-lg bg-panel border border-border text-center">
+          <div className="text-xs text-string-muted mb-1">Ingresos</div>
+          <div className="text-lg font-semibold text-success">${Number(incomeTotal).toLocaleString()}</div>
+        </div>
+        <div className="p-3 rounded-lg bg-panel border border-border text-center">
+          <div className="text-xs text-string-muted mb-1">Gastos</div>
+          <div className="text-lg font-semibold text-danger">${Number(expenseTotal).toLocaleString()}</div>
+        </div>
+        <div className="p-3 rounded-lg bg-panel border border-border text-center">
+          <div className="text-xs text-string-muted mb-1">Balance</div>
+          <div className={`text-lg font-semibold ${netTotal >= 0 ? "text-success" : "text-danger"}`}>
+            ${Number(netTotal).toLocaleString()}
+          </div>
+        </div>
+        <div className="p-3 rounded-lg bg-panel border border-border text-center">
+          <div className="text-xs text-string-muted mb-1">Movimientos</div>
+          <div className="text-lg font-semibold text-primary">{monthly.length}</div>
+        </div>
+      </div>
+
+      {payments.length === 0 ? (
+        <div className="text-string-muted text-sm">No hay pagos recurrentes registrados.</div>
+      ) : (
+        <>
+          {renderTypeStats("income", "Ingresos", "text-success", "📥")}
+          {renderTypeStats("expense", "Gastos", "text-danger", "💸")}
+          {renderCategoryGroup("income")}
+          {renderCategoryGroup("expense")}
+        </>
+      )}
+    </div>
+  );
 }

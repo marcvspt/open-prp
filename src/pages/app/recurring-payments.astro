@@ -19,7 +19,8 @@ const userId = Astro.locals.userId;
 const rpRepo = new RecurringPaymentRepository();
 const items = await rpRepo.findAll(userId);
 const paramMonth = Astro.url.searchParams.get("month");
-const selectedMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : currentMonthStr();
+const urlMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : "";
+const selectedMonth = urlMonth || currentMonthStr();
 const monthlyItems = await new RecurringPaymentMonthlyRepository().findByMonth(selectedMonth, userId);
 const today = currentMonthStr();
 const [curY, curM] = today.split("-").map(Number);
@@ -36,7 +37,8 @@ const twelveMonthsAgo = (() => {
   return `${y}-${String(m).padStart(2, "0")}`;
 })();
 const fromMonth = startMonth > twelveMonthsAgo ? startMonth : twelveMonthsAgo;
-const recurringHistory = (await rpRepo.getHistory(userId, fromMonth, nextMonth)).filter(h => h.month === selectedMonth);
+const fullHistory = await rpRepo.getHistory(userId, fromMonth, nextMonth);
+const recurringHistory = urlMonth ? fullHistory.filter(h => h.month === selectedMonth) : fullHistory;
 const paramTab = Astro.url.searchParams.get("tab");
 const initialTab = paramTab === "list" ? "list" : paramTab === "history" ? "history" : "monthly";
 const catRepo = new CategoryRepository();
@@ -68,8 +70,9 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
         initialTab={initialTab}
         defaultTab="monthly"
         ariaLabel="Secciones de pagos recurrentes"
-        initialMonth={selectedMonth}
+        initialMonth={urlMonth}
         createdAt={Astro.locals.createdAt}
+        allLabel="Último año"
       />
       <div data-tab-content="monthly" role="tabpanel" id="panel-monthly" aria-labelledby="tab-monthly" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "monthly" }]}>
         <RecurringPaymentsMonthly

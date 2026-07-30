@@ -7,26 +7,40 @@ import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import TabBarWithMonth from "@/components/app/ui/TabBarWithMonth.tsx";
 import CreditCardSummary from "@/components/app/cards/CreditCardSummary.tsx";
+import CardsHistory from "@/components/app/cards/CardsHistory.tsx";
 import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { CardMonthlyRepository } from "@/lib/modules/card-monthly/repository.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { calculateCardDebt } from "@/lib/modules/card-monthly/calculator.ts";
-import { currentMonthStr, monthLabel, resolvePaymentDueDate as resolvePaymentDueDateISO } from "@/lib/date.ts";
-import { formatCurrency } from "@/lib/format.ts";
+import { currentMonthStr, resolvePaymentDueDate as resolvePaymentDueDateISO } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
 const cards = await new CardRepository().findAll(userId);
 const paramMonth = Astro.url.searchParams.get("month");
-const currentMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : currentMonthStr();
+const urlMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : "";
+const currentMonth = urlMonth || currentMonthStr();
 
 const paramTab = Astro.url.searchParams.get("tab");
 const initialTab = paramTab === "admin" ? "admin" : paramTab === "history" ? "history" : "summary";
 
 const cardMonthlyRepo = new CardMonthlyRepository();
 const cardDebts = await cardMonthlyRepo.findByMonth(currentMonth, userId);
-const cardHistory = await cardMonthlyRepo.getHistory(userId);
-
-const visibleHistory = cardHistory.filter(d => d.month === currentMonth);
+const [curY, curM] = currentMonthStr().split("-").map(Number);
+const nextMY = curM === 12 ? curY + 1 : curY;
+const nextMM = curM === 12 ? 1 : curM + 1;
+const nextMonth = `${nextMY}-${String(nextMM).padStart(2, "0")}`;
+const startMonth = Astro.locals.createdAt
+  ? (() => { const d = new Date(Astro.locals.createdAt!); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; })()
+  : currentMonthStr();
+const twelveMonthsAgo = (() => {
+  const total = curY * 12 + curM - 13;
+  const y = Math.floor(total / 12);
+  const m = total % 12 + 1;
+  return `${y}-${String(m).padStart(2, "0")}`;
+})();
+const fromMonth = startMonth > twelveMonthsAgo ? startMonth : twelveMonthsAgo;
+const fullHistory = await cardMonthlyRepo.getHistory(userId);
+const cardHistory = urlMonth ? fullHistory.filter(d => d.month === currentMonth) : fullHistory.filter(d => d.month >= fromMonth && d.month <= nextMonth);
 
 const creditCards = cards.filter(c => c.type === "credit");
 const calculatedDebts: Record<string, { total_purchases: number; total_installments: number; total_recurring: number; total_cashback: number; statement_balance: number; committed_installments: number; total_committed: number }> = {};
@@ -81,8 +95,9 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
         initialTab={initialTab}
         defaultTab="summary"
         ariaLabel="Secciones de tarjetas"
-        initialMonth={currentMonth}
+        initialMonth={urlMonth}
         createdAt={Astro.locals.createdAt}
+        allLabel="Último año"
       />
       <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "summary" }]}>
         <CreditCardSummary
@@ -121,42 +136,11 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
         </DataTable>
       </div>
       <div data-tab-content="history" role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "history" }]}>
-        <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-          <h2 class="text-base font-semibold text-string mb-3">Historial de tarjetas</h2>
-          {visibleHistory.length === 0 ? (
-            <p class="text-sm text-string-muted">Sin datos históricos</p>
-          ) : (
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="text-string-muted text-xs uppercase border-b border-border">
-                    <th class="text-left px-3 py-2">Mes</th>
-                    <th class="text-left px-3 py-2">Tarjeta</th>
-                    <th class="text-right px-3 py-2">Deuda</th>
-                    <th class="text-center px-3 py-2">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleHistory.map(d => {
-                    const card = cards.find(c => c.id === d.card_id);
-                    return (
-                      <tr class="border-b border-border/50">
-                        <td class="px-3 py-2 text-string-muted">{monthLabel(d.month)}</td>
-                        <td class="px-3 py-2 font-medium text-string">{card?.name ?? "?"}</td>
-                        <td class="px-3 py-2 text-right font-mono text-string">{formatCurrency(d.statement_balance)}</td>
-                        <td class="px-3 py-2 text-center">
-                          <span class={`text-xs px-2 py-0.5 rounded-full ${d.is_paid ? "bg-success-bg text-success-text" : "bg-warning-bg text-warning-text"}`}>
-                            {d.is_paid ? "Pagado" : "Pendiente"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        <CardsHistory
+          client:load
+          initialData={JSON.stringify(cardHistory)}
+          initialCards={JSON.stringify(cards)}
+        />
       </div>
     </div>
   </div>
