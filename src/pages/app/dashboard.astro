@@ -1,19 +1,250 @@
 ---
 import AppLayout from "@/layouts/AppLayout.astro";
-import DashboardContent, { DASHBOARD_TABS } from "@/components/app/dashboard/DashboardContent.tsx";
+import DashboardHeader from "@/components/app/dashboard/DashboardHeader.tsx";
 import { loadDashboardMonth } from "@/lib/dashboard/load.ts";
-import { currentMonthStr } from "@/lib/date.ts";
+import { currentMonthStr, formatDate, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
+import { formatCurrency } from "@/lib/format.ts";
 
 const paramMonth = Astro.url.searchParams.get("month");
-const initialMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : currentMonthStr();
-const initialData = await loadDashboardMonth(Astro.locals.userId, initialMonth);
+const selectedMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : currentMonthStr();
 const paramTab = Astro.url.searchParams.get("tab");
-const initialTab = paramTab && DASHBOARD_TABS.some(t => t.key === paramTab) ? paramTab : "summary";
+const initialTab = paramTab === "events" ? "events" : paramTab === "tasks" ? "tasks" : "summary";
+
+const monthData = await loadDashboardMonth(Astro.locals.userId, selectedMonth);
+const {
+  cards, services, cardDebts, servicePayments, upcomingEvents,
+  pendingTasks, overdueTasks, activeShopping, paymentMethods,
+  calculatedDebts, cardTotals, incomes, expenses, recentTx,
+  installmentTotal,
+} = monthData;
+
+const creditCards = cards.filter(c => c.type === "credit");
+const creditCardDebts = cardDebts.filter(d => cards.some(c => c.id === d.card_id && c.type === "credit"));
+const incomeSvcs = servicePayments.filter(sp => sp.type === "income");
+const expenseSvcs = servicePayments.filter(sp => sp.type === "expense");
+
+function dueDaysBadge(days: number): string {
+  if (days <= 3) return "bg-danger-bg text-danger-text";
+  if (days <= 8) return "bg-warning-bg text-warning-text";
+  return "bg-success-bg text-success-text";
+}
 ---
 
 <AppLayout title="Dashboard - Open PRP">
   <div class="space-y-6">
     <h1 class="text-2xl font-bold text-string">Dashboard</h1>
-    <DashboardContent client:load createdAt={Astro.locals.createdAt} initialMonth={initialMonth} initialTab={initialTab} initialData={JSON.stringify(initialData)} />
+    <div class="tabs-container">
+      <DashboardHeader client:load initialMonth={selectedMonth} initialTab={initialTab} createdAt={Astro.locals.createdAt} />
+
+      <!-- ════════════════════ Resumen ════════════════════ -->
+      <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["space-y-6", { hidden: initialTab !== "summary" }]}>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <p class="text-xs text-string-muted uppercase tracking-wider">Ingresos</p>
+            <p class="text-xl font-bold mt-1 text-success">{formatCurrency(incomes)}</p>
+          </div>
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <p class="text-xs text-string-muted uppercase tracking-wider">Gastos</p>
+            <p class="text-xl font-bold mt-1 text-danger">{formatCurrency(expenses)}</p>
+          </div>
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <p class="text-xs text-string-muted uppercase tracking-wider">Balance</p>
+            <p class={`text-xl font-bold mt-1 ${incomes - expenses >= 0 ? "text-success" : "text-danger"}`}>{formatCurrency(incomes - expenses)}</p>
+          </div>
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <p class="text-xs text-string-muted uppercase tracking-wider">Tarjetas de crédito</p>
+            <p class="text-xl font-bold mt-1 text-primary">{creditCards.length}</p>
+          </div>
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <p class="text-xs text-string-muted uppercase tracking-wider">Plazos</p>
+            <p class="text-xl font-bold mt-1 text-warning">{formatCurrency(installmentTotal)}</p>
+          </div>
+        </div>
+        {(installmentTotal > 0 || expenseSvcs.length > 0) && (
+          <p class="text-xs text-string-muted -mt-4">* Incluye {formatCurrency(installmentTotal)} en plazos
+            {expenseSvcs.length > 0 && ` y ${formatCurrency(expenseSvcs.reduce((s, sp) => s + Number(sp.amount), 0))} en gastos recurrentes`}
+            {incomeSvcs.length > 0 && `, más ${formatCurrency(incomeSvcs.reduce((s, sp) => s + Number(sp.amount), 0))} en ingresos recurrentes`}
+          </p>
+        )}
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <p class="text-xs text-string-muted uppercase tracking-wider">Tareas pendientes</p>
+            <p class="text-xl font-bold mt-1 text-sky-600">{pendingTasks.length}</p>
+            {overdueTasks.length > 0 && <p class="text-xs text-danger mt-0.5">{overdueTasks.length} vencidas</p>}
+          </div>
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <p class="text-xs text-string-muted uppercase tracking-wider">Próximos eventos</p>
+            <p class="text-xl font-bold mt-1 text-rose-600">{upcomingEvents.length}</p>
+          </div>
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <p class="text-xs text-string-muted uppercase tracking-wider">Compras activas</p>
+            <p class="text-xl font-bold mt-1 text-amber-600">{activeShopping.length}</p>
+          </div>
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <p class="text-xs text-string-muted uppercase tracking-wider">Pagos recurrentes</p>
+            <p class="text-xl font-bold mt-1 text-purple-600">{services.length}</p>
+          </div>
+        </div>
+
+        {creditCardDebts.length > 0 && (
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <h2 class="text-base font-semibold text-string mb-3">Deudas de tarjetas de crédito del mes</h2>
+            <div class="space-y-2">
+              {creditCardDebts.map(d => {
+                const card = cards.find(c => c.id === d.card_id);
+                const dueIn = card && card.payment_due_day != null ? daysUntilPaymentDue(selectedMonth, card.cutoff_day, card.payment_due_day) : 0;
+                const paidLate = d.is_paid && isPaymentLate(selectedMonth, card?.cutoff_day ?? null, card?.payment_due_day ?? null, d.paid_at);
+                return (
+                  <div class="flex items-center justify-between text-sm py-1">
+                    <div class="flex items-center gap-2">
+                      <span class={`w-2 h-2 rounded-full ${d.is_paid ? (paidLate ? "bg-danger" : "bg-success") : "bg-warning"}`} />
+                      <span>{card?.name ?? "?"}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class={`font-mono ${d.is_paid ? (paidLate ? "text-danger" : "text-success line-through") : "text-danger"}`}>
+                        {formatCurrency(d.statement_balance)}
+                      </span>
+                      {!d.is_paid && card && (
+                        <span class={`text-xs px-2 py-0.5 rounded font-medium ${dueDaysBadge(dueIn)}`}>
+                          {dueIn <= 0 ? "Vencido" : `${dueIn} días`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {incomeSvcs.length > 0 && (
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <h2 class="text-base font-semibold text-string mb-3">💵 Ingresos recurrentes</h2>
+            <div class="space-y-2">
+              {incomeSvcs.map(sp => {
+                const svc = services.find(s => s.id === sp.payment_id);
+                return (
+                  <div class="flex items-center justify-between text-sm py-1">
+                    <div class="flex items-center gap-2">
+                      <span class={`w-2 h-2 rounded-full ${sp.is_paid ? "bg-success" : "bg-warning"}`} />
+                      <span>{svc?.name ?? "?"}</span>
+                    </div>
+                    <span class="font-mono text-success">+{formatCurrency(sp.amount)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {expenseSvcs.length > 0 && (
+          <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+            <h2 class="text-base font-semibold text-string mb-3">💰 Gastos recurrentes</h2>
+            <div class="space-y-2">
+              {expenseSvcs.map(sp => {
+                const svc = services.find(s => s.id === sp.payment_id);
+                return (
+                  <div class="flex items-center justify-between text-sm py-1">
+                    <div class="flex items-center gap-2">
+                      <span class={`w-2 h-2 rounded-full ${sp.is_paid ? "bg-success" : "bg-warning"}`} />
+                      <span>{svc?.name ?? "?"}</span>
+                    </div>
+                    <span class="font-mono text-danger">-{formatCurrency(sp.amount)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+          <h2 class="text-base font-semibold text-string mb-3">Transacciones del mes</h2>
+          {recentTx.length === 0 ? (
+            <p class="text-sm text-string-muted">Sin transacciones</p>
+          ) : (
+            <div class="space-y-2">
+              {recentTx.map(tx => (
+                <div class="flex items-center justify-between text-sm py-1">
+                  <div class="flex items-center gap-2">
+                    <span class={`w-2 h-2 rounded-full ${tx.type === "income" ? "bg-success" : "bg-danger"}`} />
+                    <span>{tx.description || "Sin descripción"}</span>
+                  </div>
+                  <span class={`font-medium ${tx.type === "income" ? "text-success" : "text-danger"}`}>
+                    {tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount))}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <!-- ════════════════════ Eventos ════════════════════ -->
+      <div data-tab-content="events" role="tabpanel" id="panel-events" aria-labelledby="tab-events" tabindex="0" class:list={["space-y-4", { hidden: initialTab !== "events" }]}>
+        {!Array.isArray(upcomingEvents) ? (
+          <div>
+            <p class="text-sm text-danger">Error: datos de eventos inválidos</p>
+            <pre class="text-xs text-string-muted mt-1">{JSON.stringify(upcomingEvents, null, 2).slice(0, 500)}</pre>
+          </div>
+        ) : upcomingEvents.length === 0 ? (
+          <p class="text-string-muted text-sm">No hay eventos próximos</p>
+        ) : (
+          upcomingEvents.map(ev => (
+            <div class="bg-panel rounded-xl border border-border p-4 shadow-sm flex items-start justify-between">
+              <div>
+                <h3 class="font-semibold text-string">{ev.description}</h3>
+                <p class="text-sm text-string-muted mt-1">
+                  <span class="font-semibold">{formatDate(ev.start_date, "es-MX", { weekday: "short", day: "numeric", month: "short" })}</span>
+                  {ev.end_date && <span class="font-semibold"> — {formatDate(ev.end_date, "es-MX", { weekday: "short", day: "numeric", month: "short" })}</span>}
+                </p>
+                {ev.location && <p class="text-xs text-string-muted mt-0.5">{ev.location}</p>}
+              </div>
+              <span class={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                ev.status === "confirmed" ? "bg-success-bg text-success-text" : "bg-warning-bg text-warning-text"
+              }`}>
+                {ev.status === "confirmed" ? "Confirmado" : "Pendiente"}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+
+      <!-- ════════════════════ Tareas ════════════════════ -->
+      <div data-tab-content="tasks" role="tabpanel" id="panel-tasks" aria-labelledby="tab-tasks" tabindex="0" class:list={["space-y-4", { hidden: initialTab !== "tasks" }]}>
+        {overdueTasks.length > 0 && (
+          <div>
+            <h3 class="text-sm font-semibold text-danger mb-2">Vencidas</h3>
+            {overdueTasks.map(t => (
+              <div class="bg-panel rounded-xl border border-danger p-3 shadow-sm flex items-center justify-between mb-2">
+                <div>
+                  <p class="font-medium text-string">{t.description}</p>
+                  <p class="text-xs text-danger">Vencía el <span class="font-semibold">{formatDate(t.due_date!, "es-MX")}</span></p>
+                </div>
+                {t.priority > 0 && <span class="text-xs bg-danger-bg text-danger-text px-2 py-0.5 rounded-full">Prioridad {t.priority}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+        {pendingTasks.length === 0 && overdueTasks.length === 0 ? (
+          <p class="text-string-muted text-sm">No hay tareas pendientes</p>
+        ) : (
+          <div>
+            {overdueTasks.length > 0 && <h3 class="text-sm font-semibold text-string mb-2">Pendientes</h3>}
+            {pendingTasks.map(t => (
+              <div class="bg-panel rounded-xl border border-border p-3 shadow-sm flex items-center justify-between mb-2">
+                <div>
+                  <p class="font-medium text-string">{t.description}</p>
+                  {t.due_date && (
+                    <p class="text-xs text-string-muted">Vence el <span class="font-semibold">{formatDate(t.due_date, "es-MX")}</span></p>
+                  )}
+                </div>
+                {t.priority > 0 && <span class="text-xs bg-warning-bg text-warning-text px-2 py-0.5 rounded-full">Prioridad {t.priority}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   </div>
 </AppLayout>

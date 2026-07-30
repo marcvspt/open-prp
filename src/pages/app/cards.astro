@@ -5,7 +5,7 @@ import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
-import TabBar from "@/components/app/ui/TabBar.tsx";
+import TabBarWithMonth from "@/components/app/ui/TabBarWithMonth.tsx";
 import CreditCardSummary from "@/components/app/cards/CreditCardSummary.tsx";
 import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { CardMonthlyRepository } from "@/lib/modules/card-monthly/repository.ts";
@@ -16,7 +16,8 @@ import { currentMonthStr, monthLabel, resolvePaymentDueDate as resolvePaymentDue
 import { formatCurrency } from "@/lib/format.ts";
 const userId = Astro.locals.userId;
 const cards = await new CardRepository().findAll(userId);
-const currentMonth = currentMonthStr();
+const paramMonth = Astro.url.searchParams.get("month");
+const currentMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : currentMonthStr();
 
 const paramTab = Astro.url.searchParams.get("tab");
 const initialTab = paramTab === "admin" ? "admin" : paramTab === "history" ? "history" : "summary";
@@ -25,21 +26,7 @@ const cardMonthlyRepo = new CardMonthlyRepository();
 const cardDebts = await cardMonthlyRepo.findByMonth(currentMonth, userId);
 const cardHistory = await cardMonthlyRepo.getHistory(userId);
 
-const [curY, curM] = currentMonth.split("-").map(Number);
-const nextMY = curM === 12 ? curY + 1 : curY;
-const nextMM = curM === 12 ? 1 : curM + 1;
-const nextMonth = `${nextMY}-${String(nextMM).padStart(2, "0")}`;
-const startMonth = Astro.locals.createdAt
-  ? (() => { const d = new Date(Astro.locals.createdAt!); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; })()
-  : currentMonth;
-const twelveMonthsAgo = (() => {
-  let y = nextMM === 1 ? curY - 1 : curY;
-  let m = nextMM === 1 ? 12 : curM + 1;
-  if (m > 12) { y++; m -= 12; }
-  return `${y}-${String(m).padStart(2, "0")}`;
-})();
-const fromMonth = startMonth > twelveMonthsAgo ? startMonth : twelveMonthsAgo;
-const visibleHistory = cardHistory.filter(d => d.month >= fromMonth && d.month <= nextMonth);
+const visibleHistory = cardHistory.filter(d => d.month === currentMonth);
 
 const creditCards = cards.filter(c => c.type === "credit");
 const calculatedDebts: Record<string, { total_purchases: number; total_installments: number; total_recurring: number; total_cashback: number; statement_balance: number; committed_installments: number; total_committed: number }> = {};
@@ -88,17 +75,18 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
   <div data-module="cards" class="space-y-4">
     <PageHeader title="Tarjetas" />
     <div class="tabs-container">
-      <TabBar
+      <TabBarWithMonth
         client:load
         tabs={[{ key: "summary", label: "Resumen de tarjetas de crédito" }, { key: "admin", label: "Administrar tarjeta" }, { key: "history", label: "Historial" }]}
         initialTab={initialTab}
         defaultTab="summary"
         ariaLabel="Secciones de tarjetas"
+        initialMonth={currentMonth}
+        createdAt={Astro.locals.createdAt}
       />
       <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "summary" }]}>
         <CreditCardSummary
           client:load
-          createdAt={Astro.locals.createdAt}
           initialCards={JSON.stringify(cards)}
           initialDebts={JSON.stringify(cardDebts)}
           initialCalculated={JSON.stringify(calculatedDebts)}

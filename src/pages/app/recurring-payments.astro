@@ -4,7 +4,7 @@ import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
-import TabBar from "@/components/app/ui/TabBar.tsx";
+import TabBarWithMonth from "@/components/app/ui/TabBarWithMonth.tsx";
 import RecurringPaymentsMonthly from "@/components/app/recurring-payments/RecurringPaymentsMonthly.tsx";
 import RecurringPaymentsHistory from "@/components/app/recurring-payments/RecurringPaymentsHistory.tsx";
 import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
@@ -36,7 +36,7 @@ const twelveMonthsAgo = (() => {
   return `${y}-${String(m).padStart(2, "0")}`;
 })();
 const fromMonth = startMonth > twelveMonthsAgo ? startMonth : twelveMonthsAgo;
-const recurringHistory = await rpRepo.getHistory(userId, fromMonth, nextMonth);
+const recurringHistory = (await rpRepo.getHistory(userId, fromMonth, nextMonth)).filter(h => h.month === selectedMonth);
 const paramTab = Astro.url.searchParams.get("tab");
 const initialTab = paramTab === "list" ? "list" : paramTab === "history" ? "history" : "monthly";
 const catRepo = new CategoryRepository();
@@ -62,17 +62,18 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
   <div data-module="recurring-payments" class="space-y-4">
     <PageHeader title="Pagos Recurrentes" />
     <div class="tabs-container">
-      <TabBar
+      <TabBarWithMonth
         client:load
         tabs={[{ key: "monthly", label: "Movimientos del mes" }, { key: "list", label: "Administrar pagos" }, { key: "history", label: "Historial" }]}
         initialTab={initialTab}
         defaultTab="monthly"
         ariaLabel="Secciones de pagos recurrentes"
+        initialMonth={selectedMonth}
+        createdAt={Astro.locals.createdAt}
       />
       <div data-tab-content="monthly" role="tabpanel" id="panel-monthly" aria-labelledby="tab-monthly" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "monthly" }]}>
         <RecurringPaymentsMonthly
           client:load
-          createdAt={Astro.locals.createdAt}
           initialMonth={selectedMonth}
           initialPayments={JSON.stringify(items)}
           initialMonthly={JSON.stringify(monthlyItems)}
@@ -105,7 +106,6 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
           client:load
           initialData={JSON.stringify(recurringHistory)}
           categories={JSON.stringify(catMap)}
-          createdAt={Astro.locals.createdAt}
         />
       </div>
     </div>

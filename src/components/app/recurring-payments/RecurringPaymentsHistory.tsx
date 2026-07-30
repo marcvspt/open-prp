@@ -1,5 +1,3 @@
-import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
-import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 import { monthLabel } from "@/lib/date.ts";
 import { CURRENCY_SYMBOL } from "@/lib/general-fields.ts";
@@ -8,27 +6,16 @@ import { displayCategoryName } from "@/lib/category-labels.ts";
 interface Props {
   initialData: string;
   categories: string;
-  createdAt?: string;
 }
 
-export default function RecurringPaymentsHistory({ initialData, categories, createdAt }: Props) {
-  const parsedInitial = JSON.parse(initialData) as RecurringPaymentMonthly[];
+export default function RecurringPaymentsHistory({ initialData, categories }: Props) {
+  const items = JSON.parse(initialData) as RecurringPaymentMonthly[];
   const catMap = JSON.parse(categories) as Record<string, { icon: string | null; name: string; type: string }>;
-  const { filters, setFilter, data, loading } = useFilteredData<RecurringPaymentMonthly[]>("/api/recurring-payment-monthly/history", {}, parsedInitial);
-
-  const items = data ?? [];
 
   return (
     <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-semibold text-string">Historial de pagos recurrentes</h2>
-        <div className="w-48">
-          <MonthSelector value={filters.month || ""} onChange={(m) => setFilter("month", m)} createdAt={createdAt} allLabel="Último año" />
-        </div>
-      </div>
-      {loading ? (
-        <p className="text-sm text-string-muted">Cargando...</p>
-      ) : items.length === 0 ? (
+      <h2 className="text-base font-semibold text-string mb-3">Historial de pagos recurrentes</h2>
+      {items.length === 0 ? (
         <p className="text-sm text-string-muted">Sin datos históricos</p>
       ) : (
         <div className="overflow-x-auto">
