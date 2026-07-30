@@ -3,6 +3,7 @@ import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
+import TabBar from "@/components/app/ui/TabBar.tsx";
 import InstallmentsFilterable from "@/components/app/installments/InstallmentsFilterable.tsx";
 import InstallmentsSummary from "@/components/app/installments/InstallmentsSummary.tsx";
 import { InstallmentRepository } from "@/lib/modules/installments/repository.ts";
@@ -10,6 +11,7 @@ import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { FIELD_TYPE_CURRENCY, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
+import { displayCategoryName } from "@/lib/category-labels.ts";
 import { currentMonthStr } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
 const currentMonth = currentMonthStr();
@@ -19,14 +21,9 @@ const filterMonth = params.get("month") || "";
 const filterQ = params.get("q") || "";
 const filterPm = params.get("payment_method_id") || "";
 const filterCat = params.get("category_id") || "";
-const paramTab = params.get("tab");
-const activeTab = paramTab === "admin" ? "admin" : "summary";
-const tabBtnClass = (t: string) =>
-  `tab-btn px-4 py-2 text-sm font-medium border-b-2 -mb-px transition cursor-pointer ${
-    activeTab === t ? "text-primary border-primary" : "text-string-muted hover:text-string border-transparent"
-  }`;
+const initialTab = params.get("tab") === "admin" ? "admin" : "summary";
 const catRepo = new CategoryRepository();
-const instCategories = await catRepo.findBySections(userId, ["plazos"]);
+const instCategories = await catRepo.findBySections(userId, ["installments"]);
 const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
 const instFilter: Record<string, unknown> = { active_only: activeOnly };
@@ -53,11 +50,14 @@ const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_
   <div data-module="installments" class="space-y-4">
     <PageHeader title="Plazos / Cuotas" createLabel="Nuevo plazo" createModule="installments" mobileOnlyCTA={true} />
     <div class="tabs-container">
-      <div class="flex gap-0 border-b border-border" role="tablist" aria-label="Secciones de plazos">
-        <button data-tab="summary" role="tab" id="tab-summary" aria-selected={activeTab === "summary"} aria-controls="panel-summary" tabindex={activeTab === "summary" ? 0 : -1} class={tabBtnClass("summary")}>Resumen</button>
-        <button data-tab="admin" role="tab" id="tab-admin" aria-selected={activeTab === "admin"} aria-controls="panel-admin" tabindex={activeTab === "admin" ? 0 : -1} class={tabBtnClass("admin")}>Administrar plazos</button>
-      </div>
-      <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "summary" }]}>
+      <TabBar
+        client:load
+        tabs={[{ key: "summary", label: "Resumen" }, { key: "admin", label: "Administrar plazos" }]}
+        initialTab={initialTab}
+        defaultTab="summary"
+        ariaLabel="Secciones de plazos"
+      />
+      <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "summary" }]}>
         <InstallmentsSummary
           client:load
           initialData={JSON.stringify(initialData)}
@@ -65,14 +65,14 @@ const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_
           initialPaymentMethods={JSON.stringify(paymentMethods)}
         />
       </div>
-      <div data-tab-content="admin" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "admin" }]}>
+      <div data-tab-content="admin" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "admin" }]}>
         <InstallmentsFilterable
           client:load
           initialMonth={filterMonth}
           createdAt={Astro.locals.createdAt}
           activeOnly={activeOnly}
           paymentMethods={paymentMethods.map(pm => ({ id: pm.id, icon: pm.icon, name: pm.name }))}
-          categories={instCategories.map(c => ({ id: c.id, icon: c.icon, name: c.name }))}
+          categories={instCategories.map(c => ({ id: c.id, icon: c.icon, name: displayCategoryName(c) }))}
           initialData={JSON.stringify(initialData)}
         />
       </div>
@@ -82,15 +82,3 @@ const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_
   <DeleteHandler module="installments" label="plazo" />
 </AppLayout>
 
-<script>
-  import { initTabs } from "@/lib/ui/tabs.ts";
-
-  const container = document.querySelector<HTMLElement>(".tabs-container");
-  if (container) {
-    const isTab = (v: string | null): v is "summary" | "admin" => v === "summary" || v === "admin";
-    const paramTab = new URLSearchParams(location.search).get("tab");
-    const hashTab = location.hash.replace("#", "");
-    const initialTab = isTab(paramTab) ? paramTab : isTab(hashTab) ? hashTab : "summary";
-    initTabs(container, { initialTab, defaultTab: "summary" });
-  }
-</script>

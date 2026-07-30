@@ -3,7 +3,7 @@ import { apiFetch } from "@/lib/api-client.ts";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
 import Select from "@/components/ui/Select.tsx";
 import MultiSelect from "@/components/ui/MultiSelect.tsx";
-import { INPUT_CLASS, COLOR_CLASS, BTN_CANCEL, BTN_SAVE, BTN_CREATE, BTN_SAVING } from "@/lib/form-fields.ts";
+import { INPUT_CLASS, COLOR_CLASS, BTN_CANCEL, BTN_SAVE, BTN_CREATE, BTN_SAVING } from "@/lib/general-fields.ts";
 
 export interface Field {
   name: string;

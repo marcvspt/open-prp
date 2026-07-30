@@ -3,7 +3,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 
 import { SignInButton, SignUpButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
-import { BTN_LOGIN, BTN_SIGNUP } from "@/lib/form-fields.ts";
+import { BTN_LOGIN, BTN_SIGNUP } from "@/lib/general-fields.ts";
 
 const { userId } = Astro.locals.auth();
 if (userId) return Astro.redirect("/app/dashboard");

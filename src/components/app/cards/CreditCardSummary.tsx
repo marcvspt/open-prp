@@ -7,7 +7,7 @@ import { daysUntilPaymentDue, isPaymentLate, currentMonthStr } from "@/lib/date.
 import { formatCurrency } from "@/lib/format.ts";
 import { fetchList, safeFetch } from "@/lib/safeFetch.ts";
 import { payCardDebtFull, payCardDebtPartial } from "@/lib/dashboard/api.ts";
-import { BTN_CANCEL } from "@/lib/form-fields.ts";
+import { BTN_CANCEL } from "@/lib/general-fields.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 
 function dueDaysBorder(days: number): string {
@@ -108,7 +108,7 @@ export default function CreditCardSummary({
       paidAmount: amt,
       cutoffDay: payDialog.card.cutoff_day,
       paymentMethodId: paymentMethods.find(p => p.card_id === payDialog.card.id)?.id ?? null,
-      categoryId: categories.find(c => c.name === "Saldo de tarjeta")?.id ?? null,
+      categoryId: categories.find(c => c.name === "card-balance")?.id ?? null,
       paidAt,
     });
     if (ok) markDebtPaid(payDialog.debt.id, paidAt ?? new Date().toISOString());

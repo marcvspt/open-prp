@@ -1,10 +1,11 @@
 ---
-import { BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
+import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
+import TabBar from "@/components/app/ui/TabBar.tsx";
 import CreditCardSummary from "@/components/app/cards/CreditCardSummary.tsx";
 import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { CardMonthlyRepository } from "@/lib/modules/card-monthly/repository.ts";
@@ -18,11 +19,7 @@ const cards = await new CardRepository().findAll(userId);
 const currentMonth = currentMonthStr();
 
 const paramTab = Astro.url.searchParams.get("tab");
-const activeTab = paramTab === "admin" ? "admin" : paramTab === "history" ? "history" : "summary";
-const tabBtnClass = (t: string) =>
-  `tab-btn px-4 py-2 text-sm font-medium border-b-2 -mb-px transition cursor-pointer ${
-    activeTab === t ? "text-primary border-primary" : "text-string-muted hover:text-string border-transparent"
-  }`;
+const initialTab = paramTab === "admin" ? "admin" : paramTab === "history" ? "history" : "summary";
 
 const cardMonthlyRepo = new CardMonthlyRepository();
 const cardDebts = await cardMonthlyRepo.findByMonth(currentMonth, userId);
@@ -91,12 +88,14 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
   <div data-module="cards" class="space-y-4">
     <PageHeader title="Tarjetas" />
     <div class="tabs-container">
-      <div class="flex gap-0 border-b border-border" role="tablist" aria-label="Secciones de tarjetas">
-        <button data-tab="summary" role="tab" id="tab-summary" aria-selected={activeTab === "summary"} aria-controls="panel-summary" tabindex={activeTab === "summary" ? 0 : -1} class={tabBtnClass("summary")}>Resumen de tarjetas de crédito</button>
-        <button data-tab="admin" role="tab" id="tab-admin" aria-selected={activeTab === "admin"} aria-controls="panel-admin" tabindex={activeTab === "admin" ? 0 : -1} class={tabBtnClass("admin")}>Administrar tarjeta</button>
-        <button data-tab="history" role="tab" id="tab-history" aria-selected={activeTab === "history"} aria-controls="panel-history" tabindex={activeTab === "history" ? 0 : -1} class={tabBtnClass("history")}>Historial</button>
-      </div>
-      <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "summary" }]}>
+      <TabBar
+        client:load
+        tabs={[{ key: "summary", label: "Resumen de tarjetas de crédito" }, { key: "admin", label: "Administrar tarjeta" }, { key: "history", label: "Historial" }]}
+        initialTab={initialTab}
+        defaultTab="summary"
+        ariaLabel="Secciones de tarjetas"
+      />
+      <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "summary" }]}>
         <CreditCardSummary
           client:load
           createdAt={Astro.locals.createdAt}
@@ -108,7 +107,7 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
           initialMonth={currentMonth}
         />
       </div>
-      <div data-tab-content="admin" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "admin" }]}>
+      <div data-tab-content="admin" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "admin" }]}>
         <div class="flex items-center justify-between mb-4">
           <p class="text-sm text-string-muted">Todas tus tarjetas registradas</p>
           <button data-create="cards" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nueva tarjeta</button>
@@ -133,7 +132,7 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
           })}
         </DataTable>
       </div>
-      <div data-tab-content="history" role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabindex="0" class:list={["tab-content pt-4", { hidden: activeTab !== "history" }]}>
+      <div data-tab-content="history" role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "history" }]}>
         <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
           <h2 class="text-base font-semibold text-string mb-3">Historial de tarjetas</h2>
           {visibleHistory.length === 0 ? (
@@ -177,16 +176,3 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
   <DeleteHandler module="cards" label="tarjeta" />
 </AppLayout>
 
-<script>
-  import { initTabs } from "@/lib/ui/tabs.ts";
-
-  const container = document.querySelector<HTMLElement>(".tabs-container");
-  if (container) {
-    const isTab = (v: string | null): v is "summary" | "admin" | "history" => v === "summary" || v === "admin" || v === "history";
-    const paramTab = new URLSearchParams(location.search).get("tab");
-    const hashTab = location.hash.replace("#", "");
-    const initialTab = isTab(paramTab) ? paramTab : isTab(hashTab) ? hashTab : "summary";
-    initTabs(container, { initialTab, defaultTab: "summary" });
-  }
-
-</script>

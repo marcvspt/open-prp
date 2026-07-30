@@ -1,21 +1,23 @@
 ---
-import { BTN_EDIT, BTN_DELETE } from "@/lib/form-fields.ts";
+import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { formatDate } from "@/lib/date.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { EventRepository } from "@/lib/modules/events/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
+import { displayCategoryName } from "@/lib/category-labels.ts";
 const userId = Astro.locals.userId;
 const items = (await new EventRepository().findAll(userId)).data ?? [];
 const catRepo = new CategoryRepository();
-const evCategories = await catRepo.findBySections(userId, ["eventos"]);
+const evCategories = await catRepo.findBySections(userId, ["events"]);
 const catMap = Object.fromEntries(evCategories.map(c => [c.id, c]));
 const statusLabels: Record<string, string> = { pending: "🟡 Pendiente", confirmed: "🔵 Confirmado", completed: "🟢 Completado", cancelled: "🔴 Cancelado" };
 const statusColor: Record<string, string> = { pending: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300", confirmed: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300", completed: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300", cancelled: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300" };
 const fields = [
   { name: "description", label: "Descripción", type: "textarea" as const, required: true },
-  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...evCategories.map(c => ({ value: c.id, label: `${c.icon || "📁"} ${c.name}` }))] },
+  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...evCategories.map(c => ({ value: c.id, label: `${c.icon || "📁"} ${displayCategoryName(c)}` }))] },
   { name: "location", label: "Ubicación", type: "text" as const },
   { name: "start_date", label: "Inicio", type: "date" as const, required: true },
   { name: "end_date", label: "Fin", type: "date" as const },
@@ -48,12 +50,12 @@ const defaultForm = { description: "", category_id: "", location: "", start_date
                 <span class={`shrink-0 text-xs px-2 py-0.5 rounded font-medium ${statusColor[ev.status]}`}>{statusLabels[ev.status]}</span>
               </div>
               <div class="flex items-center gap-3 text-xs text-string-muted mb-2">
-                <span class="font-semibold">📅 {new Date(ev.start_date).toLocaleDateString("es")}</span>
-                {ev.end_date && <span class="font-semibold">→ {new Date(ev.end_date).toLocaleDateString("es")}</span>}
+                <span class="font-semibold">📅 {formatDate(ev.start_date)}</span>
+                {ev.end_date && <span class="font-semibold">→ {formatDate(ev.end_date)}</span>}
                 {ev.is_all_day && <span>🌙</span>}
               </div>
               <div class="flex items-center gap-2 text-xs text-string-muted">
-                {cat && <span>{cat.icon || "📁"} {cat.name}</span>}
+                {cat && <span>{cat.icon || "📁"} {displayCategoryName(cat)}</span>}
                 {ev.location && <span>📍 {ev.location}</span>}
               </div>
               <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-border">

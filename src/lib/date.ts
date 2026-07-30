@@ -82,6 +82,12 @@ export function getMonthOptions(count = 12, created_at?: string): string[] {
   return months;
 }
 
+/** Safely format a YYYY-MM-DD date string in the given locale, without timezone shift. */
+export function formatDate(dateStr: string, locale = "es", options?: Intl.DateTimeFormatOptions): string {
+  const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(locale, options);
+}
+
 export function monthLabel(month: string): string {
   const [y, m] = month.split("-").map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString("es", { year: "numeric", month: "long" });

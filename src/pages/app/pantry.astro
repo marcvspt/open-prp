@@ -6,12 +6,13 @@ import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import PantryFilterable from "@/components/app/pantry/PantryFilterable.tsx";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
+import { displayCategoryName } from "@/lib/category-labels.ts";
 const userId = Astro.locals.userId;
 const params = Astro.url.searchParams;
 const filterQ = params.get("q") || "";
 const filterCat = params.get("category_id") || "";
-const categories = await new CategoryRepository().findBySections(userId, ["despensa"]);
-const catOptions = [{ value: "", label: "Sin categoría" }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📦"} ${c.name}` }))];
+const categories = await new CategoryRepository().findBySections(userId, ["pantry"]);
+const catOptions = [{ value: "", label: "Sin categoría" }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📦"} ${displayCategoryName(c)}` }))];
 const pantryFilter: Record<string, unknown> = {};
 if (filterQ) pantryFilter.q = filterQ;
 if (filterCat) pantryFilter.category_id = filterCat;
@@ -30,7 +31,7 @@ const defaultForm = { description: "", category_id: "", quantity: 1, notes: "" }
     <PageHeader title="Despensa" createLabel="Nuevo producto" createModule="pantry" mobileOnlyCTA={true} />
     <PantryFilterable
       client:load
-      categories={categories.map(c => ({ id: c.id, icon: c.icon, name: c.name }))}
+      categories={categories.map(c => ({ id: c.id, icon: c.icon, name: displayCategoryName(c) }))}
       initialData={JSON.stringify(initialData)}
     />
   </div>

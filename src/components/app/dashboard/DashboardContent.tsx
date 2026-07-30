@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import type { Transaction } from "@/lib/types/transaction.ts";
 import type { DashboardMonthData } from "@/lib/types/dashboard.ts";
-import { currentMonthStr, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
+import { currentMonthStr, formatDate, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
 import { fetchDashboardMonth } from "@/lib/dashboard/api.ts";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
+import TabBar from "@/components/app/ui/TabBar.tsx";
 import StatCard from "@/components/app/dashboard/StatCard.tsx";
-import Select from "@/components/ui/Select.tsx";
 
 function dueDaysBadge(days: number): string {
   if (days <= 3) return "bg-danger-bg text-danger-text";
@@ -79,59 +79,16 @@ export default function DashboardContent({ createdAt, initialMonth, initialTab, 
     setActiveTab(key);
   }
 
-  function onTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
-    const idx = tabs.findIndex(t => t.key === activeTab);
-    let next = -1;
-    if (e.key === "ArrowRight") next = (idx + 1) % tabs.length;
-    else if (e.key === "ArrowLeft") next = (idx - 1 + tabs.length) % tabs.length;
-    else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = tabs.length - 1;
-    else return;
-    e.preventDefault();
-    selectTab(tabs[next].key);
-    document.getElementById(`tab-${tabs[next].key}`)?.focus();
-  }
-
   return (
     <div>
-      {/* Mobile: tab select */}
-      <div className="flex md:hidden items-center gap-2 mb-4">
-        <div className="flex-1">
-          <Select
-            value={activeTab}
-            onChange={selectTab}
-            options={tabs.map(t => ({ value: t.key, label: t.label }))}
-            ariaLabel="Sección"
-          />
-        </div>
-        <div className="shrink-0"><MonthSelector value={currentMonth} onChange={handleMonthChange} createdAt={createdAt} /></div>
-      </div>
-
-      {/* Desktop: tab buttons */}
-      <div className="hidden md:flex items-end justify-between mb-6 gap-2 border-b border-border pb-0">
-        <div className="flex gap-0" role="tablist" aria-label="Secciones del dashboard">
-          {tabs.map(t => (
-            <button
-              key={t.key}
-              role="tab"
-              id={`tab-${t.key}`}
-              aria-selected={activeTab === t.key}
-              aria-controls={`panel-${t.key}`}
-              tabIndex={activeTab === t.key ? 0 : -1}
-              onClick={() => selectTab(t.key)}
-              onKeyDown={onTabKeyDown}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 cursor-pointer ${
-                activeTab === t.key
-                  ? "text-primary border-primary -mb-px"
-                  : "text-string-muted border-transparent hover:text-string -mb-px"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div className="shrink-0 pb-2"><MonthSelector value={currentMonth} onChange={handleMonthChange} createdAt={createdAt} /></div>
-      </div>
+      <TabBar
+        tabs={tabs}
+        initialTab={initialTab}
+        defaultTab={defaultTab}
+        ariaLabel="Secciones del dashboard"
+        onChange={selectTab}
+        monthSelector={<MonthSelector value={currentMonth} onChange={handleMonthChange} createdAt={createdAt} />}
+      />
 
       {/* Resumen */}
       {activeTab === "summary" && (
@@ -278,8 +235,8 @@ export default function DashboardContent({ createdAt, initialMonth, initialTab, 
                 <div>
                   <h3 className="font-semibold text-string">{ev.description}</h3>
                   <p className="text-sm text-string-muted mt-1">
-                    <span className="font-semibold">{new Date(ev.start_date).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}</span>
-                    {ev.end_date && <span className="font-semibold"> — {new Date(ev.end_date).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}</span>}
+                    <span className="font-semibold">{formatDate(ev.start_date, "es-MX", { weekday: "short", day: "numeric", month: "short" })}</span>
+                    {ev.end_date && <span className="font-semibold"> — {formatDate(ev.end_date, "es-MX", { weekday: "short", day: "numeric", month: "short" })}</span>}
                   </p>
                   {ev.location && <p className="text-xs text-string-muted mt-0.5">{ev.location}</p>}
                 </div>
@@ -304,7 +261,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialTab, 
                 <div key={t.id} className="bg-panel rounded-xl border border-danger p-3 shadow-sm flex items-center justify-between mb-2">
                   <div>
                     <p className="font-medium text-string">{t.description}</p>
-                    <p className="text-xs text-danger">Vencía el <span className="font-semibold">{new Date(t.due_date!).toLocaleDateString("es-MX")}</span></p>
+                    <p className="text-xs text-danger">Vencía el <span className="font-semibold">{formatDate(t.due_date!, "es-MX")}</span></p>
                   </div>
                   {t.priority > 0 && <span className="text-xs bg-danger-bg text-danger-text px-2 py-0.5 rounded-full">Prioridad {t.priority}</span>}
                 </div>
@@ -321,7 +278,7 @@ export default function DashboardContent({ createdAt, initialMonth, initialTab, 
                   <div>
                     <p className="font-medium text-string">{t.description}</p>
                     {t.due_date && (
-                      <p className="text-xs text-string-muted">Vence el <span className="font-semibold">{new Date(t.due_date).toLocaleDateString("es-MX")}</span></p>
+                      <p className="text-xs text-string-muted">Vence el <span className="font-semibold">{formatDate(t.due_date, "es-MX")}</span></p>
                     )}
                   </div>
                   {t.priority > 0 && <span className="text-xs bg-warning-bg text-warning-text px-2 py-0.5 rounded-full">Prioridad {t.priority}</span>}
