@@ -1,7 +1,9 @@
-import type { CardMonthly } from "@/lib/types/card-monthly.ts";
-import type { Card } from "@/lib/types/card.ts";
+import { useState, useEffect, useRef } from "react";
+import { fetchList } from "@/lib/safeFetch.ts";
 import { monthLabel } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
+import type { CardMonthly } from "@/lib/types/card-monthly.ts";
+import type { Card } from "@/lib/types/card.ts";
 
 interface Props {
   initialData: string;
@@ -10,12 +12,41 @@ interface Props {
 
 export default function CardsHistory({ initialData, initialCards }: Props) {
   const cards: Card[] = JSON.parse(initialCards);
-  const items: CardMonthly[] = JSON.parse(initialData);
+  const [items, setItems] = useState<CardMonthly[]>(() => JSON.parse(initialData));
+  const [loading, setLoading] = useState(false);
+  const loadedQsRef = useRef("");
+
+  useEffect(() => {
+    function fetchHistory() {
+      const month = new URLSearchParams(location.search).get("month");
+      const url = month && /^\d{4}-\d{2}$/.test(month)
+        ? `/api/card-monthly/history?month=${month}`
+        : "/api/card-monthly/history";
+      const qs = new URLSearchParams(location.search).toString();
+      if (qs === loadedQsRef.current) return;
+      loadedQsRef.current = qs;
+      setLoading(true);
+      fetchList<CardMonthly>(url)
+        .then(setItems)
+        .finally(() => setLoading(false));
+    }
+
+    loadedQsRef.current = new URLSearchParams(location.search).toString();
+    fetchHistory();
+
+    function handler() {
+      fetchHistory();
+    }
+    window.addEventListener("monthchange", handler);
+    return () => window.removeEventListener("monthchange", handler);
+  }, []);
 
   return (
     <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
       <h2 className="text-base font-semibold text-string mb-3">Historial de tarjetas</h2>
-      {items.length === 0 ? (
+      {loading ? (
+        <p className="text-sm text-string-muted">Cargando...</p>
+      ) : items.length === 0 ? (
         <p className="text-sm text-string-muted">Sin datos históricos</p>
       ) : (
         <div className="overflow-x-auto">

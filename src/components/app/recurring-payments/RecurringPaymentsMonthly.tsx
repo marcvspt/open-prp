@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { safeFetch } from "@/lib/safeFetch.ts";
+import { currentMonthStr } from "@/lib/date.ts";
 import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment.ts";
 
 type PaymentType = "income" | "expense";
@@ -10,19 +11,49 @@ interface Props {
   initialMonthly: string;
 }
 
+function getMonthFromUrl(): string {
+  const m = new URLSearchParams(location.search).get("month");
+  return m && /^\d{4}-\d{2}$/.test(m) ? m : "";
+}
+
 export default function RecurringPaymentsMonthly({ initialMonth, initialPayments, initialMonthly }: Props) {
   const [payments] = useState<RecurringPayment[]>(() => JSON.parse(initialPayments));
   const [monthly, setMonthly] = useState<RecurringPaymentMonthly[]>(() => JSON.parse(initialMonthly));
   const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const loadedMonthRef = useRef(initialMonth);
 
-  const fetchMonthly = useCallback(async () => {
+  const fetchMonthly = useCallback(async (month: string) => {
+    setLoading(true);
     const data = await safeFetch<RecurringPaymentMonthly[]>(
-      `/api/recurring-payment-monthly?month=${initialMonth}`
+      `/api/recurring-payment-monthly?month=${month}`
     );
-    if (data) setMonthly(data);
-  }, [initialMonth]);
+    if (data) {
+      setMonthly(data);
+      loadedMonthRef.current = month;
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const urlMonth = getMonthFromUrl() || currentMonthStr();
+    if (urlMonth !== loadedMonthRef.current) {
+      fetchMonthly(urlMonth);
+    }
+  }, [fetchMonthly]);
+
+  useEffect(() => {
+    function handler(e: Event) {
+      const detail = (e as CustomEvent).detail as { month: string };
+      if (detail.month !== loadedMonthRef.current) {
+        const m = detail.month || currentMonthStr();
+        fetchMonthly(m);
+      }
+    }
+    window.addEventListener("monthchange", handler);
+    return () => window.removeEventListener("monthchange", handler);
+  }, [fetchMonthly]);
 
   async function handleTogglePaid(paymentId: string) {
     setTogglingId(paymentId);
@@ -32,7 +63,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
       method: "PATCH",
       body: JSON.stringify({ is_paid: !m.is_paid }),
     });
-    if (ok) await fetchMonthly();
+    if (ok) await fetchMonthly(loadedMonthRef.current);
     setTogglingId(null);
   }
 
@@ -44,21 +75,21 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
         method: "PATCH",
         body: JSON.stringify({ is_paid: false }),
       });
-      if (ok) await fetchMonthly();
+      if (ok) await fetchMonthly(loadedMonthRef.current);
     } else {
       const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
         method: "DELETE",
       });
-      if (ok) await fetchMonthly();
+      if (ok) await fetchMonthly(loadedMonthRef.current);
     }
   }
 
   async function handleAddToMonth(payment: RecurringPayment) {
     const ok = await safeFetch(`/api/recurring-payments/${payment.id}/monthly`, {
       method: "POST",
-      body: JSON.stringify({ month: initialMonth, amount: payment.default_amount }),
+      body: JSON.stringify({ month: loadedMonthRef.current, amount: payment.default_amount }),
     });
-    if (ok) await fetchMonthly();
+    if (ok) await fetchMonthly(loadedMonthRef.current);
   }
 
   function toggleCategory(name: string) {

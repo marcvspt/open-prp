@@ -27,7 +27,9 @@ export default function TabBarWithMonth({ tabs, initialTab, defaultTab, ariaLabe
     const params = new URLSearchParams(location.search);
     if (newMonth) params.set("month", newMonth);
     else params.delete("month");
-    window.location.href = "?" + params.toString();
+    const qs = params.toString();
+    history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
+    window.dispatchEvent(new CustomEvent("monthchange", { detail: { month: newMonth } }));
   }
 
   function handleTabChange(key: string) {
@@ -37,7 +39,9 @@ export default function TabBarWithMonth({ tabs, initialTab, defaultTab, ariaLabe
       setMonth(fallback);
       const params = new URLSearchParams(location.search);
       params.set("month", fallback);
-      history.replaceState(null, "", "?" + params.toString());
+      const qs = params.toString();
+      history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
+      window.dispatchEvent(new CustomEvent("monthchange", { detail: { month: fallback } }));
     }
   }
 

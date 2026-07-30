@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Card } from "@/lib/types/card.ts";
 import type { CardMonthly, CalculatedDebt } from "@/lib/types/card-monthly.ts";
 import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import type { Category } from "@/lib/types/category.ts";
 import { daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
+import { safeFetch, fetchList } from "@/lib/safeFetch.ts";
 import { payCardDebtFull, payCardDebtPartial } from "@/lib/dashboard/api.ts";
 import { BTN_CANCEL } from "@/lib/general-fields.ts";
 
@@ -39,13 +40,50 @@ export default function CreditCardSummary({
 }: CreditCardSummaryProps) {
   const [cards] = useState<Card[]>(() => JSON.parse(initialCards));
   const [cardDebts, setCardDebts] = useState<CardMonthly[]>(() => JSON.parse(initialDebts));
-  const [calculatedDebts] = useState<Record<string, CalculatedDebt>>(() => JSON.parse(initialCalculated));
+  const [calculatedDebts, setCalculatedDebts] = useState<Record<string, CalculatedDebt>>(() => JSON.parse(initialCalculated));
   const [paymentMethods] = useState<PaymentMethod[]>(() => JSON.parse(initialPaymentMethods));
   const [categories] = useState<Category[]>(() => JSON.parse(initialCategories));
+  const loadedMonthRef = useRef(initialMonth);
 
   const [payDialog, setPayDialog] = useState<{ debt: CardMonthly; card: Card } | null>(null);
   const [payAmount, setPayAmount] = useState("");
   const [payDate, setPayDate] = useState("");
+
+  const fetchData = useCallback(async (month: string) => {
+    if (!month) return;
+    loadedMonthRef.current = month;
+
+    const [debts] = await Promise.all([
+      fetchList<CardMonthly>(`/api/card-monthly?month=${month}`),
+    ]);
+    setCardDebts(debts);
+
+    const creditCards = cards.filter(c => c.type === "credit");
+    const calcs: Record<string, CalculatedDebt> = {};
+    await Promise.all(creditCards.map(async (card) => {
+      const calc = await safeFetch<CalculatedDebt>(`/api/card-monthly/calculate?cardId=${card.id}&month=${month}`);
+      if (calc) calcs[card.id] = calc;
+    }));
+    setCalculatedDebts(calcs);
+  }, [cards]);
+
+  useEffect(() => {
+    const urlMonth = new URLSearchParams(location.search).get("month") || "";
+    if (urlMonth && urlMonth !== loadedMonthRef.current) {
+      fetchData(urlMonth);
+    }
+  }, [fetchData]);
+
+  useEffect(() => {
+    function handler(e: Event) {
+      const detail = (e as CustomEvent).detail as { month: string };
+      if (detail.month && detail.month !== loadedMonthRef.current) {
+        fetchData(detail.month);
+      }
+    }
+    window.addEventListener("monthchange", handler);
+    return () => window.removeEventListener("monthchange", handler);
+  }, [fetchData]);
 
   function markDebtPaid(id: string, paidAt: string) {
     setCardDebts(prev => prev.map(d => d.id === id ? { ...d, is_paid: true, paid_at: paidAt } : d));
@@ -86,8 +124,9 @@ export default function CreditCardSummary({
       ) : (
         visibleCards.map(card => {
           const debt = getCardDebt(card.id);
-          const dueIn = card.payment_due_day != null ? daysUntilPaymentDue(initialMonth, card.cutoff_day, card.payment_due_day) : 0;
-          const paidLate = debt?.is_paid === true && isPaymentLate(initialMonth, card.cutoff_day, card.payment_due_day, debt.paid_at);
+          const month = loadedMonthRef.current;
+          const dueIn = card.payment_due_day != null ? daysUntilPaymentDue(month, card.cutoff_day, card.payment_due_day) : 0;
+          const paidLate = debt?.is_paid === true && isPaymentLate(month, card.cutoff_day, card.payment_due_day, debt.paid_at);
           const calc = calculatedDebts[card.id] ?? null;
           const committed = calc ? calc.total_committed : (debt?.statement_balance ?? 0);
           const available = card.max_limit != null ? card.max_limit - committed : 0;

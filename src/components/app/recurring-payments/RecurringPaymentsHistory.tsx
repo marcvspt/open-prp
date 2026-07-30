@@ -1,7 +1,9 @@
-import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
+import { useState, useEffect, useRef } from "react";
+import { fetchList } from "@/lib/safeFetch.ts";
 import { monthLabel } from "@/lib/date.ts";
 import { CURRENCY_SYMBOL } from "@/lib/general-fields.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
+import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 
 interface Props {
   initialData: string;
@@ -9,13 +11,42 @@ interface Props {
 }
 
 export default function RecurringPaymentsHistory({ initialData, categories }: Props) {
-  const items = JSON.parse(initialData) as RecurringPaymentMonthly[];
+  const [items, setItems] = useState<RecurringPaymentMonthly[]>(() => JSON.parse(initialData));
+  const [loading, setLoading] = useState(false);
+  const loadedQsRef = useRef("");
   const catMap = JSON.parse(categories) as Record<string, { icon: string | null; name: string; type: string }>;
+
+  useEffect(() => {
+    function fetchHistory() {
+      const month = new URLSearchParams(location.search).get("month");
+      const url = month && /^\d{4}-\d{2}$/.test(month)
+        ? `/api/recurring-payment-monthly/history?month=${month}`
+        : "/api/recurring-payment-monthly/history";
+      const qs = new URLSearchParams(location.search).toString();
+      if (qs === loadedQsRef.current) return;
+      loadedQsRef.current = qs;
+      setLoading(true);
+      fetchList<RecurringPaymentMonthly>(url)
+        .then(setItems)
+        .finally(() => setLoading(false));
+    }
+
+    loadedQsRef.current = new URLSearchParams(location.search).toString();
+    fetchHistory();
+
+    function handler() {
+      fetchHistory();
+    }
+    window.addEventListener("monthchange", handler);
+    return () => window.removeEventListener("monthchange", handler);
+  }, []);
 
   return (
     <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
       <h2 className="text-base font-semibold text-string mb-3">Historial de pagos recurrentes</h2>
-      {items.length === 0 ? (
+      {loading ? (
+        <p className="text-sm text-string-muted">Cargando...</p>
+      ) : items.length === 0 ? (
         <p className="text-sm text-string-muted">Sin datos históricos</p>
       ) : (
         <div className="overflow-x-auto">
