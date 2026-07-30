@@ -33,11 +33,6 @@ export interface DashboardMonthData {
   installments: Installment[];
 }
 
-export interface DashboardHistory {
-  card: CardMonthly[];
-  service: RecurringPaymentMonthly[];
-}
-
 export interface PayCardDebtPartialArgs {
   id: string;
   month: string;

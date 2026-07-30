@@ -1,31 +1,49 @@
-import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
-import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
-import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
+import { useState, useEffect, useRef } from "react";
+import { fetchList } from "@/lib/safeFetch.ts";
 import { monthLabel } from "@/lib/date.ts";
 import { CURRENCY_SYMBOL } from "@/lib/general-fields.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
+import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 
 interface Props {
   initialData: string;
   categories: string;
-  createdAt?: string;
 }
 
-export default function RecurringPaymentsHistory({ initialData, categories, createdAt }: Props) {
-  const parsedInitial = JSON.parse(initialData) as RecurringPaymentMonthly[];
+export default function RecurringPaymentsHistory({ initialData, categories }: Props) {
+  const [items, setItems] = useState<RecurringPaymentMonthly[]>(() => JSON.parse(initialData));
+  const [loading, setLoading] = useState(false);
+  const loadedQsRef = useRef("");
   const catMap = JSON.parse(categories) as Record<string, { icon: string | null; name: string; type: string }>;
-  const { filters, setFilter, data, loading } = useFilteredData<RecurringPaymentMonthly[]>("/api/recurring-payment-monthly/history", {}, parsedInitial);
 
-  const items = data ?? [];
+  useEffect(() => {
+    function fetchHistory() {
+      const month = new URLSearchParams(location.search).get("month");
+      const url = month && /^\d{4}-\d{2}$/.test(month)
+        ? `/api/recurring-payment-monthly/history?month=${month}`
+        : "/api/recurring-payment-monthly/history";
+      const qs = new URLSearchParams(location.search).toString();
+      if (qs === loadedQsRef.current) return;
+      loadedQsRef.current = qs;
+      setLoading(true);
+      fetchList<RecurringPaymentMonthly>(url)
+        .then(setItems)
+        .finally(() => setLoading(false));
+    }
+
+    loadedQsRef.current = new URLSearchParams(location.search).toString();
+    fetchHistory();
+
+    function handler() {
+      fetchHistory();
+    }
+    window.addEventListener("monthchange", handler);
+    return () => window.removeEventListener("monthchange", handler);
+  }, []);
 
   return (
     <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-semibold text-string">Historial de pagos recurrentes</h2>
-        <div className="w-48">
-          <MonthSelector value={filters.month || ""} onChange={(m) => setFilter("month", m)} createdAt={createdAt} allLabel="Último año" />
-        </div>
-      </div>
+      <h2 className="text-base font-semibold text-string mb-3">Historial de pagos recurrentes</h2>
       {loading ? (
         <p className="text-sm text-string-muted">Cargando...</p>
       ) : items.length === 0 ? (

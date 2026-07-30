@@ -59,7 +59,7 @@ export class EventRepository {
       sql: `INSERT INTO events (id, user_id, category_id, description, location, start_date, end_date, is_all_day, status, color, seq, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
-        id, userId, data.category_id ?? null, data.description, data.location ?? null,
+        id, userId, data.category_id || null, data.description, data.location ?? null,
         data.start_date, data.end_date ?? null,
         data.is_all_day ? 1 : 0, data.status ?? "pending", data.color ?? null,
         seq, now, now,
@@ -80,7 +80,7 @@ export class EventRepository {
 
     if (data.description !== undefined) { sets.push("description = ?"); args.push(data.description); }
     if (data.location !== undefined) { sets.push("location = ?"); args.push(data.location ?? null); }
-    if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id ?? null); }
+    if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id || null); }
     if (data.start_date !== undefined) { sets.push("start_date = ?"); args.push(data.start_date); }
     if (data.end_date !== undefined) { sets.push("end_date = ?"); args.push(data.end_date ?? null); }
     if (data.is_all_day !== undefined) { sets.push("is_all_day = ?"); args.push(data.is_all_day ? 1 : 0); }

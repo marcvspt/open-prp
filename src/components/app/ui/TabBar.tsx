@@ -11,7 +11,7 @@ interface TabBarProps {
   initialTab: string;
   defaultTab: string;
   ariaLabel: string;
-  /** When provided, TabBar calls this callback instead of managing DOM panels itself */
+  /** Called when the active tab changes, in addition to DOM/URL management */
   onChange?: (key: string) => void;
   /** Optional MonthSelector to show alongside tabs */
   monthSelector?: React.ReactNode;
@@ -23,31 +23,28 @@ export default function TabBar({ tabs, initialTab, defaultTab, ariaLabel, onChan
 
   function activate(key: string) {
     setActiveTab(key);
-    if (onChange) {
-      onChange(key);
-    } else {
-      const container = containerRef.current?.closest(".tabs-container");
-      if (!container) return;
-      const buttons = [...container.querySelectorAll<HTMLElement>("[data-tab]")];
-      const contents = container.querySelectorAll<HTMLElement>("[data-tab-content]");
-      buttons.forEach((btn) => {
-        const isActive = btn.dataset.tab === key;
-        btn.classList.toggle("text-primary", isActive);
-        btn.classList.toggle("border-primary", isActive);
-        btn.classList.toggle("text-string-muted", !isActive);
-        btn.classList.toggle("border-transparent", !isActive);
-        btn.setAttribute("aria-selected", String(isActive));
-        btn.tabIndex = isActive ? 0 : -1;
-      });
-      contents.forEach((panel) => {
-        panel.classList.toggle("hidden", panel.dataset.tabContent !== key);
-      });
-      const params = new URLSearchParams(location.search);
-      if (key !== defaultTab) params.set("tab", key);
-      else params.delete("tab");
-      const qs = params.toString();
-      history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
-    }
+    if (onChange) onChange(key);
+    const container = containerRef.current?.closest(".tabs-container");
+    if (!container) return;
+    const buttons = [...container.querySelectorAll<HTMLElement>("[data-tab]")];
+    const contents = container.querySelectorAll<HTMLElement>("[data-tab-content]");
+    buttons.forEach((btn) => {
+      const isActive = btn.dataset.tab === key;
+      btn.classList.toggle("text-primary", isActive);
+      btn.classList.toggle("border-primary", isActive);
+      btn.classList.toggle("text-string-muted", !isActive);
+      btn.classList.toggle("border-transparent", !isActive);
+      btn.setAttribute("aria-selected", String(isActive));
+      btn.tabIndex = isActive ? 0 : -1;
+    });
+    contents.forEach((panel) => {
+      panel.classList.toggle("hidden", panel.dataset.tabContent !== key);
+    });
+    const params = new URLSearchParams(location.search);
+    if (key !== defaultTab) params.set("tab", key);
+    else params.delete("tab");
+    const qs = params.toString();
+    history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
   }
 
   function onTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {

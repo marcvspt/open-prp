@@ -1,56 +1,61 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { safeFetch } from "@/lib/safeFetch.ts";
-import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment.ts";
-import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import { currentMonthStr } from "@/lib/date.ts";
+import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment.ts";
 
 type PaymentType = "income" | "expense";
 
 interface Props {
-  createdAt?: string;
   initialMonth: string;
   initialPayments: string;
   initialMonthly: string;
 }
 
-export default function RecurringPaymentsMonthly({ createdAt, initialMonth, initialPayments, initialMonthly }: Props) {
-  const currentMonth = currentMonthStr();
+function getMonthFromUrl(): string {
+  const m = new URLSearchParams(location.search).get("month");
+  return m && /^\d{4}-\d{2}$/.test(m) ? m : "";
+}
 
-  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
-
-  // Initial data comes from SSR props; refetch only when the month changes or after mutations.
-  const [payments, setPayments] = useState<RecurringPayment[]>(JSON.parse(initialPayments));
-  const [monthly, setMonthly] = useState<RecurringPaymentMonthly[]>(JSON.parse(initialMonthly));
+export default function RecurringPaymentsMonthly({ initialMonth, initialPayments, initialMonthly }: Props) {
+  const [payments] = useState<RecurringPayment[]>(() => JSON.parse(initialPayments));
+  const [monthly, setMonthly] = useState<RecurringPaymentMonthly[]>(() => JSON.parse(initialMonthly));
   const [loading, setLoading] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (selectedMonth !== currentMonth) params.set("month", selectedMonth);
-    else params.delete("month");
-    const qs = params.toString();
-    history.replaceState(null, "", qs ? "?" + qs : location.pathname);
-  }, [selectedMonth, currentMonth]);
-
-  const handleMonthChange = (month: string) => setSelectedMonth(month);
-
-  const fetchMonthly = useCallback(async () => {
-    const data = await safeFetch<RecurringPaymentMonthly[]>(
-      `/api/recurring-payment-monthly?month=${selectedMonth}`
-    );
-    if (data) setMonthly(data);
-  }, [selectedMonth]);
-
   const loadedMonthRef = useRef(initialMonth);
-  useEffect(() => {
-    if (selectedMonth === loadedMonthRef.current) return;
-    loadedMonthRef.current = selectedMonth;
-    setLoading(true);
-    fetchMonthly().finally(() => setLoading(false));
-  }, [selectedMonth, fetchMonthly]);
 
-  const handleTogglePaid = async (paymentId: string) => {
+  const fetchMonthly = useCallback(async (month: string) => {
+    setLoading(true);
+    const data = await safeFetch<RecurringPaymentMonthly[]>(
+      `/api/recurring-payment-monthly?month=${month}`
+    );
+    if (data) {
+      setMonthly(data);
+      loadedMonthRef.current = month;
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const urlMonth = getMonthFromUrl() || currentMonthStr();
+    if (urlMonth !== loadedMonthRef.current) {
+      fetchMonthly(urlMonth);
+    }
+  }, [fetchMonthly]);
+
+  useEffect(() => {
+    function handler(e: Event) {
+      const detail = (e as CustomEvent).detail as { month: string };
+      if (detail.month !== loadedMonthRef.current) {
+        const m = detail.month || currentMonthStr();
+        fetchMonthly(m);
+      }
+    }
+    window.addEventListener("monthchange", handler);
+    return () => window.removeEventListener("monthchange", handler);
+  }, [fetchMonthly]);
+
+  async function handleTogglePaid(paymentId: string) {
     setTogglingId(paymentId);
     const m = monthly.find(sm => sm.payment_id === paymentId);
     if (!m) return;
@@ -58,11 +63,11 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
       method: "PATCH",
       body: JSON.stringify({ is_paid: !m.is_paid }),
     });
-    if (ok) fetchMonthly();
+    if (ok) await fetchMonthly(loadedMonthRef.current);
     setTogglingId(null);
-  };
+  }
 
-  const handleRemoveFromMonth = async (paymentId: string) => {
+  async function handleRemoveFromMonth(paymentId: string) {
     const m = monthly.find(sm => sm.payment_id === paymentId);
     if (!m) return;
     if (m.is_paid) {
@@ -70,34 +75,31 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
         method: "PATCH",
         body: JSON.stringify({ is_paid: false }),
       });
-      if (ok) fetchMonthly();
+      if (ok) await fetchMonthly(loadedMonthRef.current);
     } else {
       const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
         method: "DELETE",
       });
-      if (ok) fetchMonthly();
+      if (ok) await fetchMonthly(loadedMonthRef.current);
     }
-  };
+  }
 
-  const handleAddToMonth = async (payment: RecurringPayment) => {
+  async function handleAddToMonth(payment: RecurringPayment) {
     const ok = await safeFetch(`/api/recurring-payments/${payment.id}/monthly`, {
       method: "POST",
-      body: JSON.stringify({
-        month: selectedMonth,
-        amount: payment.default_amount,
-      }),
+      body: JSON.stringify({ month: loadedMonthRef.current, amount: payment.default_amount }),
     });
-    if (ok) fetchMonthly();
-  };
+    if (ok) await fetchMonthly(loadedMonthRef.current);
+  }
 
-  const toggleCategory = (name: string) => {
+  function toggleCategory(name: string) {
     setCollapsedCategories(prev => {
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
       else next.add(name);
       return next;
     });
-  };
+  }
 
   const monthlyMap = new Map(monthly.map(sm => [sm.payment_id, sm]));
 
@@ -110,7 +112,7 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
     const textColor = isIncome ? "text-success" : "text-danger";
 
     return (
-      <div key={payment.id}
+      <div
         className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all ${
           isPaid
             ? "border-success/30 bg-success/5"
@@ -133,7 +135,7 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
             {payment.name}
           </div>
           <div className={`text-lg font-semibold ${isPaid ? "text-string-muted" : textColor}`}>
-            {isIncome ? "+" : "-"}${amount.toLocaleString()}
+            {isIncome ? "+" : "-"}${Number(amount).toLocaleString()}
           </div>
           {payment.payment_method_name && (
             <div className="text-xs text-string-muted">
@@ -165,95 +167,103 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
     );
   }
 
-  function renderTypeSection(type: PaymentType, label: string, colorClass: string, icon: string) {
-    const filtered = payments.filter(p => p.type === type);
-    if (filtered.length === 0) return null;
-
+  function renderTypeStats(type: PaymentType, label: string, colorClass: string, icon: string) {
     const typeMonthly = monthly.filter(sm => sm.type === type);
-    const typeTotal = typeMonthly.reduce((s, sm) => s + sm.amount, 0);
+    const typeTotal = typeMonthly.reduce((s, sm) => s + Number(sm.amount), 0);
     const typeReceived = typeMonthly.filter(sm => sm.is_paid);
     const typePending = typeMonthly.filter(sm => !sm.is_paid);
-
-    const categories = [...new Set(filtered.map(p => p.category_name ?? "Sin categoría"))];
 
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <h3 className={`text-base font-semibold ${colorClass}`}>{icon} {label}</h3>
         </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="p-3 rounded-lg bg-panel border border-border text-center">
-              <div className="text-xs text-string-muted mb-1">Total</div>
-              <div className={`text-lg font-semibold ${colorClass}`}>
-                ${typeTotal.toLocaleString()}
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-panel border border-border text-center">
-              <div className="text-xs text-string-muted mb-1">{type === "income" ? "Recibidos" : "Pagados"}</div>
-              <div className="text-lg font-semibold text-success">{typeReceived.length}/{typeMonthly.length}</div>
-            </div>
-            <div className="p-3 rounded-lg bg-panel border border-border text-center">
-              <div className="text-xs text-string-muted mb-1">Pendiente</div>
-              <div className="text-lg font-semibold text-warning">
-                ${typePending.reduce((s, sm) => s + sm.amount, 0).toLocaleString()}
-              </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+            <div className="text-xs text-string-muted mb-1">Total</div>
+            <div className={`text-lg font-semibold ${colorClass}`}>
+              ${Number(typeTotal).toLocaleString()}
             </div>
           </div>
-        <div className="space-y-3">
-          {categories.map(category => {
-            const catFiltered = filtered.filter(p => (p.category_name ?? "Sin categoría") === category);
-            return (
-              <div key={category}>
-                <button
-                  onClick={() => toggleCategory(category)}
-                  className="flex items-center gap-2 text-sm font-medium text-string-muted mb-2 hover:text-string transition-colors"
-                >
-                  <span className={`transition-transform ${collapsedCategories.has(category) ? "" : "rotate-90"}`}>
-                    ▶
-                  </span>
-                  {category}
-                </button>
-                {!collapsedCategories.has(category) && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                    {catFiltered.map(renderPaymentCard)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+            <div className="text-xs text-string-muted mb-1">{type === "income" ? "Recibidos" : "Pagados"}</div>
+            <div className="text-lg font-semibold text-success">{typeReceived.length}/{typeMonthly.length}</div>
+          </div>
+          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+            <div className="text-xs text-string-muted mb-1">Pendiente</div>
+            <div className="text-lg font-semibold text-warning">
+              ${Number(typePending.reduce((s, sm) => s + Number(sm.amount), 0)).toLocaleString()}
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  const incomeTotal = monthly.filter(sm => sm.type === "income").reduce((s, sm) => s + sm.amount, 0);
-  const expenseTotal = monthly.filter(sm => sm.type === "expense").reduce((s, sm) => s + sm.amount, 0);
+  function renderCategoryGroup(type: PaymentType) {
+    const filtered = payments.filter(p => p.type === type);
+    const categories = [...new Set(filtered.map(p => p.category_name ?? "Sin categoría"))];
+    if (categories.length === 0) return null;
+
+    return (
+      <div className="space-y-3">
+        {categories.map(category => {
+          const catFiltered = filtered.filter(p => (p.category_name ?? "Sin categoría") === category);
+          return (
+            <div key={category}>
+              <button
+                onClick={() => toggleCategory(category)}
+                className="flex items-center gap-2 text-sm font-medium text-string-muted mb-2 hover:text-string transition-colors"
+              >
+                <span className={`transition-transform ${collapsedCategories.has(category) ? "" : "rotate-90"}`}>
+                  ▶
+                </span>
+                {category}
+              </button>
+              {!collapsedCategories.has(category) && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {catFiltered.map((payment, i) => {
+                    const isLastOdd = i === catFiltered.length - 1 && catFiltered.length % 2 !== 0;
+                    return (
+                      <div key={payment.id} className={isLastOdd ? "col-span-2 sm:col-span-1" : ""}>
+                        {renderPaymentCard(payment)}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const incomeTotal = monthly.filter(sm => sm.type === "income").reduce((s, sm) => s + Number(sm.amount), 0);
+  const expenseTotal = monthly.filter(sm => sm.type === "expense").reduce((s, sm) => s + Number(sm.amount), 0);
   const netTotal = incomeTotal - expenseTotal;
 
   return (
     <div className="space-y-6 relative">
-      <div className="flex items-center justify-between">
-        <MonthSelector
-          value={selectedMonth}
-          onChange={handleMonthChange}
-          createdAt={createdAt}
-        />
-        {loading && <span className="text-xs text-string-muted">Cargando...</span>}
-      </div>
+      {loading && (
+        <div className="absolute top-0 right-0">
+          <span className="text-xs text-string-muted">Cargando...</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="p-3 rounded-lg bg-panel border border-border text-center">
           <div className="text-xs text-string-muted mb-1">Ingresos</div>
-          <div className="text-lg font-semibold text-success">${incomeTotal.toLocaleString()}</div>
+          <div className="text-lg font-semibold text-success">${Number(incomeTotal).toLocaleString()}</div>
         </div>
         <div className="p-3 rounded-lg bg-panel border border-border text-center">
           <div className="text-xs text-string-muted mb-1">Gastos</div>
-          <div className="text-lg font-semibold text-danger">${expenseTotal.toLocaleString()}</div>
+          <div className="text-lg font-semibold text-danger">${Number(expenseTotal).toLocaleString()}</div>
         </div>
         <div className="p-3 rounded-lg bg-panel border border-border text-center">
           <div className="text-xs text-string-muted mb-1">Balance</div>
           <div className={`text-lg font-semibold ${netTotal >= 0 ? "text-success" : "text-danger"}`}>
-            ${netTotal.toLocaleString()}
+            ${Number(netTotal).toLocaleString()}
           </div>
         </div>
         <div className="p-3 rounded-lg bg-panel border border-border text-center">
@@ -262,13 +272,15 @@ export default function RecurringPaymentsMonthly({ createdAt, initialMonth, init
         </div>
       </div>
 
+      {renderTypeStats("income", "Ingresos", "text-success", "📥")}
+      {renderTypeStats("expense", "Gastos", "text-danger", "💸")}
       {payments.length === 0 ? (
         <div className="text-string-muted text-sm">No hay pagos recurrentes registrados.</div>
       ) : (
-        <div className="space-y-8">
-          {renderTypeSection("income", "Ingresos", "text-success", "💵")}
-          {renderTypeSection("expense", "Gastos", "text-danger", "💰")}
-        </div>
+        <>
+          {renderCategoryGroup("income")}
+          {renderCategoryGroup("expense")}
+        </>
       )}
     </div>
   );
