@@ -11,6 +11,7 @@ import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { FIELD_TYPE_CURRENCY, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
+import { displayCategoryName } from "@/lib/category-labels.ts";
 import { currentMonthStr } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
 const currentMonth = currentMonthStr();
@@ -22,7 +23,7 @@ const filterPm = params.get("payment_method_id") || "";
 const filterCat = params.get("category_id") || "";
 const initialTab = params.get("tab") === "admin" ? "admin" : "summary";
 const catRepo = new CategoryRepository();
-const instCategories = await catRepo.findBySections(userId, ["plazos"]);
+const instCategories = await catRepo.findBySections(userId, ["installments"]);
 const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
 const instFilter: Record<string, unknown> = { active_only: activeOnly };
@@ -71,7 +72,7 @@ const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_
           createdAt={Astro.locals.createdAt}
           activeOnly={activeOnly}
           paymentMethods={paymentMethods.map(pm => ({ id: pm.id, icon: pm.icon, name: pm.name }))}
-          categories={instCategories.map(c => ({ id: c.id, icon: c.icon, name: c.name }))}
+          categories={instCategories.map(c => ({ id: c.id, icon: c.icon, name: displayCategoryName(c) }))}
           initialData={JSON.stringify(initialData)}
         />
       </div>

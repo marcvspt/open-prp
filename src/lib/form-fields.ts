@@ -1,6 +1,7 @@
 import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import type { Category } from "@/lib/types/category.ts";
 import type { Card } from "@/lib/types/card.ts";
+import { displayCategoryName } from "@/lib/category-labels.ts";
 
 export const CURRENCY_OPTIONS = [
   { value: "EUR", label: "€ EUR" },
@@ -50,7 +51,7 @@ export function categoryField(categories: Category[]) {
       { value: "", label: "Sin categoría" },
       ...categories.map(c => ({
         value: c.id,
-        label: `${c.icon || "📂"} ${c.name}`,
+        label: `${c.icon || "📂"} ${displayCategoryName(c)}`,
       })),
     ],
   };

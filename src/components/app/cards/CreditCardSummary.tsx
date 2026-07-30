@@ -108,7 +108,7 @@ export default function CreditCardSummary({
       paidAmount: amt,
       cutoffDay: payDialog.card.cutoff_day,
       paymentMethodId: paymentMethods.find(p => p.card_id === payDialog.card.id)?.id ?? null,
-      categoryId: categories.find(c => c.name === "Saldo de tarjeta")?.id ?? null,
+      categoryId: categories.find(c => c.name === "card-balance")?.id ?? null,
       paidAt,
     });
     if (ok) markDebtPaid(payDialog.debt.id, paidAt ?? new Date().toISOString());

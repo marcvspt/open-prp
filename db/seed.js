@@ -57,42 +57,42 @@ async function seed() {
 
   // ── Categories (unified) ──
   const categories = [
-    // Despensa
-    { name: "Limpieza", sections: ["despensa"], icon: "🧹", color: "#8b5cf6" },
-    { name: "Comida", sections: ["despensa"], icon: "🍽️", color: "#f97316" },
-    { name: "Golosinas", sections: ["despensa"], icon: "🍬", color: "#ec4899" },
-    { name: "Escuela", sections: ["despensa", "eventos", "transacciones", "plazos", "pagos-recurrentes"], icon: "📚", color: "#3b82f6" },
-    { name: "Higiene", sections: ["despensa"], icon: "🧴", color: "#06b6d4" },
-    { name: "Bebidas", sections: ["despensa"], icon: "🥤", color: "#0ea5e9" },
-    { name: "Automotriz", sections: ["despensa", "transacciones", "plazos", "pagos-recurrentes"], icon: "🚗", color: "#64748b" },
-    // Tareas
-    { name: "Personal", sections: ["tareas", "eventos"], icon: "👤", color: "#6366f1" },
-    { name: "Encargo", sections: ["tareas"], icon: "📋", color: "#f59e0b" },
-    { name: "Trabajo", sections: ["tareas", "eventos"], icon: "💼", color: "#3b82f6" },
-    // Transacciones
-    { name: "Supermercado", sections: ["transacciones"], icon: "🛒", color: "#f97316" },
-    { name: "Transporte", sections: ["transacciones"], icon: "🚌", color: "#3b82f6" },
-    { name: "Salud", sections: ["transacciones", "eventos", "plazos"], icon: "🏥", color: "#ef4444" },
-    { name: "Ocio", sections: ["transacciones"], icon: "🎮", color: "#8b5cf6" },
-    { name: "Vivienda", sections: ["transacciones", "plazos", "pagos-recurrentes"], icon: "🏠", color: "#22c55e" },
-    { name: "Salario", sections: ["transacciones", "pagos-recurrentes"], icon: "💰", color: "#22c55e" },
-    { name: "Freelance", sections: ["transacciones", "pagos-recurrentes"], icon: "💻", color: "#6366f1" },
-    // Plazos
-    { name: "Electrónica", sections: ["plazos", "transacciones"], icon: "📱", color: "#3b82f6" },
-    { name: "Muebles", sections: ["plazos", "transacciones", "pagos-recurrentes"], icon: "🪑", color: "#f97316" },
-    { name: "Saldo de tarjeta", sections: ["plazos", "transacciones"], icon: "💳", color: "#ef4444" },
-    // Pagos recurrentes
-    { name: "Suscripciones", sections: ["pagos-recurrentes", "transacciones", "plazos"], icon: "📺", color: "#ec4899" },
+    // Pantry
+    { name: "cleaning", sections: ["pantry"], icon: "🧹", color: "#8b5cf6" },
+    { name: "food", sections: ["pantry"], icon: "🍽️", color: "#f97316" },
+    { name: "candy", sections: ["pantry"], icon: "🍬", color: "#ec4899" },
+    { name: "school", sections: ["pantry", "events", "transactions", "installments", "recurring-payments"], icon: "📚", color: "#3b82f6" },
+    { name: "hygiene", sections: ["pantry"], icon: "🧴", color: "#06b6d4" },
+    { name: "drinks", sections: ["pantry"], icon: "🥤", color: "#0ea5e9" },
+    { name: "automotive", sections: ["pantry", "transactions", "installments", "recurring-payments"], icon: "🚗", color: "#64748b" },
+    // Tasks
+    { name: "personal", sections: ["tasks", "events"], icon: "👤", color: "#6366f1" },
+    { name: "errand", sections: ["tasks"], icon: "📋", color: "#f59e0b" },
+    { name: "work", sections: ["tasks", "events"], icon: "💼", color: "#3b82f6" },
+    // Transactions
+    { name: "supermarket", sections: ["transactions"], icon: "🛒", color: "#f97316" },
+    { name: "transport", sections: ["transactions"], icon: "🚌", color: "#3b82f6" },
+    { name: "health", sections: ["transactions", "events", "installments"], icon: "🏥", color: "#ef4444" },
+    { name: "leisure", sections: ["transactions"], icon: "🎮", color: "#8b5cf6" },
+    { name: "housing", sections: ["transactions", "installments", "recurring-payments"], icon: "🏠", color: "#22c55e" },
+    { name: "salary", sections: ["transactions", "recurring-payments"], icon: "💰", color: "#22c55e" },
+    { name: "freelance", sections: ["transactions", "recurring-payments"], icon: "💻", color: "#6366f1" },
+    // Installments
+    { name: "electronics", sections: ["installments", "transactions"], icon: "📱", color: "#3b82f6" },
+    { name: "furniture", sections: ["installments", "transactions", "recurring-payments"], icon: "🪑", color: "#f97316" },
+    { name: "card-balance", sections: ["installments", "transactions"], icon: "💳", color: "#ef4444" },
+    // Recurring payments
+    { name: "subscriptions", sections: ["recurring-payments", "transactions", "installments"], icon: "📺", color: "#ec4899" },
     {
-      name: "Facturas", sections: ["pagos-recurrentes", "transacciones",
-        "plazos"], icon: "📄", color: "#ef4444"
+      name: "bills", sections: ["recurring-payments", "transactions",
+        "installments"], icon: "📄", color: "#ef4444"
     },
-    { name: "Seguros", sections: ["pagos-recurrentes", "transacciones", "plazos"], icon: "🛡️", color: "#22c55e" },
-    // Eventos
-    { name: "Social", sections: ["eventos"], icon: "🎉", color: "#ec4899" },
-    { name: "Familiar", sections: ["eventos"], icon: "👨‍👩‍👧‍👦", color: "#22c55e" },
-    { name: "Entretenimiento", sections: ["eventos", "transacciones", "plazos", "pagos-recurrentes"], icon: "🎮", color: "#8b5cf6" },
-    { name: "Otro", sections: ["eventos", "transacciones", "plazos", "pagos-recurrentes"], icon: "📌", color: "#6b7280" },
+    { name: "insurance", sections: ["recurring-payments", "transactions", "installments"], icon: "🛡️", color: "#22c55e" },
+    // Events
+    { name: "social", sections: ["events"], icon: "🎉", color: "#ec4899" },
+    { name: "family", sections: ["events"], icon: "👨‍👩‍👧‍👦", color: "#22c55e" },
+    { name: "entertainment", sections: ["events", "transactions", "installments", "recurring-payments"], icon: "🎮", color: "#8b5cf6" },
+    { name: "other", sections: ["events", "transactions", "installments", "recurring-payments"], icon: "📌", color: "#6b7280" },
   ];
   for (const cat of categories) {
     await client.execute({

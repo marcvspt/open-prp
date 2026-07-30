@@ -4,12 +4,13 @@ import ShoppingList, { SHOPPING_TABS } from "@/components/app/shopping/ShoppingL
 import { ShoppingRepository } from "@/lib/modules/shopping/repository.ts";
 import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
+import { displayCategoryName } from "@/lib/category-labels.ts";
 
 const userId = Astro.locals.userId;
 const [allItems, pantryItems, pantryCategories] = await Promise.all([
   new ShoppingRepository().findAll(userId),
   new PantryRepository().findAll(userId),
-  new CategoryRepository().findBySections(userId, ["despensa"]),
+  new CategoryRepository().findBySections(userId, ["pantry"]),
 ]);
 const paramTab = Astro.url.searchParams.get("tab");
 const initialTab = paramTab && SHOPPING_TABS.some(t => t.key === paramTab) ? paramTab : "list";
@@ -23,7 +24,7 @@ const initialTab = paramTab && SHOPPING_TABS.some(t => t.key === paramTab) ? par
       initialTab={initialTab}
       initialItems={JSON.stringify(allItems)}
       initialPantry={JSON.stringify(pantryItems)}
-      initialCategories={JSON.stringify(pantryCategories.map(c => ({ id: c.id, name: c.name, icon: c.icon, color: c.color })))}
+      initialCategories={JSON.stringify(pantryCategories.map(c => ({ id: c.id, name: displayCategoryName(c), icon: c.icon, color: c.color })))}
     />
   </div>
 </AppLayout>

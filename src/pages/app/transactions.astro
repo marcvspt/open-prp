@@ -8,6 +8,7 @@ import { TransactionRepository } from "@/lib/modules/transactions/repository.ts"
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
+import { displayCategoryName } from "@/lib/category-labels.ts";
 const userId = Astro.locals.userId;
 const params = Astro.url.searchParams;
 const filterType = params.get("type") || "all";
@@ -18,7 +19,7 @@ const filterCat = params.get("category_id") || "";
 const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
 const catRepo = new CategoryRepository();
-const txCategories = await catRepo.findBySections(userId, ["transacciones"]);
+const txCategories = await catRepo.findBySections(userId, ["transactions"]);
 const repo = new TransactionRepository();
 const txFilter: Record<string, unknown> = {};
 if (filterType !== "all") txFilter.type = filterType;
@@ -48,7 +49,7 @@ const defaultForm = { type: "expense", description: "", amount: 0, currency: "MX
       createdAt={Astro.locals.createdAt}
       filterType={filterType}
       paymentMethods={paymentMethods.map(pm => ({ id: pm.id, icon: pm.icon, name: pm.name }))}
-      categories={txCategories.map(c => ({ id: c.id, icon: c.icon, name: c.name }))}
+      categories={txCategories.map(c => ({ id: c.id, icon: c.icon, name: displayCategoryName(c) }))}
       initialData={JSON.stringify(initialData)}
     />
   </div>

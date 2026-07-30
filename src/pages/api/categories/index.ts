@@ -23,7 +23,7 @@ export const POST: APIRoute = async (context) => {
     return errorResponse("name is required");
   }
   if (!body.sections) {
-    body.sections = JSON.stringify(["transacciones"]);
+    body.sections = JSON.stringify(["transactions"]);
   }
 
   const existing = await repo.findByName(body.name, uid);

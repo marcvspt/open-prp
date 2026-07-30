@@ -13,6 +13,7 @@ import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField } from "@/lib/form-fields.ts";
 import { CURRENCY_SYMBOL, BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { displayCategoryName } from "@/lib/category-labels.ts";
 import { currentMonthStr } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
 const rpRepo = new RecurringPaymentRepository();
@@ -39,7 +40,7 @@ const recurringHistory = await rpRepo.getHistory(userId, fromMonth, nextMonth);
 const paramTab = Astro.url.searchParams.get("tab");
 const initialTab = paramTab === "list" ? "list" : paramTab === "history" ? "history" : "monthly";
 const catRepo = new CategoryRepository();
-const svcCategories = await catRepo.findBySections(userId, ["pagos-recurrentes"]);
+const svcCategories = await catRepo.findBySections(userId, ["recurring-payments"]);
 const allRecurringCategories = svcCategories;
 const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
@@ -90,7 +91,7 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
               <td class="px-4 py-3"><span class={`text-xs px-2 py-0.5 rounded font-medium ${s.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>{s.type === "income" ? "Ingreso" : "Gasto"}</span></td>
               <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[s.currency] || "$"} {s.currency || "MXN"}</td>
               <td class="px-4 py-3"><span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[s.payment_method_id] ? `${pmMap[s.payment_method_id].icon || "💳"} ${pmMap[s.payment_method_id].name}` : "-"}</span></td>
-              <td class="px-4 py-3">{s.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[s.category_id] ? `${catMap[s.category_id].icon || "📂"} ${catMap[s.category_id].name}` : "-"}</span> : "-"}</td>
+              <td class="px-4 py-3">{s.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[s.category_id] ? `${catMap[s.category_id].icon || "📂"} ${displayCategoryName(catMap[s.category_id])}` : "-"}</span> : "-"}</td>
               <td class="px-4 py-3 text-right space-x-2">
                 <button data-edit-recurring-payments={s.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">{BTN_EDIT}</button>
                 <button data-delete-recurring-payments={s.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">{BTN_DELETE}</button>

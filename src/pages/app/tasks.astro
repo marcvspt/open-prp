@@ -10,15 +10,16 @@ import FilterLinks from "@/components/app/ui/FilterLinks.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { TaskRepository } from "@/lib/modules/tasks/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
+import { displayCategoryName } from "@/lib/category-labels.ts";
 const userId = Astro.locals.userId;
 const filter = Astro.url.searchParams.get("filter") || "all";
 const q: Record<string, unknown> = {};
 if (filter === "pending") q.is_completed = false;
 if (filter === "done") q.is_completed = true;
 const items = await new TaskRepository().findAll(userId, q);
-const categories = await new CategoryRepository().findBySections(userId, ["tareas"]);
+const categories = await new CategoryRepository().findBySections(userId, ["tasks"]);
 const catMap = Object.fromEntries(categories.map(c => [c.id, c]));
-const catOptions = [{ value: "", label: "Sin categoría" }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📋"} ${c.name}` }))];
+const catOptions = [{ value: "", label: "Sin categoría" }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📋"} ${displayCategoryName(c)}` }))];
 const priorityLabels: Record<number, string> = { 1: "🟢 Baja", 2: "🟡 Media", 3: "🔴 Alta" };
 const priorityColor: Record<number, string> = { 1: "bg-success-bg text-success-text", 2: "bg-warning-bg text-warning-text", 3: "bg-danger-bg text-danger-text" };
 const fields = [
@@ -65,7 +66,7 @@ const taskFilters = [
                 </span>
               </div>
               <div class="flex items-center gap-3 text-xs text-string-muted ml-7">
-                {cat && <span>{cat.icon || "📋"} {cat.name}</span>}
+                {cat && <span>{cat.icon || "📋"} {displayCategoryName(cat)}</span>}
                 {t.due_date && (
                   <span class="font-semibold">📅 {formatDate(t.due_date)}</span>
                 )}

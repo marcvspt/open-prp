@@ -3,6 +3,7 @@ import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 import { monthLabel } from "@/lib/date.ts";
 import { CURRENCY_SYMBOL } from "@/lib/general-fields.ts";
+import { displayCategoryName } from "@/lib/category-labels.ts";
 
 interface Props {
   initialData: string;
@@ -12,7 +13,7 @@ interface Props {
 
 export default function RecurringPaymentsHistory({ initialData, categories, createdAt }: Props) {
   const parsedInitial = JSON.parse(initialData) as RecurringPaymentMonthly[];
-  const catMap = JSON.parse(categories) as Record<string, { icon: string | null; name: string }>;
+  const catMap = JSON.parse(categories) as Record<string, { icon: string | null; name: string; type: string }>;
   const { filters, setFilter, data, loading } = useFilteredData<RecurringPaymentMonthly[]>("/api/recurring-payment-monthly/history", {}, parsedInitial);
 
   const items = data ?? [];
@@ -59,7 +60,7 @@ export default function RecurringPaymentsHistory({ initialData, categories, crea
                     </td>
                     <td className="px-3 py-2 text-center text-xs text-string-muted">{CURRENCY_SYMBOL[sp.currency || "MXN"] || "$"} {sp.currency || "MXN"}</td>
                     <td className="px-3 py-2 text-center">
-                      {cat ? <span className="text-xs bg-surface-alt px-2 py-0.5 rounded">{cat.icon || "📂"} {cat.name}</span> : <span className="text-xs text-string-muted">—</span>}
+                      {cat ? <span className="text-xs bg-surface-alt px-2 py-0.5 rounded">{cat.icon || "📂"} {displayCategoryName(cat)}</span> : <span className="text-xs text-string-muted">—</span>}
                     </td>
                   </tr>
                 );
