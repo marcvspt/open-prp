@@ -9,6 +9,11 @@ export interface RecurringPayment {
   payment_method_id: string;
   created_at: string;
   updated_at: string;
+  /** Joined from payment_methods via findAll() */
+  payment_method_name?: string;
+  payment_method_icon?: string | null;
+  /** Joined from categories via findAll() */
+  category_name?: string | null;
 }
 
 export interface RecurringPaymentInput {
