@@ -27,11 +27,12 @@ astro dev stop | status | logs
 - **Hosting**: Netlify (adapter en `astro.config.mjs`)
 - **Base de datos**: TursoDB (`@libsql/client/web`, compatible con Netlify Functions)
 - **Autenticación**: Clerk
-- **Variables de entorno**: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
+- **Variables de entorno**: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`. Se declaran con el schema de `envField` de Astro en `astro.config.mjs` (`env.schema`), con `context` (`server`/`client`) y `access` (`secret`/`public`). Ventajas: valida en build que existan las obligatorias (`optional: false`), da tipos e IntelliSense para `import.meta.env.*`, y evita fugas al cliente (solo las `PUBLIC_*` con `access: 'public'` llegan al bundle del cliente; los secretos nunca se exponen).
 
 ## Arquitectura general
 
 - **SSR-first**: se prioriza Server-Side Rendering con Astro. Los datos se obtienen en SSR siempre que sea posible; la página llega ya renderizada al cliente.
+- **Mejores prácticas y rendimiento**: seguir siempre las mejores prácticas de cada tecnología (Astro, React, Tailwind, TypeScript, Clerk, TursoDB) y priorizar el rendimiento web (Core Web Vitals, bundle en cliente reducido, SSR/SSG donde aplique, queries eficientes, caching, hydration mínima).
 - React 19 se usa únicamente en componentes que requieren comportamiento dinámico en cliente (filtros, tabs, modales CRUD, interacciones en lista de compras).
 - Se prioriza la componentización y reutilización de componentes, utilidades y estilos. Cualquier funcionalidad compartida entre secciones debe implementarse como recurso reutilizable, nunca duplicado.
 - **Patrón de datos iniciales SSR**: las islas React reciben datos del primer render vía props (`initialData={JSON.stringify(...)}` desde repositorios en el frontmatter de la `.astro`). Re-fetch en cliente al cambiar filtros (vía `useFilteredData` o escuchando el evento `monthchange`) o tras una mutación. Aplica a: `ShoppingList`, `RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary`, `CardsHistory`, `CurrencySelect`, componentes `*Filterable`.
@@ -51,7 +52,7 @@ astro dev stop | status | logs
 - `needsSync()` — sincroniza el perfil si email/nombre están vacíos o pasaron >5 min desde el último sync.
 - Hooks React desde `@clerk/astro/react` (**no** `@clerk/clerk-react`).
 - `UserButton` con `afterSignOutUrl="/app/login"` y `client:load`.
-- Redirects de Clerk configurados en `astro.config.mjs`: `afterSignInUrl`, `afterSignUpUrl`, `afterSignOutUrl`.
+- Redirects de Clerk configurados en `astro.config.mjs`: `afterSignOutUrl`.
 
 ## Estructura del proyecto
 
