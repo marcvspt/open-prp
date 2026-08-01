@@ -1,5 +1,5 @@
 ---
-
+import { labels } from "@/lib/labels.ts";
 ---
 
 <footer class="border-t border-border bg-panel" id="about">
@@ -11,7 +11,7 @@
       </div>
       <div class="flex flex-col items-center gap-2 sm:items-end">
         <p class="text-xs text-string-muted">
-          Desarrollado con <a
+          {labels.landing.developedWith} <a
             href="https://opencode.ai"
             class="text-primary hover:text-primary-hover transition-colors"
             target="_blank"

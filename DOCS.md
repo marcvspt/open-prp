@@ -47,7 +47,7 @@ getDb() → cliente singleton @libsql/client/web
 nextSeq("table") → COALESCE(MAX(seq), 0) + 1
 ```
 
-### Schema (`db/schema/`)
+### Schema (`db/schemas/`)
 
 14 archivos modulares, idempotentes. Representan estado final para deploys nuevos.
 

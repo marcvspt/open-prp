@@ -1,10 +1,11 @@
 ---
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import GithubIcon from "@/assets/github.svg";
+import { labels } from "@/lib/labels.ts";
 
 const LANDING_LINKS = [
-  { href: "#features", label: "Características" },
-  { href: "https://www.marcvspt.tech", label: "Sobre Mí", external: true },
+  { href: "#features", label: labels.landing.navFeatures },
+  { href: "https://www.marcvspt.tech", label: labels.landing.navAbout, external: true },
 ];
 ---
 
@@ -18,7 +19,7 @@ const LANDING_LINKS = [
     <button
       id="mobile-menu-btn"
       class="flex lg:hidden items-center justify-center w-8 h-8 text-string-muted hover:text-string transition-colors cursor-pointer"
-      aria-label="Menú"
+      aria-label={labels.landing.ariaMenu}
       aria-expanded="false"
     >
       <svg
@@ -65,7 +66,7 @@ const LANDING_LINKS = [
         target="_blank"
         rel="noopener"
         class="flex items-center text-string-muted hover:text-string transition-colors py-1.5"
-        aria-label="GitHub"
+        aria-label={labels.nav.ariaGithub}
       >
         <GithubIcon class="h-5 w-5" />
       </a>
@@ -73,7 +74,7 @@ const LANDING_LINKS = [
         href="/app"
         class="shrink-0 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
       >
-        Login
+        {labels.landing.login}
       </a>
       <ThemeToggle client:load />
     </nav>
@@ -102,16 +103,16 @@ const LANDING_LINKS = [
           target="_blank"
           rel="noopener"
           class="flex items-center gap-2 text-sm text-string-muted hover:text-string transition-colors"
-          aria-label="GitHub"
+          aria-label={labels.nav.ariaGithub}
         >
           <GithubIcon class="h-5 w-5" />
-          GitHub
+          {labels.nav.ariaGithub}
         </a>
         <a
           href="/app"
           class="inline-block rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
         >
-          Login
+          {labels.landing.login}
         </a>
         <div class="w-36"><ThemeToggle client:load /></div>
       </div>

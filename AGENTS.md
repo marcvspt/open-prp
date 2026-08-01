@@ -46,7 +46,7 @@ astro dev stop | status | logs
 
 ## Autenticación / Middleware
 
-- `@clerk/astro` con `clerkMiddleware` en `src/middleware.ts`.
+- `clerkMiddleware` desde `@clerk/astro/server` en `src/middleware.ts` (integración `@clerk/astro`).
 - Rutas públicas (sin autenticación requerida): `/` (landing) y `/app/login`. Middleware protege el resto de `/app/*`.
 - `needsSync()` — sincroniza el perfil si email/nombre están vacíos o pasaron >5 min desde el último sync.
 - Hooks React desde `@clerk/astro/react` (**no** `@clerk/clerk-react`).
@@ -56,6 +56,7 @@ astro dev stop | status | logs
 ## Estructura del proyecto
 
 - **Ruteo**: `/` → landing pública. `/app` → redirige a `/app/dashboard` (logueado) o `/app/login` (no logueado).
+- **Prerender**: la landing `/` está prerenderizada (`export const prerender = true` en `src/pages/index.astro`); el resto de páginas son SSR. No prerenderizar páginas que dependan de auth, `Astro.locals` o la base de datos (todo `/app/*` y `/app/login`).
 - **Páginas**: landing en `src/pages/app/*`; app en `src/pages/*` (primer nivel, sin subcarpetas `/app` ni `/api`). API en `src/pages/api/*/`.
 - **Landing**: componentes en `src/components/landing/*`, layout `LandingLayout.astro`.
 - **App**: componentes en `src/components/app/*`, layout `AppLayout.astro`.
@@ -113,11 +114,11 @@ astro dev stop | status | logs
 
 ## Base de datos
 
-### Schema (`db/schema/*.sql`)
+### Schema (`db/schemas/*.sql`)
 
 - 14 archivos modulares, con prefijo numérico, idempotentes (`CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS`).
 - Semilla: `db/seed.js` (ESM, sintaxis moderna; se ejecuta con la última versión de Node).
-- **Cambios en producción**: entregar al usuario el SQL de migración (`ALTER TABLE`, `CREATE INDEX`) a ejecutar, **y además** actualizar el `.sql` correspondiente en `db/schema/` reflejando el esquema final.
+- **Cambios en producción**: entregar al usuario el SQL de migración (`ALTER TABLE`, `CREATE INDEX`) a ejecutar, **y además** actualizar el `.sql` correspondiente en `db/schemas/` reflejando el esquema final.
 
 ### Repositorios
 

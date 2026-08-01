@@ -4,7 +4,7 @@ import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Transaction } from "@/lib/types/transaction.ts";
 import { formatDate } from "@/lib/date.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL, FILTER_ALL_CATEGORIES, FILTER_ALL_PAYMENT_METHODS, FILTER_ALL_MONTHS, FILTER_SEARCH_DESC, FILTER_LABEL_TYPE, FILTER_LABEL_CATEGORY, FILTER_LABEL_PAYMENT_METHOD } from "@/lib/filter-fields.ts";
-import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { BTN_EDIT, BTN_DELETE, CURRENCY_SYMBOL } from "@/lib/general-fields.ts";
 import { labels } from "@/lib/labels.ts";
 
 interface Props {
@@ -104,9 +104,9 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
                     <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatDate(tx.date)}</td>
                     <td className="px-4 py-3">{tx.description || "-"}</td>
                     <td className={`px-4 py-3 text-right font-mono whitespace-nowrap ${tx.type === "income" ? "text-success" : "text-danger"}`}>
-                      {tx.currency === "EUR" ? "€" : "$"}{Number(tx.amount).toFixed(2)}
+                      {CURRENCY_SYMBOL[tx.currency] ?? "$"}{Number(tx.amount).toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-xs text-string-muted">{(tx.currency === "EUR" ? "€" : "$")} {tx.currency || "MXN"}</td>
+                    <td className="px-4 py-3 text-xs text-string-muted">{CURRENCY_SYMBOL[tx.currency] ?? "$"} {tx.currency || "MXN"}</td>
                     <td className="px-4 py-3">{pm ? <span className="text-xs bg-surface-alt px-2 py-0.5 rounded">{pm.icon || "💳"} {pm.name}</span> : "-"}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded ${tx.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>

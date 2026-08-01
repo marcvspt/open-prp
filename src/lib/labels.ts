@@ -205,6 +205,7 @@ export const labels = {
     myAccount: "Mi cuenta",
     ariaMain: "Navegación principal",
     ariaGithub: "GitHub",
+    openMenu: "Abrir menú",
   },
 
   theme: {
@@ -357,6 +358,29 @@ export const labels = {
     installments: "Plazos",
     events: "Eventos",
     recurringPayments: "Pagos recurrentes",
+  },
+
+  landing: {
+    heroTitle: "Controla tus",
+    heroTitleAccent: "finanzas personales",
+    heroDescription: "Open PRP es tu centro de gestión financiera personal. Transacciones, tarjetas, plazos, suscripciones, despensa y más, todo en un solo lugar.",
+    ctaStart: "Comenzar gratis",
+    ctaMore: "Ver más",
+    featuresTitle: "Todo lo que necesitas",
+    featuresTagline: "Gestiona cada aspecto de tus finanzas desde un solo panel.",
+    features: [
+      { title: "Transacciones", description: "Registra ingresos y gastos con categorías personalizadas." },
+      { title: "Tarjetas", description: "Controla tus plásticos, fechas de corte y pagos mensuales." },
+      { title: "Plazos", description: "Divide compras en cuotas y da seguimiento a cada una." },
+      { title: "Pagos recurrentes", description: "Suscripciones y servicios con registro mensual automático." },
+      { title: "Despensa", description: "Inventario de productos, fechas de vencimiento y compras." },
+      { title: "Compras", description: "Lista de compras con historial y categorías." },
+    ],
+    navFeatures: "Características",
+    navAbout: "Sobre Mí",
+    ariaMenu: "Menú",
+    login: "Login",
+    developedWith: "Desarrollado con",
   },
 
   select: {

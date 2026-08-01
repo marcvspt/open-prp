@@ -7,10 +7,9 @@ import CashbackFilterable from "@/components/app/cashback/CashbackFilterable.tsx
 import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { FIELD_TYPE_CURRENCY, cardField, dateField } from "@/lib/form-fields.ts";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
-import { currentMonthStr } from "@/lib/date.ts";
+import { lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
 import { labels } from "@/lib/labels.ts";
 const userId = Astro.locals.userId;
-const currentMonth = currentMonthStr();
 const params = Astro.url.searchParams;
 const filterMonth = params.get("month") || "";
 const filterQ = params.get("q") || "";
@@ -21,6 +20,11 @@ const cbFilter: Record<string, unknown> = {};
 if (filterMonth) cbFilter.month = filterMonth;
 if (filterQ) cbFilter.q = filterQ;
 if (filterCard) cbFilter.card_id = filterCard;
+if (!filterMonth) {
+  const { from, to } = lastYearWindow(Astro.locals.createdAt);
+  cbFilter.date_from = `${from}-01`;
+  cbFilter.date_to = lastDayOfMonth(to);
+}
 const initialData = await new CashbackRepository().findAll(userId, cbFilter);
 const fields = [
   dateField(),
@@ -37,7 +41,7 @@ const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", car
     <PageHeader title={labels.page.cashback} createLabel={labels.cta.newCashback} createModule="cashback" mobileOnlyCTA={true} />
     <CashbackFilterable
       client:load
-      initialMonth={filterMonth || currentMonth}
+      initialMonth={filterMonth}
       createdAt={Astro.locals.createdAt}
       cards={creditCards.map(c => ({ id: c.id, name: c.name, type: c.type }))}
       initialData={JSON.stringify(initialData)}

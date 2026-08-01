@@ -8,47 +8,20 @@ import ClipboardIcon from "@/assets/clipboard.svg";
 import RecurringIcon from "@/assets/recurring.svg";
 import PackageIcon from "@/assets/package.svg";
 import CartIcon from "@/assets/cart.svg";
+import { labels } from "@/lib/labels.ts";
 
-const FEATURES_INFO = [
-  {
-    icon: DollarIcon,
-    title: "Transacciones",
-    description: "Registra ingresos y gastos con categorías personalizadas.",
-  },
-  {
-    icon: CardIcon,
-    title: "Tarjetas",
-    description: "Controla tus plásticos, fechas de corte y pagos mensuales.",
-  },
-  {
-    icon: ClipboardIcon,
-    title: "Plazos",
-    description: "Divide compras en cuotas y da seguimiento a cada una.",
-  },
-  {
-    icon: RecurringIcon,
-    title: "Pagos recurrentes",
-    description: "Suscripciones y servicios con registro mensual automático.",
-  },
-  {
-    icon: PackageIcon,
-    title: "Despensa",
-    description: "Inventario de productos, fechas de vencimiento y compras.",
-  },
-  {
-    icon: CartIcon,
-    title: "Compras",
-    description: "Lista de compras con historial y categorías.",
-  },
-];
+export const prerender = true;
+
+const FEATURE_ICONS = [DollarIcon, CardIcon, ClipboardIcon, RecurringIcon, PackageIcon, CartIcon];
+const FEATURES_INFO = labels.landing.features.map((feature, i) => ({ icon: FEATURE_ICONS[i], ...feature }));
 ---
 
 <LandingLayout>
   <Hero />
   <section id="features" class="border-t border-border bg-surface-alt py-24">
     <div class="mx-auto max-w-6xl px-6">
-      <h2 class="text-center text-3xl font-bold text-string sm:text-4xl">Todo lo que necesitas</h2>
-      <p class="mt-4 text-center text-string-muted">Gestiona cada aspecto de tus finanzas desde un solo panel.</p>
+      <h2 class="text-center text-3xl font-bold text-string sm:text-4xl">{labels.landing.featuresTitle}</h2>
+      <p class="mt-4 text-center text-string-muted">{labels.landing.featuresTagline}</p>
       <div class="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES_INFO.map(({ icon: Icon, title, description }) => (
           <FeatureCard title={title} description={description}>
