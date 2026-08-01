@@ -3,6 +3,7 @@ import type { Installment } from "@/lib/types/installment.ts";
 import type { Card } from "@/lib/types/card.ts";
 import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import { formatCurrency } from "@/lib/format.ts";
+import { labels } from "@/lib/labels.ts";
 
 interface InstallmentsSummaryProps {
   initialData: string;
@@ -16,22 +17,22 @@ export default function InstallmentsSummary({ initialData, initialCards, initial
   const paymentMethods: PaymentMethod[] = useMemo(() => JSON.parse(initialPaymentMethods), [initialPaymentMethods]);
 
   if (installments.length === 0) {
-    return <p className="text-string-muted text-sm">No hay plazos activos</p>;
+    return <p className="text-string-muted text-sm">{labels.empty.activeInstallments}</p>;
   }
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4">
         <div className="p-4 rounded-xl bg-panel border border-border shadow-sm text-center">
-          <p className="text-xs text-string-muted mb-1">Plazos activos</p>
+          <p className="text-xs text-string-muted mb-1">{labels.stat.activeInstallments}</p>
           <p className="text-2xl font-bold text-primary">{installments.length}</p>
         </div>
         <div className="p-4 rounded-xl bg-panel border border-border shadow-sm text-center">
-          <p className="text-xs text-string-muted mb-1">Restante por pagar</p>
+          <p className="text-xs text-string-muted mb-1">{labels.stat.remainingToPay}</p>
           <p className="text-2xl font-bold text-danger">{formatCurrency(installments.reduce((s, i) => s + Number(i.remaining_months) * Number(i.monthly_amount), 0))}</p>
         </div>
         <div className="p-4 rounded-xl bg-panel border border-border shadow-sm text-center">
-          <p className="text-xs text-string-muted mb-1">Total de cuotas</p>
+          <p className="text-xs text-string-muted mb-1">{labels.stat.totalFees}</p>
           <p className="text-2xl font-bold text-warning">{installments.reduce((s, i) => s + Number(i.total_months), 0)}</p>
         </div>
       </div>
@@ -49,18 +50,18 @@ export default function InstallmentsSummary({ initialData, initialCards, initial
                 </span>
               </div>
               <p className="font-semibold text-sm text-string mb-1">{i.description}</p>
-              <p className="text-xs text-string-muted mb-3">{card?.name ?? pm?.name ?? "Sin tarjeta"}</p>
+              <p className="text-xs text-string-muted mb-3">{card?.name ?? pm?.name ?? labels.field.noCard}</p>
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-string-muted">Total</span>
+                  <span className="text-string-muted">{labels.stat.total}</span>
                   <span className="font-mono font-medium text-string">{formatCurrency(totalAmount)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-string-muted">Cuota</span>
+                  <span className="text-string-muted">{labels.stat.fee}</span>
                   <span className="font-mono font-medium text-danger">{formatCurrency(Number(i.monthly_amount))}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-string-muted">Restante</span>
+                  <span className="text-string-muted">{labels.stat.remaining}</span>
                   <span className="font-mono font-medium text-warning">{formatCurrency(remainingAmount)}</span>
                 </div>
               </div>

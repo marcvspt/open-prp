@@ -8,30 +8,31 @@ import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { EventRepository } from "@/lib/modules/events/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
+import { labels } from "@/lib/labels.ts";
 const userId = Astro.locals.userId;
 const items = (await new EventRepository().findAll(userId)).data ?? [];
 const catRepo = new CategoryRepository();
 const evCategories = await catRepo.findBySections(userId, ["events"]);
 const catMap = Object.fromEntries(evCategories.map(c => [c.id, c]));
-const statusLabels: Record<string, string> = { pending: "🟡 Pendiente", confirmed: "🔵 Confirmado", completed: "🟢 Completado", cancelled: "🔴 Cancelado" };
+const statusLabels: Record<string, string> = { pending: labels.badge.pendingEvent, confirmed: labels.badge.confirmed, completed: labels.badge.completed, cancelled: labels.badge.cancelled };
 const statusColor: Record<string, string> = { pending: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300", confirmed: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300", completed: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300", cancelled: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300" };
 const fields = [
-  { name: "description", label: "Descripción", type: "textarea" as const, required: true },
-  { name: "category_id", label: "Categoría", type: "select" as const, options: [{ value: "", label: "Sin categoría" }, ...evCategories.map(c => ({ value: c.id, label: `${c.icon || "📁"} ${displayCategoryName(c)}` }))] },
-  { name: "location", label: "Ubicación", type: "text" as const },
-  { name: "start_date", label: "Inicio", type: "date" as const, required: true },
-  { name: "end_date", label: "Fin", type: "date" as const },
-  { name: "status", label: "Estado", type: "select" as const, options: [{ value: "pending", label: "🟡 Pendiente" }, { value: "confirmed", label: "🔵 Confirmado" }, { value: "completed", label: "🟢 Completado" }, { value: "cancelled", label: "🔴 Cancelado" }] },
-  { name: "is_all_day", label: "Día completo", type: "checkbox" as const },
+  { name: "description", label: labels.field.description, type: "textarea" as const, required: true },
+  { name: "category_id", label: labels.field.category, type: "select" as const, options: [{ value: "", label: labels.field.noCategory }, ...evCategories.map(c => ({ value: c.id, label: `${c.icon || "📁"} ${displayCategoryName(c)}` }))] },
+  { name: "location", label: labels.field.location, type: "text" as const },
+  { name: "start_date", label: labels.field.start, type: "date" as const, required: true },
+  { name: "end_date", label: labels.field.end, type: "date" as const },
+  { name: "status", label: labels.field.status, type: "select" as const, options: [{ value: "pending", label: labels.badge.pendingEvent }, { value: "confirmed", label: labels.badge.confirmed }, { value: "completed", label: labels.badge.completed }, { value: "cancelled", label: labels.badge.cancelled }] },
+  { name: "is_all_day", label: labels.field.allDay, type: "checkbox" as const },
 ];
 const defaultForm = { description: "", category_id: "", location: "", start_date: "", end_date: "", status: "pending", is_all_day: false };
 ---
 
-<AppLayout title="Eventos - Open PRP">
+<AppLayout title={`${labels.page.events} - Open PRP`}>
   <div data-module="events" class="space-y-4">
-    <PageHeader title="Eventos" createLabel="Nuevo evento" createModule="events" />
+    <PageHeader title={labels.page.events} createLabel={labels.cta.newEvent} createModule="events" />
     {items.length === 0 ? (
-      <div class="text-string-muted text-sm">Sin eventos</div>
+      <div class="text-string-muted text-sm">{labels.empty.events}</div>
     ) : (
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {items.map(ev => {
@@ -68,6 +69,6 @@ const defaultForm = { description: "", category_id: "", location: "", start_date
       </div>
     )}
   </div>
-  <CrudModal client:load module="events" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="evento" />
-  <DeleteHandler module="events" label="evento" />
+  <CrudModal client:load module="events" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.event} />
+  <DeleteHandler module="events" label={labels.singular.event} />
 </AppLayout>

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { safeFetch } from "@/lib/safeFetch.ts";
 import { currentMonthStr } from "@/lib/date.ts";
+import { labels } from "@/lib/labels.ts";
 import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment.ts";
 
 type PaymentType = "income" | "expense";
@@ -125,7 +126,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
           <button
             onClick={() => handleRemoveFromMonth(payment.id)}
             className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center text-xs text-string-muted hover:text-danger hover:bg-danger/10 rounded transition-colors cursor-pointer"
-            title={isPaid ? "Volver a pendiente" : "Eliminar del mes"}
+            title={isPaid ? labels.cta.backToPending : labels.cta.removeFromMonth}
           >
             ✕
           </button>
@@ -145,7 +146,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
         </div>
         {isPaid ? (
           <div className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-success-bg text-success-text text-center">
-            {isIncome ? "Recibido" : "Pagado"}
+            {isIncome ? labels.badge.received : labels.badge.paid}
           </div>
         ) : isAdded ? (
           <button
@@ -153,14 +154,14 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
             disabled={togglingId === payment.id}
             className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-all disabled:opacity-50 cursor-pointer"
           >
-            {togglingId === payment.id ? "..." : isIncome ? "Marcar como recibido" : "Marcar como pagado"}
+            {togglingId === payment.id ? "..." : isIncome ? labels.cta.markReceived : labels.cta.markPaid}
           </button>
         ) : (
           <button
             onClick={() => handleAddToMonth(payment)}
             className="mt-3 w-full px-3 py-2 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-all cursor-pointer"
           >
-            Agregar al mes
+            {labels.cta.addToMonth}
           </button>
         )}
       </div>
@@ -180,17 +181,17 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
         </div>
         <div className="grid grid-cols-3 gap-2">
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">Total</div>
+            <div className="text-xs text-string-muted mb-1">{labels.stat.total}</div>
             <div className={`text-lg font-semibold ${colorClass}`}>
               ${Number(typeTotal).toLocaleString()}
             </div>
           </div>
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">{type === "income" ? "Recibidos" : "Pagados"}</div>
+            <div className="text-xs text-string-muted mb-1">{type === "income" ? labels.stat.received : labels.stat.paid}</div>
             <div className="text-lg font-semibold text-success">{typeReceived.length}/{typeMonthly.length}</div>
           </div>
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
-            <div className="text-xs text-string-muted mb-1">Pendiente</div>
+            <div className="text-xs text-string-muted mb-1">{labels.stat.pending}</div>
             <div className="text-lg font-semibold text-warning">
               ${Number(typePending.reduce((s, sm) => s + Number(sm.amount), 0)).toLocaleString()}
             </div>
@@ -202,13 +203,13 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
 
   function renderCategoryGroup(type: PaymentType) {
     const filtered = payments.filter(p => p.type === type);
-    const categories = [...new Set(filtered.map(p => p.category_name ?? "Sin categoría"))];
+    const categories = [...new Set(filtered.map(p => p.category_name ?? labels.recurring.noCategory))];
     if (categories.length === 0) return null;
 
     return (
       <div className="space-y-3">
         {categories.map(category => {
-          const catFiltered = filtered.filter(p => (p.category_name ?? "Sin categoría") === category);
+          const catFiltered = filtered.filter(p => (p.category_name ?? labels.recurring.noCategory) === category);
           return (
             <div key={category}>
               <button
@@ -247,35 +248,35 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
     <div className="space-y-6 relative">
       {loading && (
         <div className="absolute top-0 right-0">
-          <span className="text-xs text-string-muted">Cargando...</span>
+          <span className="text-xs text-string-muted">{labels.common.loading}</span>
         </div>
       )}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="p-3 rounded-lg bg-panel border border-border text-center">
-          <div className="text-xs text-string-muted mb-1">Ingresos</div>
+          <div className="text-xs text-string-muted mb-1">{labels.stat.incomes}</div>
           <div className="text-lg font-semibold text-success">${Number(incomeTotal).toLocaleString()}</div>
         </div>
         <div className="p-3 rounded-lg bg-panel border border-border text-center">
-          <div className="text-xs text-string-muted mb-1">Gastos</div>
+          <div className="text-xs text-string-muted mb-1">{labels.stat.expenses}</div>
           <div className="text-lg font-semibold text-danger">${Number(expenseTotal).toLocaleString()}</div>
         </div>
         <div className="p-3 rounded-lg bg-panel border border-border text-center">
-          <div className="text-xs text-string-muted mb-1">Balance</div>
+          <div className="text-xs text-string-muted mb-1">{labels.stat.balance}</div>
           <div className={`text-lg font-semibold ${netTotal >= 0 ? "text-success" : "text-danger"}`}>
             ${Number(netTotal).toLocaleString()}
           </div>
         </div>
         <div className="p-3 rounded-lg bg-panel border border-border text-center">
-          <div className="text-xs text-string-muted mb-1">Movimientos</div>
+          <div className="text-xs text-string-muted mb-1">{labels.stat.movements}</div>
           <div className="text-lg font-semibold text-primary">{monthly.length}</div>
         </div>
       </div>
 
-      {renderTypeStats("income", "Ingresos", "text-success", "📥")}
-      {renderTypeStats("expense", "Gastos", "text-danger", "💸")}
+      {renderTypeStats("income", labels.stat.incomes, "text-success", "📥")}
+      {renderTypeStats("expense", labels.stat.expenses, "text-danger", "💸")}
       {payments.length === 0 ? (
-        <div className="text-string-muted text-sm">No hay pagos recurrentes registrados.</div>
+        <div className="text-string-muted text-sm">{labels.empty.recurringMonthly}</div>
       ) : (
         <>
           {renderCategoryGroup("income")}

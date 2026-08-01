@@ -13,6 +13,7 @@ import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField } from "@/lib/form-fields.ts";
 import { CURRENCY_SYMBOL, BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { labels } from "@/lib/labels.ts";
 import { FILTER_ALL_MONTHS } from "@/lib/filter-fields.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
 import { currentMonthStr, lastYearWindow } from "@/lib/date.ts";
@@ -38,8 +39,8 @@ const catMap = Object.fromEntries(allRecurringCategories.map(c => [c.id, c]));
 const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
   FIELD_TYPE,
-  { name: "name", label: "Descripción", type: "text" as const, required: true },
-  { name: "default_amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
+  { name: "name", label: labels.field.description, type: "text" as const, required: true },
+  { name: "default_amount", label: labels.field.amount, type: "number" as const, required: true, step: "0.01" },
   FIELD_TYPE_CURRENCY,
   paymentMethodField(paymentMethods),
   categoryField(allRecurringCategories),
@@ -47,16 +48,16 @@ const fields = [
 const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expense", payment_method_id: paymentMethods[0]?.id ?? "", category_id: "" };
 ---
 
-<AppLayout title="Pagos Recurrentes - Open PRP">
+<AppLayout title={`${labels.page.recurringPayments} - Open PRP`}>
   <div data-module="recurring-payments" class="space-y-4">
-    <PageHeader title="Pagos Recurrentes" />
+    <PageHeader title={labels.page.recurringPayments} />
     <div class="tabs-container">
       <TabBarWithMonth
         client:load
-        tabs={[{ key: "monthly", label: "Resumen" }, { key: "list", label: "Administrar pagos recurrentes" }, { key: "history", label: "Historial" }]}
+        tabs={[{ key: "monthly", label: labels.tabs.summary }, { key: "list", label: labels.tabs.adminRecurring }, { key: "history", label: labels.tabs.history }]}
         initialTab={initialTab}
         defaultTab="monthly"
-        ariaLabel="Secciones de pagos recurrentes"
+        ariaLabel={labels.recurring.ariaTabs}
         initialMonth={urlMonth}
         createdAt={Astro.locals.createdAt}
         allLabel={FILTER_ALL_MONTHS}
@@ -71,15 +72,15 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
       </div>
       <div data-tab-content="list" role="tabpanel" id="panel-list" aria-labelledby="tab-list" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "list" }]}>
         <div class="flex items-center justify-between mb-4">
-          <p class="text-sm text-string-muted">Todos tus pagos recurrentes registrados</p>
-          <button data-create="recurring-payments" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nuevo pago recurrente</button>
+          <p class="text-sm text-string-muted">{labels.recurring.allRegistered}</p>
+          <button data-create="recurring-payments" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">{labels.cta.newRecurring}</button>
         </div>
-        <DataTable columns={["Descripción", { label: "Monto", align: "right" }, "Tipo", "Moneda", "Método", "Categoría", { label: "Acciones", align: "right" }]} emptyMessage="Sin pagos recurrentes">
+        <DataTable columns={[labels.table.description, { label: labels.table.amount, align: "right" }, labels.table.type, labels.table.currency, labels.table.method, labels.table.category, { label: labels.table.actions, align: "right" }]} emptyMessage={labels.empty.recurring}>
           {items.map(s => (
             <tr class="hover:bg-nav-hover">
               <td class="px-4 py-3 font-medium">{s.name}</td>
               <td class={`px-4 py-3 text-right font-mono ${s.type === "income" ? "text-success" : "text-danger"}`}>{s.type === "income" ? "+" : "-"}{currencySymbol[s.currency] || "$"}{Number(s.default_amount).toFixed(2)}</td>
-              <td class="px-4 py-3"><span class={`text-xs px-2 py-0.5 rounded font-medium ${s.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>{s.type === "income" ? "Ingreso" : "Gasto"}</span></td>
+              <td class="px-4 py-3"><span class={`text-xs px-2 py-0.5 rounded font-medium ${s.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>{s.type === "income" ? labels.badge.income : labels.badge.expense}</span></td>
               <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[s.currency] || "$"} {s.currency || "MXN"}</td>
               <td class="px-4 py-3"><span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[s.payment_method_id] ? `${pmMap[s.payment_method_id].icon || "💳"} ${pmMap[s.payment_method_id].name}` : "-"}</span></td>
               <td class="px-4 py-3">{s.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[s.category_id] ? `${catMap[s.category_id].icon || "📂"} ${displayCategoryName(catMap[s.category_id])}` : "-"}</span> : "-"}</td>
@@ -100,7 +101,7 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
       </div>
     </div>
   </div>
-  <CrudModal client:load module="recurring-payments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="pago recurrente" />
-  <DeleteHandler module="recurring-payments" label="pago recurrente" />
+  <CrudModal client:load module="recurring-payments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.recurringPayment} />
+  <DeleteHandler module="recurring-payments" label={labels.singular.recurringPayment} />
 </AppLayout>
 

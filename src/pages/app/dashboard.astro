@@ -1,6 +1,7 @@
 ---
 import AppLayout from "@/layouts/AppLayout.astro";
 import DashboardHeader from "@/components/app/dashboard/DashboardHeader.tsx";
+import { labels } from "@/lib/labels.ts";
 import { loadDashboardMonth } from "@/lib/dashboard/load.ts";
 import { currentMonthStr, formatDate, daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
@@ -20,6 +21,7 @@ const creditCards = cards.filter(c => c.type === "credit");
 const creditCardDebts = cardDebts.filter(d => cards.some(c => c.id === d.card_id && c.type === "credit"));
 const incomeSvcs = servicePayments.filter(sp => sp.type === "income");
 const expenseSvcs = servicePayments.filter(sp => sp.type === "expense");
+const recurringExpensesTotal = expenseSvcs.reduce((sum, sp) => sum + Number(sp.amount), 0);
 
 function dueDaysBadge(days: number): string {
   if (days <= 3) return "bg-danger-bg text-danger-text";
@@ -28,65 +30,63 @@ function dueDaysBadge(days: number): string {
 }
 ---
 
-<AppLayout title="Dashboard - Open PRP">
+<AppLayout title={`${labels.page.dashboard} - Open PRP`}>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-string">Dashboard</h1>
+      <h1 class="text-2xl font-bold text-string">{labels.page.dashboard}</h1>
       <DashboardHeader client:load initialMonth={selectedMonth} createdAt={Astro.locals.createdAt} />
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <p class="text-xs text-string-muted uppercase tracking-wider">Ingresos</p>
+        <p class="text-xs text-string-muted uppercase tracking-wider">{labels.dashboard.statIncomes}</p>
         <p class="text-xl font-bold mt-1 text-success">{formatCurrency(incomes)}</p>
       </div>
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <p class="text-xs text-string-muted uppercase tracking-wider">Gastos</p>
+        <p class="text-xs text-string-muted uppercase tracking-wider">{labels.dashboard.statExpenses}</p>
         <p class="text-xl font-bold mt-1 text-danger">{formatCurrency(expenses)}</p>
       </div>
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <p class="text-xs text-string-muted uppercase tracking-wider">Balance</p>
+        <p class="text-xs text-string-muted uppercase tracking-wider">{labels.dashboard.statBalance}</p>
         <p class={`text-xl font-bold mt-1 ${incomes - expenses >= 0 ? "text-success" : "text-danger"}`}>{formatCurrency(incomes - expenses)}</p>
       </div>
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <p class="text-xs text-string-muted uppercase tracking-wider">Tarjetas de crédito</p>
+        <p class="text-xs text-string-muted uppercase tracking-wider">{labels.dashboard.statCreditCards}</p>
         <p class="text-xl font-bold mt-1 text-primary">{creditCards.length}</p>
       </div>
-      <div class="col-span-2 md:col-span-1 bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <p class="text-xs text-string-muted uppercase tracking-wider">Plazos</p>
+      <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+        <p class="text-xs text-string-muted uppercase tracking-wider">{labels.dashboard.statInstallments}</p>
         <p class="text-xl font-bold mt-1 text-warning">{formatCurrency(installmentTotal)}</p>
       </div>
+      <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
+        <p class="text-xs text-string-muted uppercase tracking-wider">{labels.dashboard.statRecurringExpenses}</p>
+        <p class="text-xl font-bold mt-1 text-danger">{formatCurrency(recurringExpensesTotal)}</p>
+      </div>
     </div>
-    {(installmentTotal > 0 || expenseSvcs.length > 0) && (
-      <p class="text-xs text-string-muted -mt-4">* Incluye {formatCurrency(installmentTotal)} en plazos
-        {expenseSvcs.length > 0 && ` y ${formatCurrency(expenseSvcs.reduce((s, sp) => s + Number(sp.amount), 0))} en gastos recurrentes`}
-        {incomeSvcs.length > 0 && `, más ${formatCurrency(incomeSvcs.reduce((s, sp) => s + Number(sp.amount), 0))} en ingresos recurrentes`}
-      </p>
-    )}
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <p class="text-xs text-string-muted uppercase tracking-wider">Tareas pendientes</p>
+        <p class="text-xs text-string-muted uppercase tracking-wider">{labels.dashboard.statPendingTasks}</p>
         <p class="text-xl font-bold mt-1 text-sky-600">{pendingTasks.length}</p>
-        {overdueTasks.length > 0 && <p class="text-xs text-danger mt-0.5">{overdueTasks.length} vencidas</p>}
+        {overdueTasks.length > 0 && <p class="text-xs text-danger mt-0.5">{labels.dashboard.overdueCount(overdueTasks.length)}</p>}
       </div>
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <p class="text-xs text-string-muted uppercase tracking-wider">Próximos eventos</p>
+        <p class="text-xs text-string-muted uppercase tracking-wider">{labels.dashboard.statUpcomingEvents}</p>
         <p class="text-xl font-bold mt-1 text-rose-600">{upcomingEvents.length}</p>
       </div>
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <p class="text-xs text-string-muted uppercase tracking-wider">Compras activas</p>
+        <p class="text-xs text-string-muted uppercase tracking-wider">{labels.dashboard.statActiveShopping}</p>
         <p class="text-xl font-bold mt-1 text-amber-600">{activeShopping.length}</p>
       </div>
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <p class="text-xs text-string-muted uppercase tracking-wider">Pagos recurrentes</p>
+        <p class="text-xs text-string-muted uppercase tracking-wider">{labels.dashboard.statRecurring}</p>
         <p class="text-xl font-bold mt-1 text-purple-600">{services.length}</p>
       </div>
     </div>
 
     {creditCardDebts.length > 0 && (
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <h2 class="text-base font-semibold text-string mb-3">Deudas de tarjetas de crédito del mes</h2>
+        <h2 class="text-base font-semibold text-string mb-3">{labels.dashboard.cardDebtsTitle}</h2>
         <div class="space-y-2">
           {creditCardDebts.map(d => {
             const card = cards.find(c => c.id === d.card_id);
@@ -104,7 +104,7 @@ function dueDaysBadge(days: number): string {
                   </span>
                   {!d.is_paid && card && (
                     <span class={`text-xs px-2 py-0.5 rounded font-medium ${dueDaysBadge(dueIn)}`}>
-                      {dueIn <= 0 ? "Vencido" : `${dueIn} días`}
+                      {dueIn <= 0 ? labels.badge.overdue : labels.dashboard.dueInDays(dueIn)}
                     </span>
                   )}
                 </div>
@@ -117,7 +117,7 @@ function dueDaysBadge(days: number): string {
 
     {incomeSvcs.length > 0 && (
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <h2 class="text-base font-semibold text-string mb-3">💵 Ingresos recurrentes</h2>
+        <h2 class="text-base font-semibold text-string mb-3">{labels.dashboard.recurringIncomesTitle}</h2>
         <div class="space-y-2">
           {incomeSvcs.map(sp => {
             const svc = services.find(s => s.id === sp.payment_id);
@@ -137,7 +137,7 @@ function dueDaysBadge(days: number): string {
 
     {expenseSvcs.length > 0 && (
       <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-        <h2 class="text-base font-semibold text-string mb-3">💰 Gastos recurrentes</h2>
+        <h2 class="text-base font-semibold text-string mb-3">{labels.dashboard.recurringExpensesTitle}</h2>
         <div class="space-y-2">
           {expenseSvcs.map(sp => {
             const svc = services.find(s => s.id === sp.payment_id);
@@ -156,16 +156,16 @@ function dueDaysBadge(days: number): string {
     )}
 
     <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-      <h2 class="text-base font-semibold text-string mb-3">Transacciones del mes</h2>
+      <h2 class="text-base font-semibold text-string mb-3">{labels.dashboard.monthTransactionsTitle}</h2>
       {recentTx.length === 0 ? (
-        <p class="text-sm text-string-muted">Sin transacciones</p>
+        <p class="text-sm text-string-muted">{labels.empty.transactions}</p>
       ) : (
         <div class="space-y-2">
           {recentTx.map(tx => (
             <div class="flex items-center justify-between text-sm py-1">
               <div class="flex items-center gap-2">
                 <span class={`w-2 h-2 rounded-full ${tx.type === "income" ? "bg-success" : "bg-danger"}`} />
-                <span>{tx.description || "Sin descripción"}</span>
+                <span>{tx.description || labels.dashboard.noDescription}</span>
               </div>
               <span class={`font-medium ${tx.type === "income" ? "text-success" : "text-danger"}`}>
                 {tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount))}

@@ -1,4 +1,6 @@
 ---
+import { labels } from "@/lib/labels.ts";
+
 type Column = string | { label: string; align?: "left" | "right" | "center" };
 
 export interface Props {
@@ -7,7 +9,7 @@ export interface Props {
   ariaLabel?: string;
 }
 
-const { columns, emptyMessage = "Sin datos", ariaLabel } = Astro.props;
+const { columns, emptyMessage = labels.empty.data, ariaLabel } = Astro.props;
 const colCount = columns.length;
 
 const alignMap: Record<string, string> = { left: "text-left", right: "text-right", center: "text-center" };

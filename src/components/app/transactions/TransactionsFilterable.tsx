@@ -5,6 +5,7 @@ import type { Transaction } from "@/lib/types/transaction.ts";
 import { formatDate } from "@/lib/date.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL, FILTER_ALL_CATEGORIES, FILTER_ALL_PAYMENT_METHODS, FILTER_ALL_MONTHS, FILTER_SEARCH_DESC, FILTER_LABEL_TYPE, FILTER_LABEL_CATEGORY, FILTER_LABEL_PAYMENT_METHOD } from "@/lib/filter-fields.ts";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { labels } from "@/lib/labels.ts";
 
 interface Props {
   initialMonth: string;
@@ -34,8 +35,8 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
               onChange={(v) => setFilter("type", v)}
               options={[
                 { value: "", label: FILTER_ALL },
-                { value: "income", label: "Ingresos" },
-                { value: "expense", label: "Gastos" },
+                { value: "income", label: labels.filter.income },
+                { value: "expense", label: labels.filter.expense },
               ]}
               placeholder={FILTER_LABEL_TYPE}
               ariaLabel={FILTER_LABEL_TYPE}
@@ -72,26 +73,26 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
           />
           <button onClick={clearFilters} className={FILTER_LIMPIAR_CLASS}>{BTN_CLEAR}</button>
         </div>
-        <button data-create="transactions" className={FILTER_CTA_CLASS}>Nueva transacción</button>
+        <button data-create="transactions" className={FILTER_CTA_CLASS}>{labels.cta.newTransaction}</button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border">
         {loading ? (
-          <div className="p-4 text-center text-string-muted text-sm">Cargando...</div>
+          <div className="p-4 text-center text-string-muted text-sm">{labels.common.loading}</div>
         ) : items.length === 0 ? (
-          <div className="p-4 text-center text-string-muted text-sm">Sin transacciones</div>
+          <div className="p-4 text-center text-string-muted text-sm">{labels.empty.transactions}</div>
         ) : (
-          <table className="w-full text-sm" aria-label="Transacciones">
+          <table className="w-full text-sm" aria-label={labels.page.transactions}>
             <thead>
               <tr className="text-xs uppercase text-string-muted border-b border-border">
-                <th className="text-left px-4 py-3 font-medium">Fecha</th>
-                <th className="text-left px-4 py-3 font-medium">Descripción</th>
-                <th className="text-right px-4 py-3 font-medium">Monto</th>
-                <th className="text-left px-4 py-3 font-medium">Moneda</th>
-                <th className="text-left px-4 py-3 font-medium">Método</th>
-                <th className="text-left px-4 py-3 font-medium">Tipo</th>
-                <th className="text-left px-4 py-3 font-medium">Categoría</th>
-                <th className="text-right px-4 py-3 font-medium">Acciones</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.date}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.description}</th>
+                <th className="text-right px-4 py-3 font-medium">{labels.table.amount}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.currency}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.method}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.type}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.category}</th>
+                <th className="text-right px-4 py-3 font-medium">{labels.table.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -109,7 +110,7 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
                     <td className="px-4 py-3">{pm ? <span className="text-xs bg-surface-alt px-2 py-0.5 rounded">{pm.icon || "💳"} {pm.name}</span> : "-"}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded ${tx.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>
-                        {tx.type === "income" ? "Ingreso" : "Gasto"}
+                        {tx.type === "income" ? labels.badge.income : labels.badge.expense}
                       </span>
                     </td>
                     <td className="px-4 py-3">{cat ? <span className="text-xs bg-surface-alt px-2 py-0.5 rounded">{cat.icon || "📂"} {cat.name}</span> : "-"}</td>

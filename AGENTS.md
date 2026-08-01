@@ -101,6 +101,16 @@ astro dev stop | status | logs
 - **Datos ingresados por el usuario** se guardan exactamente como fueron escritos, respetando idioma, formato y estilo original. Nunca se normalizan ni traducen.
 - La aplicación separa el **valor almacenado** de su **representación visual** mediante `displayCategoryName()` en `src/lib/category-labels.ts`.
 
+## Textos UI centralizados (`src/lib/labels.ts`)
+
+- **Todos los textos UI** (títulos de página/sección, botones, placeholders, aria-labels, textos de tablas, mensajes vacíos, CTAs, badges, textos de filtros, mensajes de error/confirmación) viven en `src/lib/labels.ts`, un diccionario `labels` con `as const` organizado por dominio (`common`, `field`, `table`, `empty`, `badge`, `stat`, `tabs`, `nav`, `theme`, `page`, `cta`, `singular`, `filter`, `currency`, `shopping`, `cards`, `recurring`, `dashboard`, `sections`, `select`, `error`). Estructura label-value preparada para un futuro i18n (**no implementar i18n**).
+- **Nunca hardcodear textos UI inline** en componentes ni páginas: importar siempre `import { labels } from "@/lib/labels.ts"`. Solo texto visible/al usuario va a labels; los datos del usuario (nombres, descripciones) nunca.
+- **Strings dinámicos** se modelan como funciones dentro del diccionario (template literals): ej. `labels.common.deleteConfirm(label)`, `labels.common.deleteTitle(label)`, `labels.common.editSingular(s)`, `labels.common.newSingular(s)`, `labels.shopping.toBuy(n)`, `labels.shopping.bought(n)`, `labels.dashboard.dueInDays(n)`, `labels.dashboard.overdueCount(n)`, `labels.error.message(msg)`, `labels.select.countSections(n)`.
+- `src/lib/general-fields.ts` y `src/lib/filter-fields.ts` **re-exportan** constantes derivadas de `labels` (`BTN_*`, `FILTER_*`, `FILTER_LABEL_*`, `FILTER_SEARCH_*`, fallbacks, `BTN_CLEAR`): para esos textos importar la constante desde su archivo, no acceder a `labels` directamente.
+- `src/lib/form-fields.ts` (`CURRENCY_OPTIONS`, `TYPE_OPTIONS`, `FIELD_TYPE`, `FIELD_TYPE_CURRENCY`, `paymentMethodField()`, `categoryField()`, `cardField()`, `dateField()`) también se alimenta de `labels`; los labels de campo usan `labels.field.*` y `labels.badge.*`.
+- Clases CSS, atributos `data-*`, IDs, query params y emojis decorativos no van en labels.
+- Cualquier texto nuevo debe añadirse al diccionario (en la sección correspondiente) antes de usarse.
+
 ## Base de datos
 
 ### Schema (`db/schema/*.sql`)

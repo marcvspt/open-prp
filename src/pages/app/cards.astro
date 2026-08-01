@@ -1,5 +1,6 @@
 ---
 import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { labels } from "@/lib/labels.ts";
 import { FILTER_ALL_MONTHS } from "@/lib/filter-fields.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
@@ -63,26 +64,26 @@ function resolveCutoffDate(cutoffDay: number): string {
 }
 
 const fields = [
-  { name: "name", label: "Nombre", type: "text" as const, required: true },
-  { name: "type", label: "Tipo", type: "select" as const, required: true, options: [{ value: "credit", label: "Crédito" }, { value: "debit", label: "Débito" }, { value: "voucher", label: "Vales de despensa" }] },
-  { name: "max_limit", label: "Límite máximo", type: "number" as const, step: "0.01", showIf: { field: "type", value: "credit" } },
-  { name: "cutoff_day", label: "Día de corte", type: "number" as const, min: 1, showIf: { field: "type", value: "credit" } },
-  { name: "payment_due_day", label: "Fecha límite de pago", type: "number" as const, min: 1, showIf: { field: "type", value: "credit" } },
-  { name: "color", label: "Color", type: "color" as const },
+  { name: "name", label: labels.field.name, type: "text" as const, required: true },
+  { name: "type", label: labels.field.type, type: "select" as const, required: true, options: [{ value: "credit", label: labels.badge.credit }, { value: "debit", label: labels.badge.debit }, { value: "voucher", label: labels.badge.voucherFull }] },
+  { name: "max_limit", label: labels.field.maxLimit, type: "number" as const, step: "0.01", showIf: { field: "type", value: "credit" } },
+  { name: "cutoff_day", label: labels.field.cutoffDay, type: "number" as const, min: 1, showIf: { field: "type", value: "credit" } },
+  { name: "payment_due_day", label: labels.field.paymentDueDay, type: "number" as const, min: 1, showIf: { field: "type", value: "credit" } },
+  { name: "color", label: labels.field.color, type: "color" as const },
 ];
 const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, payment_due_day: 10, color: "#6366f1" };
 ---
 
-<AppLayout title="Tarjetas - Open PRP">
+<AppLayout title={`${labels.page.cards} - Open PRP`}>
   <div data-module="cards" class="space-y-4">
-    <PageHeader title="Tarjetas" />
+    <PageHeader title={labels.page.cards} />
     <div class="tabs-container">
       <TabBarWithMonth
         client:load
-        tabs={[{ key: "summary", label: "Resumen" }, { key: "admin", label: "Administrar tarjetas" }, { key: "history", label: "Historial" }]}
+        tabs={[{ key: "summary", label: labels.tabs.summary }, { key: "admin", label: labels.tabs.adminCards }, { key: "history", label: labels.tabs.history }]}
         initialTab={initialTab}
         defaultTab="summary"
-        ariaLabel="Secciones de tarjetas"
+        ariaLabel={labels.cards.ariaTabs}
         initialMonth={urlMonth}
         createdAt={Astro.locals.createdAt}
         allLabel={FILTER_ALL_MONTHS}
@@ -100,12 +101,12 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
       </div>
       <div data-tab-content="admin" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "admin" }]}>
         <div class="flex items-center justify-between mb-4">
-          <p class="text-sm text-string-muted">Todas tus tarjetas registradas</p>
-          <button data-create="cards" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nueva tarjeta</button>
+          <p class="text-sm text-string-muted">{labels.cards.allCardsRegistered}</p>
+          <button data-create="cards" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">{labels.cta.newCard}</button>
         </div>
-        <DataTable columns={["Nombre", "Tipo", { label: "Límite", align: "right" }, { label: "Corte", align: "center" }, { label: "Límite de pago", align: "center" }, { label: "Acciones", align: "right" }]} emptyMessage="Sin tarjetas">
+        <DataTable columns={[labels.table.name, labels.table.type, { label: labels.table.limit, align: "right" }, { label: labels.table.cutoff, align: "center" }, { label: labels.table.dueDay, align: "center" }, { label: labels.table.actions, align: "right" }]} emptyMessage={labels.empty.cards}>
           {cards.map(c => {
-            const typeLabel = c.type === "credit" ? "Crédito" : c.type === "debit" ? "Débito" : "Vales";
+            const typeLabel = c.type === "credit" ? labels.badge.credit : c.type === "debit" ? labels.badge.debit : labels.badge.voucher;
             const typeColor = c.type === "credit" ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" : c.type === "debit" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300" : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300";
             return (
             <tr class="hover:bg-nav-hover">
@@ -132,7 +133,7 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
       </div>
     </div>
   </div>
-  <CrudModal client:load module="cards" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="tarjeta" />
-  <DeleteHandler module="cards" label="tarjeta" />
+  <CrudModal client:load module="cards" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.card} />
+  <DeleteHandler module="cards" label={labels.singular.card} />
 </AppLayout>
 

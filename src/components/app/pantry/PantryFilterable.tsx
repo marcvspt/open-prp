@@ -3,6 +3,7 @@ import Select from "@/components/ui/Select.tsx";
 import type { PantryItem } from "@/lib/types/pantry.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_CATEGORIES, FILTER_SEARCH_PANTRY, FILTER_LABEL_CATEGORY } from "@/lib/filter-fields.ts";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { labels } from "@/lib/labels.ts";
 
 interface Props {
   categories: { id: string; icon: string | null; name: string }[];
@@ -38,23 +39,23 @@ export default function PantryFilterable({ categories, initialData }: Props) {
           />
           <button onClick={clearFilters} className={FILTER_LIMPIAR_CLASS}>{BTN_CLEAR}</button>
         </div>
-        <button data-create="pantry" className={FILTER_CTA_CLASS}>Nuevo producto</button>
+        <button data-create="pantry" className={FILTER_CTA_CLASS}>{labels.cta.newProduct}</button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border">
         {loading ? (
-          <div className="p-4 text-center text-string-muted text-sm">Cargando...</div>
+          <div className="p-4 text-center text-string-muted text-sm">{labels.common.loading}</div>
         ) : items.length === 0 ? (
-          <div className="p-4 text-center text-string-muted text-sm">Sin productos en la despensa</div>
+          <div className="p-4 text-center text-string-muted text-sm">{labels.empty.pantry}</div>
         ) : (
-          <table className="w-full text-sm" aria-label="Despensa">
+          <table className="w-full text-sm" aria-label={labels.page.pantry}>
             <thead>
               <tr className="text-xs uppercase text-string-muted border-b border-border">
-                <th className="text-left px-4 py-3 font-medium">Artículo</th>
-                <th className="text-left px-4 py-3 font-medium">Cant.</th>
-                <th className="text-left px-4 py-3 font-medium">Categoría</th>
-                <th className="text-left px-4 py-3 font-medium">Notas</th>
-                <th className="text-right px-4 py-3 font-medium">Acciones</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.item}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.qty}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.category}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.notes}</th>
+                <th className="text-right px-4 py-3 font-medium">{labels.table.actions}</th>
               </tr>
             </thead>
             <tbody>

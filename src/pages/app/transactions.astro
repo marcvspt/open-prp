@@ -10,6 +10,7 @@ import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
 import { lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
+import { labels } from "@/lib/labels.ts";
 const userId = Astro.locals.userId;
 const params = Astro.url.searchParams;
 const filterType = params.get("type") || "all";
@@ -37,8 +38,8 @@ const initialData = await repo.findAll(userId, txFilter);
 const fields = [
   dateField(),
   FIELD_TYPE,
-  { name: "description", label: "Descripción", type: "text" as const },
-  { name: "amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
+  { name: "description", label: labels.field.description, type: "text" as const },
+  { name: "amount", label: labels.field.amount, type: "number" as const, required: true, step: "0.01" },
   FIELD_TYPE_CURRENCY,
   paymentMethodField(paymentMethods),
   categoryField(txCategories),
@@ -46,9 +47,9 @@ const fields = [
 const defaultForm = { type: "expense", description: "", amount: 0, currency: "MXN", payment_method_id: paymentMethods[0]?.id ?? "", category_id: "", date: "" };
 ---
 
-<AppLayout title="Transacciones - Open PRP">
+<AppLayout title={`${labels.page.transactions} - Open PRP`}>
   <div data-module="transactions" class="space-y-4">
-    <PageHeader title="Transacciones" createLabel="Nueva transacción" createModule="transactions" mobileOnlyCTA={true} />
+    <PageHeader title={labels.page.transactions} createLabel={labels.cta.newTransaction} createModule="transactions" mobileOnlyCTA={true} />
     <TransactionsFilterable
       client:load
       initialMonth={filterMonth}
@@ -59,6 +60,6 @@ const defaultForm = { type: "expense", description: "", amount: 0, currency: "MX
       initialData={JSON.stringify(initialData)}
     />
   </div>
-  <CrudModal client:load module="transactions" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="transacción" />
-  <DeleteHandler module="transactions" label="transacción" />
+  <CrudModal client:load module="transactions" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.transaction} />
+  <DeleteHandler module="transactions" label={labels.singular.transaction} />
 </AppLayout>

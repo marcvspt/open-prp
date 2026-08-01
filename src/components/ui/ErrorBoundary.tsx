@@ -1,5 +1,6 @@
 import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
+import { labels } from "@/lib/labels.ts";
 
 interface Props {
   children: ReactNode;
@@ -24,7 +25,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <div className="p-4 text-sm text-danger">
-          Error: {this.state.error.message}
+          {labels.error.message(this.state.error.message)}
         </div>
       );
     }

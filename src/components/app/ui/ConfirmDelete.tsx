@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
 import { BTN_CANCEL, BTN_DELETE, BTN_DELETING } from "@/lib/general-fields.ts";
+import { labels } from "@/lib/labels.ts";
 
 interface Props {
   module: string;
@@ -8,7 +9,7 @@ interface Props {
 }
 
 /** Styled confirmation dialog for `[data-delete-{module}]` triggers (replaces native confirm()). */
-export default function ConfirmDelete({ module, label = "elemento" }: Props) {
+export default function ConfirmDelete({ module, label = labels.common.element }: Props) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -35,15 +36,15 @@ export default function ConfirmDelete({ module, label = "elemento" }: Props) {
       if (!res.ok) throw new Error();
       window.location.reload();
     } catch {
-      setError(`No se pudo eliminar. Inténtalo de nuevo.`);
+      setError(labels.common.errorDelete);
       setDeleting(false);
     }
   }
 
   return (
-    <FormModal open={deleteId !== null} onClose={() => setDeleteId(null)} title={`Eliminar ${label}`}>
+    <FormModal open={deleteId !== null} onClose={() => setDeleteId(null)} title={labels.common.deleteTitle(label)}>
       <p className="text-sm text-string-muted">
-        ¿Eliminar {label}? Esta acción no se puede deshacer.
+        {labels.common.deleteConfirm(label)}
       </p>
       {error && (
         <p role="alert" className="mt-3 rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-sm text-danger-text">

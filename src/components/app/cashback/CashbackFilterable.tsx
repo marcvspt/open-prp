@@ -5,6 +5,7 @@ import type { Cashback } from "@/lib/types/cashback.ts";
 import { formatDate } from "@/lib/date.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_CARDS, FILTER_SEARCH_DESC, FILTER_LABEL_CARD } from "@/lib/filter-fields.ts";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { labels } from "@/lib/labels.ts";
 
 interface Props {
   initialMonth: string;
@@ -49,24 +50,24 @@ export default function CashbackFilterable({ initialMonth, cards, initialData, c
           />
           <button onClick={clearFilters} className={FILTER_LIMPIAR_CLASS}>{BTN_CLEAR}</button>
         </div>
-        <button data-create="cashback" className={FILTER_CTA_CLASS}>Nuevo cashback</button>
+        <button data-create="cashback" className={FILTER_CTA_CLASS}>{labels.cta.newCashback}</button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border">
         {loading ? (
-          <div className="p-4 text-center text-string-muted text-sm">Cargando...</div>
+          <div className="p-4 text-center text-string-muted text-sm">{labels.common.loading}</div>
         ) : items.length === 0 ? (
-          <div className="p-4 text-center text-string-muted text-sm">Sin cashback</div>
+          <div className="p-4 text-center text-string-muted text-sm">{labels.empty.cashback}</div>
         ) : (
-          <table className="w-full text-sm" aria-label="Cashback">
+          <table className="w-full text-sm" aria-label={labels.page.cashback}>
             <thead>
               <tr className="text-xs uppercase text-string-muted border-b border-border">
-                <th className="text-left px-4 py-3 font-medium">Fecha</th>
-                <th className="text-left px-4 py-3 font-medium">Descripción</th>
-                <th className="text-right px-4 py-3 font-medium">Monto</th>
-                <th className="text-left px-4 py-3 font-medium">Moneda</th>
-                <th className="text-left px-4 py-3 font-medium">Tarjeta</th>
-                <th className="text-right px-4 py-3 font-medium">Acciones</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.date}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.description}</th>
+                <th className="text-right px-4 py-3 font-medium">{labels.table.amount}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.currency}</th>
+                <th className="text-left px-4 py-3 font-medium">{labels.table.card}</th>
+                <th className="text-right px-4 py-3 font-medium">{labels.table.actions}</th>
               </tr>
             </thead>
             <tbody>

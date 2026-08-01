@@ -1,5 +1,6 @@
 ---
 import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { labels } from "@/lib/labels.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
@@ -10,12 +11,12 @@ import { displayCategoryName } from "@/lib/category-labels.ts";
 const userId = Astro.locals.userId;
 const items = await new CategoryRepository().findAll(userId);
 const SECTION_LABELS: Record<string, string> = {
-  pantry: "Despensa",
-  tasks: "Tareas",
-  transactions: "Transacciones",
-  installments: "Plazos",
-  events: "Eventos",
-  "recurring-payments": "Pagos recurrentes",
+  pantry: labels.sections.pantry,
+  tasks: labels.sections.tasks,
+  transactions: labels.sections.transactions,
+  installments: labels.sections.installments,
+  events: labels.sections.events,
+  "recurring-payments": labels.sections.recurringPayments,
 };
 const SECTION_COLORS: Record<string, string> = {
   pantry: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300",
@@ -26,8 +27,8 @@ const SECTION_COLORS: Record<string, string> = {
   "recurring-payments": "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300",
 };
 const TYPE_LABELS: Record<string, string> = {
-  global: "Global",
-  personal: "Personal",
+  global: labels.badge.global,
+  personal: labels.badge.personal,
 };
 const TYPE_COLORS: Record<string, string> = {
   global: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
@@ -35,18 +36,18 @@ const TYPE_COLORS: Record<string, string> = {
 };
 const sectionOptions = Object.entries(SECTION_LABELS).map(([value, label]) => ({ value, label }));
 const fields = [
-  { name: "name", label: "Nombre", type: "text" as const, required: true },
-  { name: "sections", label: "Secciones", type: "multiselect" as const, options: sectionOptions, placeholder: "Seleccionar secciones..." },
-  { name: "icon", label: "Ícono (emoji)", type: "text" as const, placeholder: "🛒" },
-  { name: "color", label: "Color", type: "color" as const },
+  { name: "name", label: labels.field.name, type: "text" as const, required: true },
+  { name: "sections", label: labels.field.sections, type: "multiselect" as const, options: sectionOptions, placeholder: labels.filter.multiSelectFallback },
+  { name: "icon", label: labels.field.iconEmoji, type: "text" as const, placeholder: labels.field.iconPlaceholder },
+  { name: "color", label: labels.field.color, type: "color" as const },
 ];
 const defaultForm = { name: "", type: "personal", sections: JSON.stringify(["transactions"]), icon: "📁", color: "#6366f1" };
 ---
 
-<AppLayout title="Categorías - Open PRP">
+<AppLayout title={`${labels.page.categories} - Open PRP`}>
   <div data-module="categories" class="space-y-4">
-    <PageHeader title="Categorías" createLabel="Nueva categoría" createModule="categories" />
-    <DataTable columns={["Nombre", "Tipo", "Secciones", { label: "Icono", align: "center" }, "Color", { label: "Acciones", align: "right" }]} emptyMessage="Sin categorías">
+    <PageHeader title={labels.page.categories} createLabel={labels.cta.newCategory} createModule="categories" />
+    <DataTable columns={[labels.table.name, labels.table.type, labels.table.sections, { label: labels.table.icon, align: "center" }, labels.table.color, { label: labels.table.actions, align: "right" }]} emptyMessage={labels.empty.categories}>
       {items.map(c => {
         let sections: string[] = [];
         try { sections = JSON.parse(c.sections); } catch {}
@@ -69,6 +70,6 @@ const defaultForm = { name: "", type: "personal", sections: JSON.stringify(["tra
       );})}
     </DataTable>
   </div>
-  <CrudModal client:load module="categories" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="categoría" />
-  <DeleteHandler module="categories" label="categoría" />
+  <CrudModal client:load module="categories" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.category} />
+  <DeleteHandler module="categories" label={labels.singular.category} />
 </AppLayout>

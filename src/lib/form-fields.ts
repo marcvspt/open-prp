@@ -2,28 +2,25 @@ import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import type { Category } from "@/lib/types/category.ts";
 import type { Card } from "@/lib/types/card.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
+import { labels } from "@/lib/labels.ts";
 
-export const CURRENCY_OPTIONS = [
-  { value: "EUR", label: "€ EUR" },
-  { value: "MXN", label: "$ MXN" },
-  { value: "USD", label: "$ USD" },
-];
+export const CURRENCY_OPTIONS = labels.currency.options;
 
 export const TYPE_OPTIONS = [
-  { value: "expense", label: "💸 Gasto" },
-  { value: "income", label: "📥 Ingreso" },
+  { value: "expense", label: labels.badge.expenseOption },
+  { value: "income", label: labels.badge.incomeOption },
 ];
 
 export const FIELD_TYPE_CURRENCY = {
   name: "currency",
-  label: "Moneda",
+  label: labels.field.currency,
   type: "select" as const,
   options: CURRENCY_OPTIONS,
 };
 
 export const FIELD_TYPE = {
   name: "type",
-  label: "Tipo",
+  label: labels.field.type,
   type: "select" as const,
   required: true,
   options: TYPE_OPTIONS,
@@ -32,7 +29,7 @@ export const FIELD_TYPE = {
 export function paymentMethodField(paymentMethods: PaymentMethod[]) {
   return {
     name: "payment_method_id",
-    label: "Método de pago",
+    label: labels.field.method,
     type: "select" as const,
     required: true,
     options: paymentMethods.map(pm => ({
@@ -45,10 +42,10 @@ export function paymentMethodField(paymentMethods: PaymentMethod[]) {
 export function categoryField(categories: Category[]) {
   return {
     name: "category_id",
-    label: "Categoría",
+    label: labels.field.category,
     type: "select" as const,
     options: [
-      { value: "", label: "Sin categoría" },
+      { value: "", label: labels.field.noCategory },
       ...categories.map(c => ({
         value: c.id,
         label: `${c.icon || "📂"} ${displayCategoryName(c)}`,
@@ -60,7 +57,7 @@ export function categoryField(categories: Category[]) {
 export function dateField(name: string = "date") {
   return {
     name,
-    label: "Fecha",
+    label: labels.field.date,
     type: "date" as const,
     required: true,
   };
@@ -71,7 +68,7 @@ export function cardField(cards: Card[]) {
     type === "credit" ? "💳" : type === "debit" ? "🏦" : "🎫";
   return {
     name: "card_id",
-    label: "Tarjeta",
+    label: labels.field.card,
     type: "select" as const,
     required: true,
     options: cards.map(c => ({
