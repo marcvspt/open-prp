@@ -141,6 +141,7 @@ astro dev stop | status | logs
 ## Formularios
 
 - Usar siempre helpers de campo (`src/lib/form-fields.ts`: `CURRENCY_OPTIONS`, `TYPE_OPTIONS`, `paymentMethodField()`, `categoryField()`, `cardField()`, `dateField()`), nunca fields inline.
+- **Textos de filtros centralizados**: todas las etiquetas/placeholders reutilizables de filtros viven en `src/lib/filter-fields.ts` (`FILTER_ALL`, `FILTER_ALL_*` para opciones "todos", `FILTER_SEARCH_*` para placeholders de búsqueda, `FILTER_LABEL_*` para placeholders/ariaLabels de selects, `FILTER_SELECT_FALLBACK`, `FILTER_MULTI_SELECT_FALLBACK`, `BTN_CLEAR`). Nunca hardcodear estos textos inline en componentes: importar siempre la constante (ej. `FILTER_ALL_CATEGORIES` = "Todas las categorías", `FILTER_ALL_MONTHS` = "Último año", `FILTER_ALL` = "Todas", `FILTER_SEARCH_DESC` = "Buscar por descripción...", `FILTER_LABEL_PAYMENT_METHOD` = "Método de pago").
 - Orden estándar de campos: **Fecha → Tipo → Descripción → Montos → Moneda → Método pago/Tarjeta → Categoría → Específicos**.
 - `required: true` en el campo → `NOT NULL` en el schema SQL (mantener auditado y sincronizado).
 - Campos `required: true` muestran asterisco rojo `*`.
@@ -170,6 +171,7 @@ astro dev stop | status | logs
 - **Valor por defecto según tipo de vista**:
   - **Vistas de resumen general**: por defecto el **mes actual**.
   - **Vistas de historial/registros** (con creación, edición o eliminación): por defecto **"Últimos 12 meses"**.
+- **Ventana "Último año" en APIs y SSR**: sin param `month`, los endpoints (`/api/transactions`, `/api/installments`, `/api/cashback`, `/api/card-monthly/history`, `/api/recurring-payment-monthly/history`) y las páginas SSR aplican la ventana `lastYearWindow(createdAt)` de `src/lib/date.ts` (12 meses atrás o mes de registro, hasta el mes siguiente) en vez de devolver todo el histórico. Con `month` presente, filtran solo ese mes.
 
 ### Evento `monthchange`
 

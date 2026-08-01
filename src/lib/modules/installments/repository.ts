@@ -61,6 +61,9 @@ export class InstallmentRepository {
         return i.start_date <= monthEnd && lastPaymentDate >= targetMonthStart;
       }
       if (filter?.active_only) return lastPaymentDate >= targetMonthStart;
+      if (filter?.date_from || filter?.date_to) {
+        return (!filter.date_from || lastPaymentDate >= filter.date_from) && (!filter.date_to || i.start_date <= filter.date_to);
+      }
       return true;
     });
   }

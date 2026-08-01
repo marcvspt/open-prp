@@ -1,7 +1,7 @@
 import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
 import Select from "@/components/ui/Select.tsx";
 import type { PantryItem } from "@/lib/types/pantry.ts";
-import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR } from "@/lib/filter-fields.ts";
+import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_CATEGORIES, FILTER_SEARCH_PANTRY, FILTER_LABEL_CATEGORY } from "@/lib/filter-fields.ts";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
 
 interface Props {
@@ -23,9 +23,9 @@ export default function PantryFilterable({ categories, initialData }: Props) {
             <Select
               value={filters.category_id || ""}
               onChange={(v) => setFilter("category_id", v)}
-              options={[{ value: "", label: "Todas las categorías" }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📦"} ${c.name}` }))]}
-              placeholder="Categoría"
-              ariaLabel="Categoría"
+              options={[{ value: "", label: FILTER_ALL_CATEGORIES }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📦"} ${c.name}` }))]}
+              placeholder={FILTER_LABEL_CATEGORY}
+              ariaLabel={FILTER_LABEL_CATEGORY}
             />
           </div>
           <input
@@ -33,7 +33,7 @@ export default function PantryFilterable({ categories, initialData }: Props) {
             data-search-input
             defaultValue={filters.q || ""}
             onChange={(e) => setFilter("q", e.target.value)}
-            placeholder="Buscar por artículo o nota..."
+            placeholder={FILTER_SEARCH_PANTRY}
             className={FILTER_INPUT_CLASS}
           />
           <button onClick={clearFilters} className={FILTER_LIMPIAR_CLASS}>{BTN_CLEAR}</button>

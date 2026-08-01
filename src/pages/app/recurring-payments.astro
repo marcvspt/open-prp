@@ -13,8 +13,9 @@ import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField } from "@/lib/form-fields.ts";
 import { CURRENCY_SYMBOL, BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { FILTER_ALL_MONTHS } from "@/lib/filter-fields.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
-import { currentMonthStr } from "@/lib/date.ts";
+import { currentMonthStr, lastYearWindow } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
 const rpRepo = new RecurringPaymentRepository();
 const items = await rpRepo.findAll(userId);
@@ -22,21 +23,7 @@ const paramMonth = Astro.url.searchParams.get("month");
 const urlMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : "";
 const selectedMonth = urlMonth || currentMonthStr();
 const monthlyItems = await new RecurringPaymentMonthlyRepository().findByMonth(selectedMonth, userId);
-const today = currentMonthStr();
-const [curY, curM] = today.split("-").map(Number);
-const nextMY = curM === 12 ? curY + 1 : curY;
-const nextMM = curM === 12 ? 1 : curM + 1;
-const nextMonth = `${nextMY}-${String(nextMM).padStart(2, "0")}`;
-const startMonth = Astro.locals.createdAt
-  ? (() => { const d = new Date(Astro.locals.createdAt!); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; })()
-  : today;
-const twelveMonthsAgo = (() => {
-  const total = curY * 12 + curM - 13;
-  const y = Math.floor(total / 12);
-  const m = total % 12 + 1;
-  return `${y}-${String(m).padStart(2, "0")}`;
-})();
-const fromMonth = startMonth > twelveMonthsAgo ? startMonth : twelveMonthsAgo;
+const { from: fromMonth, to: nextMonth } = lastYearWindow(Astro.locals.createdAt);
 const fullHistory = await rpRepo.getHistory(userId, fromMonth, nextMonth);
 const recurringHistory = urlMonth ? fullHistory.filter(h => h.month === selectedMonth) : fullHistory;
 const paramTab = Astro.url.searchParams.get("tab");
@@ -72,7 +59,7 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
         ariaLabel="Secciones de pagos recurrentes"
         initialMonth={urlMonth}
         createdAt={Astro.locals.createdAt}
-        allLabel="Último año"
+        allLabel={FILTER_ALL_MONTHS}
       />
       <div data-tab-content="monthly" role="tabpanel" id="panel-monthly" aria-labelledby="tab-monthly" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "monthly" }]}>
         <RecurringPaymentsMonthly

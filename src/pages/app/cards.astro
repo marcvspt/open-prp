@@ -1,5 +1,6 @@
 ---
 import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { FILTER_ALL_MONTHS } from "@/lib/filter-fields.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
@@ -13,7 +14,7 @@ import { CardMonthlyRepository } from "@/lib/modules/card-monthly/repository.ts"
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { calculateCardDebt } from "@/lib/modules/card-monthly/calculator.ts";
-import { currentMonthStr, resolvePaymentDueDate as resolvePaymentDueDateISO } from "@/lib/date.ts";
+import { currentMonthStr, resolvePaymentDueDate as resolvePaymentDueDateISO, lastYearWindow } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
 const cards = await new CardRepository().findAll(userId);
 const paramMonth = Astro.url.searchParams.get("month");
@@ -25,20 +26,7 @@ const initialTab = paramTab === "admin" ? "admin" : paramTab === "history" ? "hi
 
 const cardMonthlyRepo = new CardMonthlyRepository();
 const cardDebts = await cardMonthlyRepo.findByMonth(currentMonth, userId);
-const [curY, curM] = currentMonthStr().split("-").map(Number);
-const nextMY = curM === 12 ? curY + 1 : curY;
-const nextMM = curM === 12 ? 1 : curM + 1;
-const nextMonth = `${nextMY}-${String(nextMM).padStart(2, "0")}`;
-const startMonth = Astro.locals.createdAt
-  ? (() => { const d = new Date(Astro.locals.createdAt!); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; })()
-  : currentMonthStr();
-const twelveMonthsAgo = (() => {
-  const total = curY * 12 + curM - 13;
-  const y = Math.floor(total / 12);
-  const m = total % 12 + 1;
-  return `${y}-${String(m).padStart(2, "0")}`;
-})();
-const fromMonth = startMonth > twelveMonthsAgo ? startMonth : twelveMonthsAgo;
+const { from: fromMonth, to: nextMonth } = lastYearWindow(Astro.locals.createdAt);
 const fullHistory = await cardMonthlyRepo.getHistory(userId);
 const cardHistory = urlMonth ? fullHistory.filter(d => d.month === currentMonth) : fullHistory.filter(d => d.month >= fromMonth && d.month <= nextMonth);
 
@@ -97,7 +85,7 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
         ariaLabel="Secciones de tarjetas"
         initialMonth={urlMonth}
         createdAt={Astro.locals.createdAt}
-        allLabel="Último año"
+        allLabel={FILTER_ALL_MONTHS}
       />
       <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "summary" }]}>
         <CreditCardSummary

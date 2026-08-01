@@ -3,7 +3,7 @@ import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Cashback } from "@/lib/types/cashback.ts";
 import { formatDate } from "@/lib/date.ts";
-import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR } from "@/lib/filter-fields.ts";
+import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_CARDS, FILTER_SEARCH_DESC, FILTER_LABEL_CARD } from "@/lib/filter-fields.ts";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
 
 interface Props {
@@ -34,9 +34,9 @@ export default function CashbackFilterable({ initialMonth, cards, initialData, c
             <Select
               value={filters.card_id || ""}
               onChange={(v) => setFilter("card_id", v)}
-              options={[{ value: "", label: "Todas las tarjetas" }, ...cards.map(c => ({ value: c.id, label: `${cardEmoji(c.type)} ${c.name}` }))]}
-              placeholder="Tarjeta"
-              ariaLabel="Tarjeta"
+              options={[{ value: "", label: FILTER_ALL_CARDS }, ...cards.map(c => ({ value: c.id, label: `${cardEmoji(c.type)} ${c.name}` }))]}
+              placeholder={FILTER_LABEL_CARD}
+              ariaLabel={FILTER_LABEL_CARD}
             />
           </div>
           <input
@@ -44,7 +44,7 @@ export default function CashbackFilterable({ initialMonth, cards, initialData, c
             data-search-input
             defaultValue={filters.q || ""}
             onChange={(e) => setFilter("q", e.target.value)}
-            placeholder="Buscar por descripción..."
+            placeholder={FILTER_SEARCH_DESC}
             className={FILTER_INPUT_CLASS}
           />
           <button onClick={clearFilters} className={FILTER_LIMPIAR_CLASS}>{BTN_CLEAR}</button>

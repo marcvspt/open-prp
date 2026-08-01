@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import ChevronIcon from "@/assets/chevron.svg?react";
+import { FILTER_ALL_SECTIONS, FILTER_MULTI_SELECT_FALLBACK } from "@/lib/filter-fields.ts";
 
 export interface MultiSelectOption {
   value: string;
@@ -33,9 +34,9 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
 
   const allSelected = selectedValues.length === options.length && options.length > 0;
   const display = allSelected
-    ? "Todas las secciones"
+    ? FILTER_ALL_SECTIONS
     : selectedValues.length === 0
-      ? placeholder ?? "Seleccionar secciones..."
+      ? placeholder ?? FILTER_MULTI_SELECT_FALLBACK
       : selectedValues.length === 1
         ? options.find(o => o.value === selectedValues[0])?.label ?? selectedValues[0]
         : `${selectedValues.length} secciones`;
@@ -166,7 +167,7 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
             onMouseEnter={() => setHighlighted(0)}
           >
             <input type="checkbox" checked={allSelected} aria-hidden="true" className="w-4 h-4 accent-primary pointer-events-none" />
-            <span className={allSelected ? "font-medium text-primary" : ""}>Todas las secciones</span>
+            <span className={allSelected ? "font-medium text-primary" : ""}>{FILTER_ALL_SECTIONS}</span>
           </li>
           {options.map((o, i) => {
             const idx = i + 1;

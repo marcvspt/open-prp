@@ -9,6 +9,7 @@ import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repositor
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
+import { lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
 const params = Astro.url.searchParams;
 const filterType = params.get("type") || "all";
@@ -27,6 +28,11 @@ if (filterMonth) txFilter.month = filterMonth;
 if (filterQ) txFilter.q = filterQ;
 if (filterPm) txFilter.payment_method_id = filterPm;
 if (filterCat) txFilter.category_id = filterCat;
+if (!filterMonth) {
+  const { from, to } = lastYearWindow(Astro.locals.createdAt);
+  txFilter.date_from = `${from}-01`;
+  txFilter.date_to = lastDayOfMonth(to);
+}
 const initialData = await repo.findAll(userId, txFilter);
 const fields = [
   dateField(),
