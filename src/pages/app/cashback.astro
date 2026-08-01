@@ -8,6 +8,7 @@ import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { FIELD_TYPE_CURRENCY, cardField, dateField } from "@/lib/form-fields.ts";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
 import { currentMonthStr } from "@/lib/date.ts";
+import { labels } from "@/lib/labels.ts";
 const userId = Astro.locals.userId;
 const currentMonth = currentMonthStr();
 const params = Astro.url.searchParams;
@@ -23,17 +24,17 @@ if (filterCard) cbFilter.card_id = filterCard;
 const initialData = await new CashbackRepository().findAll(userId, cbFilter);
 const fields = [
   dateField(),
-  { name: "description", label: "Descripción", type: "text" as const },
-  { name: "amount", label: "Monto", type: "number" as const, required: true, step: "0.01" },
+  { name: "description", label: labels.field.description, type: "text" as const },
+  { name: "amount", label: labels.field.amount, type: "number" as const, required: true, step: "0.01" },
   FIELD_TYPE_CURRENCY,
   cardField(creditCards),
 ];
 const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", card_id: creditCards[0]?.id ?? "" };
 ---
 
-<AppLayout title="Cashback - Open PRP">
+<AppLayout title={`${labels.page.cashback} - Open PRP`}>
   <div data-module="cashback" class="space-y-4">
-    <PageHeader title="Cashback" createLabel="Nuevo cashback" createModule="cashback" mobileOnlyCTA={true} />
+    <PageHeader title={labels.page.cashback} createLabel={labels.cta.newCashback} createModule="cashback" mobileOnlyCTA={true} />
     <CashbackFilterable
       client:load
       initialMonth={filterMonth || currentMonth}
@@ -42,6 +43,6 @@ const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", car
       initialData={JSON.stringify(initialData)}
     />
   </div>
-  <CrudModal client:load module="cashback" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="cashback" />
-  <DeleteHandler module="cashback" label="cashback" />
+  <CrudModal client:load module="cashback" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.cashback} />
+  <DeleteHandler module="cashback" label={labels.singular.cashback} />
 </AppLayout>

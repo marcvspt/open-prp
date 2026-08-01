@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import ChevronIcon from "@/assets/chevron.svg?react";
+import { FILTER_SELECT_FALLBACK } from "@/lib/filter-fields.ts";
+import { labels } from "@/lib/labels.ts";
 
 export interface SelectOption {
   value: string;
@@ -29,7 +31,7 @@ export default function Select({ value, onChange, options, placeholder, required
   const id = useId();
 
   const selected = options.find(o => o.value === value);
-  const display = selected?.label ?? placeholder ?? "Seleccionar...";
+  const display = selected?.label ?? placeholder ?? FILTER_SELECT_FALLBACK;
 
   useEffect(() => {
     if (!open) { setHighlighted(-1); setPos(null); return; }
@@ -130,7 +132,7 @@ export default function Select({ value, onChange, options, placeholder, required
           ref={listRef}
           id={`${id}-listbox`}
           role="listbox"
-          aria-label="Opciones"
+          aria-label={labels.select.ariaOptions}
           style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight, zIndex: 9999 }}
           className="rounded-lg border border-border bg-panel shadow-lg overflow-y-auto"
         >

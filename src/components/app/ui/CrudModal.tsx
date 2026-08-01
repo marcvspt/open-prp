@@ -4,6 +4,7 @@ import { FormModal } from "@/components/app/ui/FormModal.tsx";
 import Select from "@/components/ui/Select.tsx";
 import MultiSelect from "@/components/ui/MultiSelect.tsx";
 import { INPUT_CLASS, COLOR_CLASS, BTN_CANCEL, BTN_SAVE, BTN_CREATE, BTN_SAVING } from "@/lib/general-fields.ts";
+import { labels } from "@/lib/labels.ts";
 
 export interface Field {
   name: string;
@@ -112,7 +113,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
       setOpen(false);
       window.location.href = window.location.href;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(err instanceof Error ? err.message : labels.common.errorUnknown);
     } finally {
       setSaving(false);
     }
@@ -124,8 +125,8 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
 
   return (
     <>
-      {saving && editingId && <div className="fixed inset-0 z-40 flex items-center justify-center bg-overlay"><div className="bg-panel p-4 rounded-lg text-sm">Cargando...</div></div>}
-      <FormModal open={open} onClose={() => setOpen(false)} title={editingId ? `Editar ${titleSingular}` : `Nuevo ${titleSingular}`}>
+      {saving && editingId && <div className="fixed inset-0 z-40 flex items-center justify-center bg-overlay"><div className="bg-panel p-4 rounded-lg text-sm">{labels.common.loading}</div></div>}
+      <FormModal open={open} onClose={() => setOpen(false)} title={editingId ? labels.common.editSingular(titleSingular) : labels.common.newSingular(titleSingular)}>
         <form onSubmit={handleSubmit} className="space-y-4">
           {fields.filter(f => !f.showIf || String(form[f.showIf.field]) === f.showIf.value).map(f => (
             <div key={f.name}>

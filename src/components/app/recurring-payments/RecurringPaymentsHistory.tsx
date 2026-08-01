@@ -3,6 +3,7 @@ import { fetchList } from "@/lib/safeFetch.ts";
 import { monthLabel } from "@/lib/date.ts";
 import { CURRENCY_SYMBOL } from "@/lib/general-fields.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
+import { labels } from "@/lib/labels.ts";
 import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
 
 interface Props {
@@ -43,22 +44,22 @@ export default function RecurringPaymentsHistory({ initialData, categories }: Pr
 
   return (
     <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-      <h2 className="text-base font-semibold text-string mb-3">Historial de pagos recurrentes</h2>
+      <h2 className="text-base font-semibold text-string mb-3">{labels.recurring.historyTitle}</h2>
       {loading ? (
-        <p className="text-sm text-string-muted">Cargando...</p>
+        <p className="text-sm text-string-muted">{labels.common.loading}</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-string-muted">Sin datos históricos</p>
+        <p className="text-sm text-string-muted">{labels.empty.history}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-string-muted text-xs uppercase border-b border-border">
-                <th className="text-left px-3 py-2">Mes</th>
-                <th className="text-left px-3 py-2">Descripción</th>
-                <th className="text-right px-3 py-2">Monto</th>
-                <th className="text-center px-3 py-2">Tipo</th>
-                <th className="text-center px-3 py-2">Moneda</th>
-                <th className="text-center px-3 py-2">Categoría</th>
+                <th className="text-left px-3 py-2">{labels.table.month}</th>
+                <th className="text-left px-3 py-2">{labels.table.description}</th>
+                <th className="text-right px-3 py-2">{labels.table.amount}</th>
+                <th className="text-center px-3 py-2">{labels.table.type}</th>
+                <th className="text-center px-3 py-2">{labels.table.currency}</th>
+                <th className="text-center px-3 py-2">{labels.table.category}</th>
               </tr>
             </thead>
             <tbody>
@@ -73,7 +74,7 @@ export default function RecurringPaymentsHistory({ initialData, categories }: Pr
                     </td>
                     <td className="px-3 py-2 text-center">
                       <span className={`text-xs px-2 py-0.5 rounded font-medium ${sp.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>
-                        {sp.type === "income" ? "Ingreso" : "Gasto"}
+                        {sp.type === "income" ? labels.badge.income : labels.badge.expense}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-center text-xs text-string-muted">{CURRENCY_SYMBOL[sp.currency || "MXN"] || "$"} {sp.currency || "MXN"}</td>

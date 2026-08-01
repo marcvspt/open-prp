@@ -12,7 +12,8 @@ import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { FIELD_TYPE_CURRENCY, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
-import { currentMonthStr } from "@/lib/date.ts";
+import { currentMonthStr, lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
+import { labels } from "@/lib/labels.ts";
 const userId = Astro.locals.userId;
 const currentMonth = currentMonthStr();
 const params = Astro.url.searchParams;
@@ -31,14 +32,19 @@ if (filterMonth) instFilter.month = filterMonth;
 if (filterQ) instFilter.q = filterQ;
 if (filterPm) instFilter.payment_method_id = filterPm;
 if (filterCat) instFilter.category_id = filterCat;
+if (!filterMonth) {
+  const { from, to } = lastYearWindow(Astro.locals.createdAt);
+  instFilter.date_from = `${from}-01`;
+  instFilter.date_to = lastDayOfMonth(to);
+}
 const initialData = await new InstallmentRepository().findAll(userId, instFilter);
 const allCards = await new CardRepository().findAll(userId);
 const fields = [
   dateField("start_date"),
-  { name: "description", label: "Descripción", type: "text" as const, required: true },
-  { name: "total_amount", label: "Monto total", type: "number" as const, required: true, step: "0.01" },
-  { name: "monthly_amount", label: "Cuota mensual", type: "number" as const, required: true, step: "0.01" },
-  { name: "total_months", label: "Total de meses", type: "number" as const, required: true, min: 1 },
+  { name: "description", label: labels.field.description, type: "text" as const, required: true },
+  { name: "total_amount", label: labels.field.totalAmount, type: "number" as const, required: true, step: "0.01" },
+  { name: "monthly_amount", label: labels.field.monthlyFee, type: "number" as const, required: true, step: "0.01" },
+  { name: "total_months", label: labels.field.totalMonths, type: "number" as const, required: true, min: 1 },
   FIELD_TYPE_CURRENCY,
   paymentMethodField(paymentMethods),
   categoryField(instCategories),
@@ -46,16 +52,16 @@ const fields = [
 const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_amount: 0, currency: "MXN", total_months: 1, payment_method_id: paymentMethods[0]?.id ?? "", category_id: "" };
 ---
 
-<AppLayout title="Plazos - Open PRP">
+<AppLayout title={`${labels.page.installments} - Open PRP`}>
   <div data-module="installments" class="space-y-4">
-    <PageHeader title="Plazos / Cuotas" createLabel="Nuevo plazo" createModule="installments" mobileOnlyCTA={true} />
+    <PageHeader title={labels.page.installments} createLabel={labels.cta.newInstallment} createModule="installments" mobileOnlyCTA={true} />
     <div class="tabs-container">
       <TabBar
         client:load
-        tabs={[{ key: "summary", label: "Resumen" }, { key: "admin", label: "Administrar plazos" }]}
+        tabs={[{ key: "summary", label: labels.tabs.summary }, { key: "admin", label: labels.tabs.adminInstallments }]}
         initialTab={initialTab}
         defaultTab="summary"
-        ariaLabel="Secciones de plazos"
+        ariaLabel={labels.tabs.ariaInstallments}
       />
       <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "summary" }]}>
         <InstallmentsSummary
@@ -78,7 +84,7 @@ const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_
       </div>
     </div>
   </div>
-  <CrudModal client:load module="installments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="plazo" />
-  <DeleteHandler module="installments" label="plazo" />
+  <CrudModal client:load module="installments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.installment} />
+  <DeleteHandler module="installments" label={labels.singular.installment} />
 </AppLayout>
 

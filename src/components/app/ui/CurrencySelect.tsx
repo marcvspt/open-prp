@@ -1,12 +1,9 @@
 import { useState } from "react";
 import Select from "@/components/ui/Select.tsx";
 import { saveCurrency, type Currency } from "@/lib/ui/currency.ts";
+import { labels } from "@/lib/labels.ts";
 
-const options = [
-  { value: "EUR", label: "EUR €" },
-  { value: "MXN", label: "MXN $" },
-  { value: "USD", label: "USD $" },
-];
+const options = labels.currency.options;
 
 const VALID: readonly string[] = ["EUR", "MXN", "USD"];
 
@@ -36,7 +33,7 @@ export default function CurrencySelect({ initialCurrency }: Props) {
       onChange={handleChange}
       options={options}
       className="w-full"
-      ariaLabel="Moneda"
+      ariaLabel={labels.select.ariaCurrency}
     />
   );
 }

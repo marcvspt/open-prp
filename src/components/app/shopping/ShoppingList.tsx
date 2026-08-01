@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { PantryItem } from "@/lib/types/pantry.ts";
 import type { ShoppingItem } from "@/lib/types/shopping.ts";
 import { formatDate } from "@/lib/date.ts";
+import { labels } from "@/lib/labels.ts";
 
 interface PantryCategory {
   id: string;
@@ -18,8 +19,8 @@ interface Props {
 }
 
 export const SHOPPING_TABS = [
-  { key: "list", label: "Lista actual" },
-  { key: "history", label: "Historial" },
+  { key: "list", label: labels.tabs.currentList },
+  { key: "history", label: labels.tabs.history },
 ] as const;
 
 type TabKey = (typeof SHOPPING_TABS)[number]["key"];
@@ -130,14 +131,14 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
 
   const groupedPantry: Record<string, PantryItem[]> = {};
   for (const d of pantryItems) {
-    const catName = categories.find(c => c.id === d.category_id)?.name ?? "Otros";
+    const catName = categories.find(c => c.id === d.category_id)?.name ?? labels.shopping.others;
     if (!groupedPantry[catName]) groupedPantry[catName] = [];
     groupedPantry[catName].push(d);
   }
 
   const sortedCategories = Object.keys(groupedPantry).sort((a, b) => {
-    if (a === "Otros") return 1;
-    if (b === "Otros") return -1;
+    if (a === labels.shopping.others) return 1;
+    if (b === labels.shopping.others) return -1;
     return a.localeCompare(b);
   });
 
@@ -171,7 +172,7 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
 
   return (
     <div>
-      <div className="flex gap-0 border-b border-border mb-6" role="tablist" aria-label="Secciones de compras">
+      <div className="flex gap-0 border-b border-border mb-6" role="tablist" aria-label={labels.shopping.ariaSections}>
         {SHOPPING_TABS.map(t => (
           <button
             key={t.key}
@@ -195,7 +196,7 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
         <div className="space-y-4" role="tabpanel" id="panel-list" aria-labelledby="tab-list" tabIndex={0}>
           {Object.keys(groupedPantry).length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-string mb-3">Desde la despensa</h2>
+              <h2 className="text-sm font-semibold text-string mb-3">{labels.shopping.fromPantry}</h2>
               <div className="flex flex-wrap gap-2">
                 {sortedCategories.map(cat => (
                   <div key={cat} className="w-full">
@@ -226,28 +227,28 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
           )}
 
           <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-string mb-3">Agregar otro</h2>
+            <h2 className="text-sm font-semibold text-string mb-3">{labels.shopping.addAnother}</h2>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={otroInput}
                 onChange={e => setOtroInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") handleAddOtro(); }}
-                placeholder="Escribe el nombre del producto..."
+                placeholder={labels.shopping.searchPlaceholder}
                 className="flex-1 text-sm border border-border rounded-lg px-3 py-2 bg-surface text-string placeholder-text-muted"
               />
               <button
                 onClick={handleAddOtro}
                 className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover"
               >
-                Agregar
+                {labels.common.add}
               </button>
             </div>
           </div>
 
           {activeItems.length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-string mb-3">Por comprar ({activeItems.length})</h2>
+              <h2 className="text-sm font-semibold text-string mb-3">{labels.shopping.toBuy(activeItems.length)}</h2>
               <div className="space-y-1">
                 {activeItems.map(i => (
                   <div key={i.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-nav-hover group">
@@ -261,7 +262,7 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
                       <span className="text-sm font-medium text-string">{i.name}</span>
                       <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
                     </div>
-                    <button onClick={() => handleDelete(i.id)} className="text-xs text-danger hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity">Eliminar</button>
+                    <button onClick={() => handleDelete(i.id)} className="text-xs text-danger hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity">{labels.common.delete}</button>
 
                   </div>
                 ))}
@@ -272,12 +273,12 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
           {checkedItems.length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-string">Comprados ({checkedItems.length})</h2>
+                <h2 className="text-sm font-semibold text-string">{labels.shopping.bought(checkedItems.length)}</h2>
                 <button
                   onClick={handleComplete}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white hover:bg-success-hover"
                 >
-                  Completar compra
+                  {labels.cta.completePurchase}
                 </button>
               </div>
               <div className="space-y-1">
@@ -301,7 +302,7 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
 
           {activeItems.length === 0 && checkedItems.length === 0 && (
             <div className="bg-panel rounded-xl border border-border p-8 shadow-sm text-center">
-              <p className="text-string-muted text-sm">Agrega productos desde la despensa o escribe el nombre</p>
+              <p className="text-string-muted text-sm">{labels.empty.shoppingActive}</p>
             </div>
           )}
         </div>
@@ -311,7 +312,7 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
         <div className="space-y-4" role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabIndex={0}>
           {Object.keys(historyByMonth).length === 0 ? (
             <div className="bg-panel rounded-xl border border-border p-8 shadow-sm text-center">
-              <p className="text-string-muted text-sm">Sin compras completadas aún</p>
+              <p className="text-string-muted text-sm">{labels.empty.shoppingHistory}</p>
             </div>
           ) : (
             Object.entries(historyByMonth).sort(([a], [b]) => b.localeCompare(a)).map(([month, monthItems]) => (

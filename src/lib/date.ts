@@ -53,6 +53,29 @@ export function currentMonthStr(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+/** Month string (YYYY-MM) `n` months away from the current month (n can be negative). */
+function monthOffsetStr(n: number): string {
+  const now = new Date();
+  const idx = now.getFullYear() * 12 + now.getMonth() + n;
+  const y = Math.floor(idx / 12);
+  const m = idx % 12 + 1;
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
+
+/**
+ * "Último año" window: from the later of the user's registration month and 12 months ago,
+ * through the next month. Users younger than a year only see back to their registration month.
+ */
+export function lastYearWindow(createdAt?: string | null): { from: string; to: string } {
+  let from = monthOffsetStr(-11);
+  if (createdAt) {
+    const created = new Date(createdAt);
+    const createdMonth = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, "0")}`;
+    if (createdMonth > from) from = createdMonth;
+  }
+  return { from, to: monthOffsetStr(1) };
+}
+
 export function getMonthOptions(count = 12, created_at?: string): string[] {
   const now = new Date();
   const maxPast = new Date(now.getFullYear(), now.getMonth() - (count - 1), 1);

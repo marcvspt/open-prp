@@ -1,5 +1,6 @@
 import { getMonthOptions, monthLabel } from "@/lib/date.ts";
 import Select from "@/components/ui/Select.tsx";
+import { FILTER_LABEL_MONTH } from "@/lib/filter-fields.ts";
 
 interface Props {
   value: string;
@@ -18,7 +19,7 @@ export default function MonthSelector({ value, onChange, count = 12, createdAt, 
         value={value}
         onChange={onChange}
         options={options}
-        ariaLabel="Mes"
+        ariaLabel={FILTER_LABEL_MONTH}
       />
     </div>
   );

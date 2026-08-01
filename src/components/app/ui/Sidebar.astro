@@ -3,6 +3,7 @@ import { Show, UserButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import CurrencySelect from "@/components/app/ui/CurrencySelect.tsx";
 import { UserRepository } from "@/lib/modules/users/repository.ts";
+import { labels } from "@/lib/labels.ts";
 import HomeIcon from "@/assets/home.svg";
 import DollarIcon from "@/assets/dollar.svg";
 import CardIcon from "@/assets/card.svg";
@@ -31,40 +32,40 @@ interface AppLink {
 
 const APP_LINKS: { title?: string; links: AppLink[] }[] = [
   {
-    links: [{ url: "/app/dashboard", label: "Dashboard", icon: HomeIcon }],
+    links: [{ url: "/app/dashboard", label: labels.nav.dashboard, icon: HomeIcon }],
   },
   {
-    title: "Finanzas",
+    title: labels.nav.groupFinance,
     links: [
-      { url: "/app/transactions", label: "Transacciones", icon: DollarIcon },
-      { url: "/app/cards", label: "Tarjetas", icon: CardIcon },
-      { url: "/app/installments", label: "Plazos", icon: ClipboardIcon },
+      { url: "/app/transactions", label: labels.nav.transactions, icon: DollarIcon },
+      { url: "/app/cards", label: labels.nav.cards, icon: CardIcon },
+      { url: "/app/installments", label: labels.nav.installments, icon: ClipboardIcon },
       {
         url: "/app/recurring-payments",
-        label: "Pagos recurrentes",
+        label: labels.nav.recurringPayments,
         icon: RecurringIcon,
       },
-      { url: "/app/cashback", label: "Cashback", icon: DollarIcon },
+      { url: "/app/cashback", label: labels.nav.cashback, icon: DollarIcon },
       {
         url: "/app/payment-methods",
-        label: "Métodos de pago",
+        label: labels.nav.paymentMethods,
         icon: WalletIcon,
       },
     ],
   },
   {
-    title: "Organización",
+    title: labels.nav.groupOrganization,
     links: [
-      { url: "/app/shopping", label: "Compras", icon: CartIcon },
-      { url: "/app/tasks", label: "Tareas", icon: ClipboardIcon },
-      { url: "/app/notes", label: "Notas", icon: PenIcon },
-      { url: "/app/events", label: "Eventos", icon: CalendarIcon },
-      { url: "/app/pantry", label: "Despensa", icon: PackageIcon },
+      { url: "/app/shopping", label: labels.nav.shopping, icon: CartIcon },
+      { url: "/app/tasks", label: labels.nav.tasks, icon: ClipboardIcon },
+      { url: "/app/notes", label: labels.nav.notes, icon: PenIcon },
+      { url: "/app/events", label: labels.nav.events, icon: CalendarIcon },
+      { url: "/app/pantry", label: labels.nav.pantry, icon: PackageIcon },
     ],
   },
   {
-    title: "General",
-    links: [{ url: "/app/categories", label: "Categorías", icon: TagIcon }],
+    title: labels.nav.groupGeneral,
+    links: [{ url: "/app/categories", label: labels.nav.categories, icon: TagIcon }],
   },
 ];
 ---
@@ -82,13 +83,13 @@ const APP_LINKS: { title?: string; links: AppLink[] }[] = [
       target="_blank"
       rel="noopener"
       class="text-string-muted hover:text-primary transition-colors"
-      aria-label="GitHub"
+      aria-label={labels.nav.ariaGithub}
     >
       <GithubIcon class="w-4 h-4" />
     </a>
   </div>
 
-  <nav aria-label="Navegación principal" class="flex-1 space-y-1 overflow-y-auto p-2 text-sm">
+  <nav aria-label={labels.nav.ariaMain} class="flex-1 space-y-1 overflow-y-auto p-2 text-sm">
     {
       APP_LINKS.map((group) => (
         <>
@@ -133,7 +134,7 @@ const APP_LINKS: { title?: string; links: AppLink[] }[] = [
             }}
           />
         </div>
-        <span class="text-xs text-string-muted">Mi cuenta</span>
+        <span class="text-xs text-string-muted">{labels.nav.myAccount}</span>
       </div>
     </Show>
   </div>

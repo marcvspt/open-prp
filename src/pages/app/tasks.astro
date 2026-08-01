@@ -1,6 +1,6 @@
 ---
 import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
-import { FILTER_WRAP_CLASS } from "@/lib/filter-fields.ts";
+import { FILTER_WRAP_CLASS, FILTER_ALL } from "@/lib/filter-fields.ts";
 import { formatDate } from "@/lib/date.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
@@ -11,6 +11,7 @@ import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { TaskRepository } from "@/lib/modules/tasks/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
+import { labels } from "@/lib/labels.ts";
 const userId = Astro.locals.userId;
 const filter = Astro.url.searchParams.get("filter") || "all";
 const q: Record<string, unknown> = {};
@@ -19,32 +20,32 @@ if (filter === "done") q.is_completed = true;
 const items = await new TaskRepository().findAll(userId, q);
 const categories = await new CategoryRepository().findBySections(userId, ["tasks"]);
 const catMap = Object.fromEntries(categories.map(c => [c.id, c]));
-const catOptions = [{ value: "", label: "Sin categoría" }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📋"} ${displayCategoryName(c)}` }))];
-const priorityLabels: Record<number, string> = { 1: "🟢 Baja", 2: "🟡 Media", 3: "🔴 Alta" };
+const catOptions = [{ value: "", label: labels.field.noCategory }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📋"} ${displayCategoryName(c)}` }))];
+const priorityLabels: Record<number, string> = { 1: labels.badge.low, 2: labels.badge.medium, 3: labels.badge.high };
 const priorityColor: Record<number, string> = { 1: "bg-success-bg text-success-text", 2: "bg-warning-bg text-warning-text", 3: "bg-danger-bg text-danger-text" };
 const fields = [
-  { name: "description", label: "Descripción", type: "textarea" as const, required: true },
-  { name: "due_date", label: "Fecha de vencimiento", type: "date" as const },
-  { name: "priority", label: "Prioridad", type: "select" as const, options: [{ value: "1", label: "🟢 1 - Baja" }, { value: "2", label: "🟡 2 - Media" }, { value: "3", label: "🔴 3 - Alta" }] },
-  { name: "category", label: "Categoría", type: "select" as const, options: catOptions },
+  { name: "description", label: labels.field.description, type: "textarea" as const, required: true },
+  { name: "due_date", label: labels.field.dueDate, type: "date" as const },
+  { name: "priority", label: labels.field.priority, type: "select" as const, options: [{ value: "1", label: labels.badge.lowOption }, { value: "2", label: labels.badge.mediumOption }, { value: "3", label: labels.badge.highOption }] },
+  { name: "category", label: labels.field.category, type: "select" as const, options: catOptions },
 ];
 const defaultForm = { description: "", due_date: "", priority: 1, category: "" };
 const taskFilters = [
-  { value: "all", label: "Todas", href: "/app/tasks" },
-  { value: "pending", label: "Pendientes", href: "/app/tasks?filter=pending" },
-  { value: "done", label: "Completadas", href: "/app/tasks?filter=done" },
+  { value: "all", label: FILTER_ALL, href: "/app/tasks" },
+  { value: "pending", label: labels.filter.pendingTasks, href: "/app/tasks?filter=pending" },
+  { value: "done", label: labels.filter.doneTasks, href: "/app/tasks?filter=done" },
 ];
 ---
 
-<AppLayout title="Tareas - Open PRP">
+<AppLayout title={`${labels.page.tasks} - Open PRP`}>
   <div data-module="tasks" class="space-y-4">
-    <PageHeader title="Tareas" createLabel="Nueva tarea" createModule="tasks" mobileOnlyCTA={true} />
+    <PageHeader title={labels.page.tasks} createLabel={labels.cta.newTask} createModule="tasks" mobileOnlyCTA={true} />
     <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <FilterLinks filters={taskFilters} active={filter} class={FILTER_WRAP_CLASS} />
-      <button data-create="tasks" class="hidden sm:block sm:shrink-0 px-3 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">Nueva tarea</button>
+      <button data-create="tasks" class="hidden sm:block sm:shrink-0 px-3 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">{labels.cta.newTask}</button>
     </div>
     {items.length === 0 ? (
-      <div class="text-string-muted text-sm">Sin tareas</div>
+      <div class="text-string-muted text-sm">{labels.empty.tasks}</div>
     ) : (
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {items.map(t => {
@@ -81,7 +82,7 @@ const taskFilters = [
       </div>
     )}
   </div>
-  <CrudModal client:load module="tasks" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="tarea" />
-  <DeleteHandler module="tasks" label="tarea" />
+  <CrudModal client:load module="tasks" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.task} />
+  <DeleteHandler module="tasks" label={labels.singular.task} />
   <ToggleHandler module="tasks" key="is_completed" />
 </AppLayout>

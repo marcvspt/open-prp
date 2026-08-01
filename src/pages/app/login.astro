@@ -4,12 +4,13 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import { SignInButton, SignUpButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import { BTN_LOGIN, BTN_SIGNUP } from "@/lib/general-fields.ts";
+import { labels } from "@/lib/labels.ts";
 
 const { userId } = Astro.locals.auth();
 if (userId) return Astro.redirect("/app/dashboard");
 ---
 
-<BaseLayout title="Iniciar sesión | Open PRP">
+<BaseLayout title={`${labels.common.login} | Open PRP`}>
   <div class="flex items-center justify-center min-h-screen bg-surface">
     <div class="text-center space-y-4">
       <h1 class="text-2xl font-bold text-primary">Open PRP</h1>
@@ -26,7 +27,7 @@ if (userId) return Astro.redirect("/app/dashboard");
         <a
           href="/"
           class="text-sm text-string-muted hover:text-primary transition-colors"
-          >← Volver al inicio</a
+          >{labels.common.backHome}</a
         >
         <div class="w-36"><ThemeToggle client:load /></div>
       </div>

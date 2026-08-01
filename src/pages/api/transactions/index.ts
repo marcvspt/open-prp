@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { jsonResponse, errorResponse, requireUserId, getSearchParams, parsePageParams } from "@/lib/api-helpers.ts";
 import { TransactionRepository } from "@/lib/modules/transactions/repository.ts";
+import { lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
 
 const repo = new TransactionRepository();
 
@@ -11,14 +12,22 @@ export const GET: APIRoute = async (context) => {
   const params = getSearchParams(context);
   const { page, pageSize } = parsePageParams(context.url);
 
+  let date_from = params.date_from;
+  let date_to = params.date_to;
+  if (!params.month && !date_from && !date_to) {
+    const { from, to } = lastYearWindow(context.locals.createdAt);
+    date_from = `${from}-01`;
+    date_to = lastDayOfMonth(to);
+  }
+
   const result = await repo.findAll(uid, {
     type: params.type as "income" | "expense" | undefined,
     category_id: params.category_id,
     payment_method_id: params.payment_method_id,
     q: params.q,
     month: params.month,
-    date_from: params.date_from,
-    date_to: params.date_to,
+    date_from,
+    date_to,
     page,
     pageSize,
   });

@@ -6,13 +6,14 @@ import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
+import { labels } from "@/lib/labels.ts";
 const userId = Astro.locals.userId;
 const repo = new PaymentMethodRepository();
 const items = await repo.findAll(userId);
 const typeLabels: Record<string, string> = {
-  global: "Global",
-  personal: "Personal",
-  card: "Tarjeta",
+  global: labels.badge.global,
+  personal: labels.badge.personal,
+  card: labels.badge.card,
 };
 const typeColors: Record<string, string> = {
   global: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
@@ -20,17 +21,17 @@ const typeColors: Record<string, string> = {
   card: "bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300",
 };
 const fields = [
-  { name: "name", label: "Nombre", type: "text" as const, required: true },
-  { name: "icon", label: "Ícono (emoji)", type: "text" as const, placeholder: "💳" },
-  { name: "color", label: "Color", type: "color" as const },
+  { name: "name", label: labels.field.name, type: "text" as const, required: true },
+  { name: "icon", label: labels.field.iconEmoji, type: "text" as const, placeholder: labels.field.iconPlaceholder },
+  { name: "color", label: labels.field.color, type: "color" as const },
 ];
 const defaultForm = { name: "", type: "personal", icon: "💳", color: "#6366f1" };
 ---
 
-<AppLayout title="Métodos de pago - Open PRP">
+<AppLayout title={`${labels.page.paymentMethods} - Open PRP`}>
   <div data-module="payment-methods" class="space-y-4">
-    <PageHeader title="Métodos de pago" createLabel="Nuevo método" createModule="payment-methods" />
-    <DataTable columns={["Nombre", "Tipo", { label: "Icono", align: "center" }, "Color", { label: "Acciones", align: "right" }]} emptyMessage="Sin métodos de pago">
+    <PageHeader title={labels.page.paymentMethods} createLabel={labels.cta.newPaymentMethod} createModule="payment-methods" />
+    <DataTable columns={[labels.table.name, labels.table.type, { label: labels.table.icon, align: "center" }, labels.table.color, { label: labels.table.actions, align: "right" }]} emptyMessage={labels.empty.paymentMethods}>
       {items.map(m => {
         const isSystem = m.type === "global" || m.type === "card";
         return (
@@ -51,6 +52,6 @@ const defaultForm = { name: "", type: "personal", icon: "💳", color: "#6366f1"
       );})}
     </DataTable>
   </div>
-  <CrudModal client:load module="payment-methods" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="método de pago" />
-  <DeleteHandler module="payment-methods" label="método de pago" />
+  <CrudModal client:load module="payment-methods" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.paymentMethod} />
+  <DeleteHandler module="payment-methods" label={labels.singular.paymentMethod} />
 </AppLayout>

@@ -32,4 +32,6 @@ export interface InstallmentFilter {
   payment_method_id?: string;
   q?: string;
   month?: string;
+  date_from?: string;
+  date_to?: string;
 }

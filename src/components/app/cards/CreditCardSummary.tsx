@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/format.ts";
 import { safeFetch, fetchList } from "@/lib/safeFetch.ts";
 import { payCardDebtFull, payCardDebtPartial } from "@/lib/dashboard/api.ts";
 import { BTN_CANCEL } from "@/lib/general-fields.ts";
+import { labels } from "@/lib/labels.ts";
 
 function dueDaysBorder(days: number): string {
   if (days <= 3) return "border-danger";
@@ -120,7 +121,7 @@ export default function CreditCardSummary({
   return (
     <div className="space-y-4">
       {visibleCards.length === 0 ? (
-        <p className="text-string-muted text-sm">No hay tarjetas de crédito registradas</p>
+        <p className="text-string-muted text-sm">{labels.empty.creditCards}</p>
       ) : (
         visibleCards.map(card => {
           const debt = getCardDebt(card.id);
@@ -136,41 +137,41 @@ export default function CreditCardSummary({
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="font-semibold text-string">{card.name}</h3>
-                  <span className="text-xs text-string-muted uppercase">Crédito</span>
+                  <span className="text-xs text-string-muted uppercase">{labels.badge.credit}</span>
                 </div>
                 {debt && !debt.is_paid && (
                   <button
                     onClick={() => { setPayDialog({ debt, card }); setPayAmount(""); setPayDate(new Date().toLocaleDateString("sv")); }}
                     className="px-3 py-1 text-xs font-medium rounded-lg bg-success text-white hover:bg-success-hover transition-colors"
                   >
-                    Pagar
+                    {labels.cta.payCard}
                   </button>
                 )}
                 {debt?.is_paid && (
                   <span className={`px-3 py-1 text-xs font-medium rounded-lg ${paidLate ? "bg-danger-bg text-danger-text" : "bg-success-bg text-success-text"}`}>
-                    {paidLate ? "Pagada tarde" : "Pagada"}
+                    {paidLate ? labels.badge.paidLate : labels.badge.paidF}
                   </span>
                 )}
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-string-muted">Límite</p>
+                  <p className="text-xs text-string-muted">{labels.stat.limit}</p>
                   <p className="font-mono font-medium text-success">{card.max_limit != null ? formatCurrency(card.max_limit) : "—"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-string-muted">Deuda calculada</p>
+                  <p className="text-xs text-string-muted">{labels.stat.calculatedDebt}</p>
                   {calc ? (
                     <div className="group relative">
                       <p className="font-mono font-medium text-danger cursor-help">{formatCurrency(calc.statement_balance)}</p>
                       <div className="absolute left-0 right-0 top-full mt-1 max-w-xs bg-panel border border-border rounded-lg shadow-lg p-3 text-xs z-10 hidden group-hover:block">
                         <div className="space-y-1">
-                          <div className="flex justify-between"><span>Compras</span><span className="font-mono text-danger">-{formatCurrency(calc.total_purchases)}</span></div>
-                          <div className="flex justify-between"><span>Plazos (este mes)</span><span className="font-mono text-danger">-{formatCurrency(calc.total_installments)}</span></div>
-                          <div className="flex justify-between"><span>Pagos recurrentes</span><span className="font-mono text-danger">-{formatCurrency(calc.total_recurring)}</span></div>
-                          <div className="flex justify-between"><span>Cashback</span><span className="font-mono text-success">+{formatCurrency(calc.total_cashback)}</span></div>
-                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>Adeudo del mes</span><span className="font-mono">{formatCurrency(calc.statement_balance)}</span></div>
-                          <div className="flex justify-between text-string-muted"><span>Plazos futuros</span><span className="font-mono">-{formatCurrency(calc.committed_installments)}</span></div>
-                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>Total comprometido</span><span className="font-mono">{formatCurrency(calc.total_committed)}</span></div>
+                          <div className="flex justify-between"><span>{labels.stat.purchases}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_purchases)}</span></div>
+                          <div className="flex justify-between"><span>{labels.stat.installmentsThisMonth}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_installments)}</span></div>
+                          <div className="flex justify-between"><span>{labels.stat.recurringPayments}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_recurring)}</span></div>
+                          <div className="flex justify-between"><span>{labels.stat.cashback}</span><span className="font-mono text-success">+{formatCurrency(calc.total_cashback)}</span></div>
+                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{labels.stat.monthDebt}</span><span className="font-mono">{formatCurrency(calc.statement_balance)}</span></div>
+                          <div className="flex justify-between text-string-muted"><span>{labels.stat.futureInstallments}</span><span className="font-mono">-{formatCurrency(calc.committed_installments)}</span></div>
+                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{labels.stat.totalCommitted}</span><span className="font-mono">{formatCurrency(calc.total_committed)}</span></div>
                         </div>
                       </div>
                     </div>
@@ -181,19 +182,19 @@ export default function CreditCardSummary({
                   )}
                 </div>
                 <div>
-                  <p className="text-xs text-string-muted">Disponible</p>
+                  <p className="text-xs text-string-muted">{labels.stat.available}</p>
                   <p className={`font-mono font-medium ${available < 0 ? "text-danger" : "text-success"}`}>{formatCurrency(Math.max(0, available))}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-string-muted">Corte / Pago</p>
+                  <p className="text-xs text-string-muted">{labels.stat.cutoffPayment}</p>
                   <p className="font-mono font-medium">{card.cutoff_day != null && card.payment_due_day != null ? `${card.cutoff_day} / ${card.payment_due_day}` : "—"}</p>
                 </div>
               </div>
               {debt && !debt.is_paid && (
                 <div className="mt-3 flex items-center gap-2 text-xs">
-                  <span className="text-string-muted">Límite de pago:</span>
+                  <span className="text-string-muted">{labels.stat.paymentDue}</span>
                   <span className={`font-medium ${dueDaysBadge(dueIn)} px-2 py-0.5 rounded`}>
-                    {dueIn <= 0 ? "Vencido" : `En ${dueIn} días (día ${card.payment_due_day})`}
+                    {dueIn <= 0 ? labels.badge.overdue : labels.cards.dueIn(dueIn, card.payment_due_day!)}
                   </span>
                 </div>
               )}
@@ -205,11 +206,11 @@ export default function CreditCardSummary({
       {payDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay" onClick={() => setPayDialog(null)}>
           <div className="bg-panel rounded-xl border border-border shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-semibold text-string mb-1">Pagar tarjeta</h3>
+            <h3 className="text-base font-semibold text-string mb-1">{labels.cards.payCardTitle}</h3>
             <p className="text-sm text-string-muted mb-4">{payDialog.card.name} — {formatCurrency(payDialog.debt.statement_balance)}</p>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-string mb-1">Fecha de pago</label>
+                <label className="block text-sm font-medium text-string mb-1">{labels.field.paymentDate}</label>
                 <input
                   type="date"
                   value={payDate}
@@ -218,15 +219,15 @@ export default function CreditCardSummary({
                 />
               </div>
               <button onClick={() => handlePayFull(payDialog.debt.id)} className="w-full py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors">
-                Pagar todo ({formatCurrency(payDialog.debt.statement_balance)})
+                {labels.cta.payAll} ({formatCurrency(payDialog.debt.statement_balance)})
               </button>
               <div className="flex items-center gap-2">
                 <div className="flex-1 border-t border-border" />
-                <span className="text-xs text-string-muted">o</span>
+                <span className="text-xs text-string-muted">{labels.cards.or}</span>
                 <div className="flex-1 border-t border-border" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-string mb-1">Pago parcial</label>
+                <label className="block text-sm font-medium text-string mb-1">{labels.field.partialPayment}</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -235,7 +236,7 @@ export default function CreditCardSummary({
                     max={payDialog.debt.statement_balance}
                     value={payAmount}
                     onChange={e => setPayAmount(e.target.value)}
-                    placeholder="0.00"
+                    placeholder={labels.cards.zeroPlaceholder}
                     className="flex-1 block rounded-lg border border-border px-3 py-2 text-sm"
                   />
                   <button
@@ -243,12 +244,12 @@ export default function CreditCardSummary({
                     disabled={!payAmount || parseFloat(payAmount) <= 0}
                     className="px-4 py-2 text-sm font-medium rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 transition-colors"
                   >
-                    Pagar
+                    {labels.cta.payCard}
                   </button>
                 </div>
                 {payAmount && parseFloat(payAmount) > 0 && (
                   <p className="text-xs text-string-muted mt-1">
-                    Restante: {formatCurrency(payDialog.debt.statement_balance - parseFloat(payAmount))} — se agregará como gasto al mes siguiente
+                    {labels.cards.remainingNote(formatCurrency(payDialog.debt.statement_balance - parseFloat(payAmount)))}
                   </p>
                 )}
               </div>

@@ -7,34 +7,35 @@ import PantryFilterable from "@/components/app/pantry/PantryFilterable.tsx";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
+import { labels } from "@/lib/labels.ts";
 const userId = Astro.locals.userId;
 const params = Astro.url.searchParams;
 const filterQ = params.get("q") || "";
 const filterCat = params.get("category_id") || "";
 const categories = await new CategoryRepository().findBySections(userId, ["pantry"]);
-const catOptions = [{ value: "", label: "Sin categoría" }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📦"} ${displayCategoryName(c)}` }))];
+const catOptions = [{ value: "", label: labels.field.noCategory }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📦"} ${displayCategoryName(c)}` }))];
 const pantryFilter: Record<string, unknown> = {};
 if (filterQ) pantryFilter.q = filterQ;
 if (filterCat) pantryFilter.category_id = filterCat;
 const initialData = await new PantryRepository().findAll(userId, pantryFilter);
 const fields = [
-  { name: "description", label: "Artículo", type: "text" as const, required: true },
-  { name: "category_id", label: "Categoría", type: "select" as const, options: catOptions },
-  { name: "quantity", label: "Cantidad", type: "number" as const, min: 0, step: "0.01" },
-  { name: "notes", label: "Notas", type: "textarea" as const },
+  { name: "description", label: labels.field.item, type: "text" as const, required: true },
+  { name: "category_id", label: labels.field.category, type: "select" as const, options: catOptions },
+  { name: "quantity", label: labels.field.quantity, type: "number" as const, min: 0, step: "0.01" },
+  { name: "notes", label: labels.field.notes, type: "textarea" as const },
 ];
 const defaultForm = { description: "", category_id: "", quantity: 1, notes: "" };
 ---
 
-<AppLayout title="Despensa - Open PRP">
+<AppLayout title={`${labels.page.pantry} - Open PRP`}>
   <div data-module="pantry" class="space-y-4">
-    <PageHeader title="Despensa" createLabel="Nuevo producto" createModule="pantry" mobileOnlyCTA={true} />
+    <PageHeader title={labels.page.pantry} createLabel={labels.cta.newProduct} createModule="pantry" mobileOnlyCTA={true} />
     <PantryFilterable
       client:load
       categories={categories.map(c => ({ id: c.id, icon: c.icon, name: displayCategoryName(c) }))}
       initialData={JSON.stringify(initialData)}
     />
   </div>
-  <CrudModal client:load module="pantry" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular="producto" />
-  <DeleteHandler module="pantry" label="producto" />
+  <CrudModal client:load module="pantry" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.product} />
+  <DeleteHandler module="pantry" label={labels.singular.product} />
 </AppLayout>

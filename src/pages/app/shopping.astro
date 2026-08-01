@@ -5,6 +5,7 @@ import { ShoppingRepository } from "@/lib/modules/shopping/repository.ts";
 import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
+import { labels } from "@/lib/labels.ts";
 
 const userId = Astro.locals.userId;
 const [allItems, pantryItems, pantryCategories] = await Promise.all([
@@ -16,9 +17,9 @@ const paramTab = Astro.url.searchParams.get("tab");
 const initialTab = paramTab && SHOPPING_TABS.some(t => t.key === paramTab) ? paramTab : "list";
 ---
 
-<AppLayout title="Compras - Open PRP">
+<AppLayout title={`${labels.page.shopping} - Open PRP`}>
   <div class="space-y-6">
-    <h1 class="text-2xl font-bold text-string">Lista de compras</h1>
+    <h1 class="text-2xl font-bold text-string">{labels.page.shopping}</h1>
     <ShoppingList
       client:load
       initialTab={initialTab}
