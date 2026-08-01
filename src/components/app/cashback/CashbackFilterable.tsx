@@ -3,8 +3,8 @@ import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Cashback } from "@/lib/types/cashback.ts";
 import { formatDate } from "@/lib/date.ts";
-import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_CARDS, FILTER_SEARCH_DESC, FILTER_LABEL_CARD } from "@/lib/filter-fields.ts";
-import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
+import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_CARDS, FILTER_ALL_MONTHS, FILTER_SEARCH_DESC, FILTER_LABEL_CARD } from "@/lib/filter-fields.ts";
+import { BTN_EDIT, BTN_DELETE, CURRENCY_SYMBOL } from "@/lib/general-fields.ts";
 import { labels } from "@/lib/labels.ts";
 
 interface Props {
@@ -19,7 +19,7 @@ const cardEmoji = (type: string) => type === "credit" ? "💳" : type === "debit
 export default function CashbackFilterable({ initialMonth, cards, initialData, createdAt }: Props) {
   const parsedInitial = initialData ? JSON.parse(initialData) as Cashback[] : undefined;
   const { filters, setFilter, clearFilters, data, loading } = useFilteredData<Cashback[]>("/api/cashback", {
-    month: initialMonth,
+    ...(initialMonth ? { month: initialMonth } : {}),
   }, parsedInitial);
 
   const items = data ?? [];
@@ -29,7 +29,7 @@ export default function CashbackFilterable({ initialMonth, cards, initialData, c
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className={FILTER_GRID_CLASS}>
           <div className={FILTER_WRAP_CLASS}>
-            <MonthSelector value={filters.month || initialMonth} onChange={(m) => setFilter("month", m)} createdAt={createdAt} />
+            <MonthSelector value={filters.month || initialMonth} onChange={(m) => setFilter("month", m)} createdAt={createdAt} allLabel={FILTER_ALL_MONTHS} />
           </div>
           <div className={FILTER_WRAP_CLASS}>
             <Select
@@ -77,8 +77,8 @@ export default function CashbackFilterable({ initialMonth, cards, initialData, c
                   <tr key={c.id} className="hover:bg-nav-hover border-b border-border/50">
                     <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatDate(c.date)}</td>
                     <td className="px-4 py-3">{c.description || "-"}</td>
-                    <td className="px-4 py-3 text-right font-mono text-success whitespace-nowrap">+{(c.currency === "EUR" ? "€" : "$")}{Number(c.amount).toFixed(2)}</td>
-                    <td className="px-4 py-3 text-xs text-string-muted">{(c.currency === "EUR" ? "€" : "$")} {c.currency || "MXN"}</td>
+                    <td className="px-4 py-3 text-right font-mono text-success whitespace-nowrap">+{CURRENCY_SYMBOL[c.currency] ?? "$"}{Number(c.amount).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-xs text-string-muted">{CURRENCY_SYMBOL[c.currency] ?? "$"} {c.currency || "MXN"}</td>
                     <td className="px-4 py-3">{card ? <span className="inline-flex items-center gap-1 text-xs bg-surface-alt px-2 py-0.5 rounded">{cardEmoji(card.type)} {card.name}</span> : "-"}</td>
                     <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
                       <button data-edit-cashback={c.id} className="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">{BTN_EDIT}</button>

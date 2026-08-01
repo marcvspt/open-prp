@@ -15,6 +15,8 @@ export default defineConfig({
   adapter: netlify(),
 
   integrations: [react(), clerk({
+    afterSignInUrl: "/app/dashboard",
+    afterSignUpUrl: "/app/dashboard",
     afterSignOutUrl: "/app/login",
   })],
 

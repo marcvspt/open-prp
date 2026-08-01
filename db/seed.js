@@ -43,9 +43,9 @@ async function seed() {
 
   // ── Payment Methods (global) ──
   const paymentMethods = [
-    { name: "Nómina", icon: "💰", color: "#f59e0b" },
-    { name: "Transferencia", icon: "🔄", color: "#3b82f6" },
-    { name: "Efectivo", icon: "💵", color: "#22c55e" },
+    { name: "payroll", icon: "💰", color: "#f59e0b" },
+    { name: "transfer", icon: "🔄", color: "#3b82f6" },
+    { name: "cash", icon: "💵", color: "#22c55e" },
   ];
   for (const pm of paymentMethods) {
     await client.execute({

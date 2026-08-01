@@ -1,6 +1,6 @@
 import { useState } from "react";
-import TabBar from "./TabBar";
-import MonthSelector from "./MonthSelector";
+import TabBar from "@/components/app/ui/TabBar.tsx";
+import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import { currentMonthStr } from "@/lib/date.ts";
 
 interface Tab {
