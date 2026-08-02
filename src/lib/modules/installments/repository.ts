@@ -34,15 +34,17 @@ export class InstallmentRepository {
     const currentMonthStart = `${now().slice(0, 7)}-01`;
     const monthFilter = filter?.month || (filter?.active_only ? undefined : undefined);
     const targetMonthStart = monthFilter ? `${monthFilter}-01` : currentMonthStart;
-    return rows.map(r => {
+    const computedRows: Installment[] = [];
+    for (const r of rows) {
       const computed = computeRemaining(r.start_date, r.total_months);
       if (computed !== r.remaining_months) {
-        db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now(), r.id] });
+        await db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now(), r.id] });
       }
-      return { ...r, remaining_months: computed };
+      computedRows.push({ ...r, remaining_months: computed });
       // Active = its last payment falls in the month or later, so an
       // installment stays visible during its final month.
-    }).filter(i => {
+    }
+    return computedRows.filter(i => {
       const lastPaymentDate = addMonths(i.start_date, Math.max(0, i.total_months - 1));
       if (filter?.month) {
         const monthEnd = lastDayOfMonth(filter.month);
@@ -62,7 +64,7 @@ export class InstallmentRepository {
     if (!row) return null;
     const computed = computeRemaining(row.start_date, row.total_months);
     if (computed !== row.remaining_months) {
-      db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now(), row.id] });
+      await db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now(), row.id] });
     }
     return { ...row, remaining_months: computed };
   }

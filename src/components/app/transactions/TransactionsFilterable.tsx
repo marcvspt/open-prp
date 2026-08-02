@@ -18,7 +18,7 @@ interface Props {
 
 export default function TransactionsFilterable({ initialMonth, filterType: initialType, paymentMethods, categories, initialData, createdAt }: Props) {
   const parsedInitial = initialData ? JSON.parse(initialData) as Transaction[] : undefined;
-  const { filters, setFilter, clearFilters, data, loading } = useFilteredData<Transaction[]>("/api/transactions", {
+  const { filters, setFilter, clearFilters, data, loading, error } = useFilteredData<Transaction[]>("/api/transactions", {
     ...(initialType !== "all" ? { type: initialType } : {}),
     ...(initialMonth ? { month: initialMonth } : {}),
   }, parsedInitial);
@@ -27,6 +27,11 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="rounded-xl border border-danger-border bg-danger-bg px-4 py-3 text-sm text-danger-text" role="alert">
+          {error}
+        </div>
+      )}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className={FILTER_GRID_CLASS}>
           <div className={FILTER_WRAP_CLASS}>

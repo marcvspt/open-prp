@@ -22,7 +22,9 @@ export default function CurrencySelect({ initialCurrency }: Props) {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ currency: next }),
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      console.error("Failed to save preferred currency:", err);
+    });
     saveCurrency(next);
     setCurrency(next);
   }

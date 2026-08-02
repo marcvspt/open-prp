@@ -1,6 +1,29 @@
-import type { APIContext } from "astro";
+import type { APIContext, APIRoute } from "astro";
 import type { ApiResponse } from "@/types/general.ts";
 import { lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
+
+/** Wraps an API handler so thrown errors become a JSON 500 instead of Astro's HTML error page. */
+export function withErrorHandling(handler: APIRoute): APIRoute {
+  return async (context) => {
+    try {
+      return await handler(context);
+    } catch (err: unknown) {
+      console.error(`API ${context.request.method} ${context.url.pathname} failed:`, err);
+      return errorResponse("Error interno del servidor", 500);
+    }
+  };
+}
+
+/** Parses the request body as a JSON object; returns `null` for malformed/invalid bodies. */
+export async function readJsonBody(context: APIContext): Promise<Record<string, unknown> | null> {
+  try {
+    const body = await context.request.json();
+    if (typeof body !== "object" || body === null || Array.isArray(body)) return null;
+    return body as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 
 export function jsonResponse<T>(data: T, status = 200): Response {
   return new Response(JSON.stringify({ success: true, data } satisfies ApiResponse<T>), {

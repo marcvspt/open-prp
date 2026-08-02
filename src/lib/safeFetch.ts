@@ -5,11 +5,18 @@ export async function safeFetch(url: string, init: RequestInit): Promise<boolean
 export async function safeFetch<T>(url: string, init?: RequestInit): Promise<T | undefined | boolean> {
   try {
     const res = await fetch(url, init);
-    if (!res.ok) return init ? false : undefined;
+    if (!res.ok) {
+      console.error(`Fetch ${init?.method ?? "GET"} ${url} failed with ${res.status}`);
+      return init ? false : undefined;
+    }
     const json: ApiResponse<T> = await res.json();
-    if (!json.success) return init ? false : undefined;
+    if (!json.success) {
+      console.error(`Fetch ${init?.method ?? "GET"} ${url} returned error:`, json.error);
+      return init ? false : undefined;
+    }
     return init ? true : json.data;
-  } catch {
+  } catch (err: unknown) {
+    console.error(`Fetch ${init?.method ?? "GET"} ${url} threw:`, err);
     return init ? false : undefined;
   }
 }

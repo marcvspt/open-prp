@@ -1,15 +1,16 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { jsonResponse, errorResponse, requireUserId, readJsonBody, withErrorHandling } from "@/lib/api-helpers.ts";
 import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
 
-export const POST: APIRoute = async (context) => {
+export const POST: APIRoute = withErrorHandling(async (context) => {
   const uid = requireUserId(context);
   if (uid instanceof Response) return uid;
 
   const { id } = context.params;
   if (!id) return errorResponse("ID requerido");
 
-  const body = await context.request.json();
+  const body = await readJsonBody(context);
+  if (!body) return errorResponse("Body inválido", 400);
   if (!body.month || body.amount === undefined) {
     return errorResponse("month y amount son requeridos");
   }
@@ -18,6 +19,6 @@ export const POST: APIRoute = async (context) => {
   const existing = await repo.findById(id, uid);
   if (!existing) return errorResponse("No encontrado", 404);
 
-  const result = await repo.upsertMonthly(id, body.month, { amount: body.amount }, uid);
+  const result = await repo.upsertMonthly(id, body.month as string, { amount: body.amount as number }, uid);
   return jsonResponse(result);
-};
+});
