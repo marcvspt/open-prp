@@ -1,6 +1,6 @@
 ---
 import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
-import { FILTER_WRAP_CLASS, FILTER_ALL } from "@/lib/filter-fields.ts";
+import { FILTER_WRAP_CLASS, FILTER_ALL_STATUS_TASKS } from "@/lib/filter-fields.ts";
 import { formatDate } from "@/lib/date.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
@@ -71,7 +71,7 @@ const defaultForm = {
   category: "",
 };
 const taskFilters = [
-  { value: "all", label: FILTER_ALL, href: "/app/tasks" },
+  { value: "all", label: FILTER_ALL_STATUS_TASKS, href: "/app/tasks" },
   {
     value: "pending",
     label: labels.filter.pendingTasks,

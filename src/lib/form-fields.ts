@@ -71,9 +71,11 @@ export function cardField(cards: Card[]) {
     label: labels.field.card,
     type: "select" as const,
     required: true,
-    options: cards.map(c => ({
-      value: c.id,
-      label: `${emoji(c.type)} ${c.name}`,
-    })),
+    options: cards.length > 0
+      ? cards.map(c => ({
+          value: c.id,
+          label: `${emoji(c.type)} ${c.name}`,
+        }))
+      : [{ value: "", label: labels.field.noCreditCards }],
   };
 }

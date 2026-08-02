@@ -3,7 +3,7 @@ import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Installment } from "@/lib/types/installment.ts";
 import { formatDate } from "@/lib/date.ts";
-import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_CATEGORIES, FILTER_ALL_PAYMENT_METHODS, FILTER_ALL_STATUS, FILTER_ALL_MONTHS, FILTER_SEARCH_DESC, FILTER_LABEL_CATEGORY, FILTER_LABEL_PAYMENT_METHOD, FILTER_LABEL_STATUS } from "@/lib/filter-fields.ts";
+import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_CATEGORIES, FILTER_ALL_PAYMENT_METHODS, FILTER_ALL_STATUS_INSTALLMENTS, FILTER_ALL_MONTHS, FILTER_SEARCH_DESC, FILTER_LABEL_CATEGORY, FILTER_LABEL_PAYMENT_METHOD, FILTER_LABEL_STATUS } from "@/lib/filter-fields.ts";
 import { BTN_EDIT, BTN_DELETE, CURRENCY_SYMBOL } from "@/lib/general-fields.ts";
 import { labels } from "@/lib/labels.ts";
 
@@ -40,7 +40,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
               onChange={(v) => setFilter("active_only", v)}
               options={[
                 { value: "true", label: labels.filter.activeOnly },
-                { value: "", label: FILTER_ALL_STATUS },
+                { value: "", label: FILTER_ALL_STATUS_INSTALLMENTS },
               ]}
               placeholder={FILTER_LABEL_STATUS}
               ariaLabel={FILTER_LABEL_STATUS}
