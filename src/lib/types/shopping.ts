@@ -1,7 +1,27 @@
+export interface ShoppingList {
+  id: string;
+  seq: number;
+  user_id: string;
+  name: string | null;
+  is_completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShoppingListInput {
+  name?: string;
+}
+
+export interface ShoppingListUpdate {
+  name?: string;
+}
+
 export interface ShoppingItem {
   id: string;
   seq: number;
   user_id: string;
+  list_id: string | null;
   name: string;
   quantity: number;
   unit: string | null;
@@ -19,6 +39,7 @@ export interface ShoppingItem {
 
 export interface ShoppingItemInput {
   name: string;
+  list_id?: string;
   quantity?: number;
   unit?: string;
   notes?: string;
@@ -30,6 +51,7 @@ export interface ShoppingItemInput {
 
 export interface ShoppingItemUpdate {
   name?: string;
+  list_id?: string;
   quantity?: number;
   unit?: string;
   notes?: string;
@@ -43,6 +65,7 @@ export interface ShoppingItemUpdate {
 export interface ShoppingFilter {
   is_checked?: boolean;
   is_completed?: boolean;
+  list_id?: string;
   category?: string;
   event_id?: string;
 }

@@ -244,7 +244,6 @@ export const labels = {
     addToMonth: "Agregar al mes",
     backToPending: "Volver a pendiente",
     removeFromMonth: "Eliminar del mes",
-    completePurchase: "Completar compra",
   },
 
   singular: {
@@ -304,6 +303,15 @@ export const labels = {
     toBuy: (n: number) => `Por comprar (${n})`,
     bought: (n: number) => `Comprados (${n})`,
     ariaSections: "Secciones de compras",
+    newList: "Nueva lista",
+    finalizeList: "Finalizar lista",
+    deleteList: "Eliminar lista",
+    confirmDeleteList: "¿Eliminar esta lista y sus artículos?",
+    listNamePlaceholder: "Nombre de la lista",
+    addTo: "Agregar a",
+    itemCount: (n: number) => `${n} ${n === 1 ? "artículo" : "artículos"}`,
+    emptyLists: "Crea una lista de compras para empezar",
+    completedOn: "Completada el",
   },
 
   cards: {

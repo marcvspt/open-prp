@@ -72,8 +72,8 @@ const currentPath = Astro.url.pathname;
 <script>
   import { initSidebar, initUserAreaForward } from "@/lib/ui/sidebar.ts";
 
-  initSidebar();
   initUserAreaForward();
+  document.addEventListener("astro:page-load", () => initSidebar());
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js");
   }

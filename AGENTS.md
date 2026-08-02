@@ -110,6 +110,7 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
 - Navegación data-driven: `APP_LINKS` (grupos `{ title?, links: [{ href, label, icon }] }`), estado activo vía `currentPath.startsWith(href)`.
 - Footer: ícono GitHub, `ThemeToggle`, `CurrencySelect` (moneda vía `UserRepository` en SSR), `UserButton` (`@clerk/astro/components`) + "Mi cuenta".
   - `UserButton` envuelto en caja fija `h-8 w-8 rounded-full bg-surface-alt` (placeholder) + `appearance.userButtonAvatarBox` de 2rem: ClerkJS monta el avatar de forma asíncrona (CDN); sin la caja, el footer crece tarde y salta el layout.
+- **View transitions**: los scripts module bundled de Astro se ejecutan **solo una vez** y se ignoran en navegaciones posteriores del ClientRouter (se marcan `data-astro-exec`). Por eso `initSidebar()` (binding a elementos del DOM, que se reemplazan en cada swap) se registra dentro de `document.addEventListener("astro:page-load", ...)` en el script de `AppLayout.astro` (`astro:page-load` se dispara en la carga inicial y en cada navegación). En cambio `initUserAreaForward()` (listener a nivel `document`, que persiste) y el registro del service worker corren una sola vez fuera del listener. No usar `data-astro-rerun`: fuerza `is:inline` (rompe imports) y acumula listeners.
 
 ## TypeScript
 
@@ -151,6 +152,7 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
 - Recurring Payments: `upsertMonthly()` hace snapshot de `category_id` y `payment_method_id`.
 - `findAll()` en recurring-payments: `LEFT JOIN` con categories y payment_methods.
 - Card repository: al crear/actualizar/eliminar una tarjeta, sincroniza automáticamente el `PaymentMethod` asociado vía `PaymentMethodRepository`.
+- Shopping: `ShoppingRepository` (artículos, en `src/lib/modules/shopping/repository.ts`) y `ShoppingListRepository` (listas, en `src/lib/modules/shopping/lists.ts`). Los artículos pertenecen a una lista (`list_id`); `ShoppingListRepository.complete()` finaliza una lista y completa todos sus artículos, y `delete()` borra la lista junto con sus artículos. El nombre de lista es opcional (null) y la UI muestra como default la fecha+hora local de creación.
 
 ### API routes (factories)
 

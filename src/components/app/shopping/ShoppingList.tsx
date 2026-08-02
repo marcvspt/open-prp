@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import Select from "@/components/ui/Select.tsx";
 import type { PantryItem } from "@/lib/types/pantry.ts";
-import type { ShoppingItem } from "@/lib/types/shopping.ts";
-import { formatDate } from "@/lib/date.ts";
+import type { ShoppingItem, ShoppingList } from "@/lib/types/shopping.ts";
+import { formatDate, formatDateTime } from "@/lib/date.ts";
 import { labels } from "@/lib/labels.ts";
 
 interface PantryCategory {
@@ -14,6 +15,7 @@ interface PantryCategory {
 interface Props {
   initialTab: string;
   initialItems: string;
+  initialLists: string;
   initialPantry: string;
   initialCategories: string;
 }
@@ -25,7 +27,11 @@ export const SHOPPING_TABS = [
 
 type TabKey = (typeof SHOPPING_TABS)[number]["key"];
 
-export default function ShoppingList({ initialTab, initialItems, initialPantry, initialCategories }: Props) {
+function listTitle(list: ShoppingList): string {
+  return list.name || formatDateTime(list.created_at);
+}
+
+export default function ShoppingList({ initialTab, initialItems, initialLists, initialPantry, initialCategories }: Props) {
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     // Legacy #tab links: the server can't see the hash, so adopt it on the client.
     const h = typeof location !== "undefined" ? location.hash.replace("#", "") : "";
@@ -41,36 +47,89 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
   }, [activeTab]);
 
   // Initial data comes from SSR props; refetch only after mutations.
-  const allInitial: ShoppingItem[] = JSON.parse(initialItems);
-  const [items, setItems] = useState<ShoppingItem[]>(allInitial.filter(i => !i.is_completed));
-  const [historyItems, setHistoryItems] = useState<ShoppingItem[]>(allInitial.filter(i => i.is_completed));
+  const [lists, setLists] = useState<ShoppingList[]>(JSON.parse(initialLists));
+  const [items, setItems] = useState<ShoppingItem[]>(JSON.parse(initialItems));
   const [pantryItems, setPantryItems] = useState<PantryItem[]>(JSON.parse(initialPantry));
   const [categories, setCategories] = useState<PantryCategory[]>(JSON.parse(initialCategories));
-  const [otroInput, setOtroInput] = useState("");
+  const [otroInputs, setOtroInputs] = useState<Record<string, string>>({});
+  const [nameDrafts, setNameDrafts] = useState<Record<string, string>>({});
+  const [targetListId, setTargetListId] = useState("");
+  const [confirmDeleteListId, setConfirmDeleteListId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const [itemsRes, pantryRes, catRes] = await Promise.all([
+      const [listsRes, itemsRes, pantryRes, catRes] = await Promise.all([
+        fetch("/api/shopping/lists"),
         fetch("/api/shopping"),
         fetch("/api/pantry"),
         fetch("/api/pantry/categories"),
       ]);
+      const listsJson = await listsRes.json();
       const itemsJson = await itemsRes.json();
       const pantryJson = await pantryRes.json();
       const catJson = await catRes.json();
-
-      let allItems: ShoppingItem[] = itemsJson.data ?? itemsJson ?? [];
-      if (!Array.isArray(allItems)) allItems = [];
-
-      setItems(allItems.filter((i: ShoppingItem) => !i.is_completed));
-      setHistoryItems(allItems.filter((i: ShoppingItem) => i.is_completed));
+      setLists(listsJson.data ?? listsJson ?? []);
+      setItems(itemsJson.data ?? itemsJson ?? []);
       setPantryItems(pantryJson.data ?? pantryJson ?? []);
       setCategories(catJson.data ?? catJson ?? []);
     } catch {}
   }, []);
 
-  const activeItems = items.filter(i => !i.is_checked);
-  const checkedItems = items.filter(i => i.is_checked);
+  const activeLists = lists.filter(l => !l.is_completed);
+  const completedLists = lists.filter(l => l.is_completed);
+  const effectiveTarget =
+    activeLists.some(l => l.id === targetListId) ? targetListId : (activeLists[0]?.id ?? "");
+
+  async function handleNewList() {
+    const name = new Date().toLocaleString("es", { dateStyle: "short", timeStyle: "short" });
+    try {
+      const res = await fetch("/api/shopping/lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (res.ok) {
+        setOtroInputs({});
+        setConfirmDeleteListId(null);
+        fetchData();
+      }
+    } catch {}
+  }
+
+  function commitRename(listId: string) {
+    const draft = (nameDrafts[listId] ?? "").trim();
+    if (nameDrafts[listId] === undefined) return;
+    const current = lists.find(l => l.id === listId)?.name ?? "";
+    setNameDrafts(d => {
+      const next = { ...d };
+      delete next[listId];
+      return next;
+    });
+    if (draft !== current) {
+      fetch(`/api/shopping/lists/${listId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: draft }),
+      }).then(r => { if (r.ok) fetchData(); }).catch(() => {});
+    }
+  }
+
+  async function handleDeleteList(listId: string) {
+    try {
+      const res = await fetch(`/api/shopping/lists/${listId}`, { method: "DELETE" });
+      if (res.ok) {
+        setConfirmDeleteListId(null);
+        fetchData();
+      }
+    } catch {}
+  }
+
+  async function handleCompleteList(listId: string) {
+    try {
+      const res = await fetch(`/api/shopping/lists/${listId}/complete`, { method: "POST" });
+      if (res.ok) fetchData();
+    } catch {}
+  }
 
   async function handleToggleCheck(id: string) {
     try {
@@ -84,6 +143,7 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
   }
 
   async function handleAddFromDespensa(d: PantryItem) {
+    if (!effectiveTarget) return;
     try {
       const res = await fetch("/api/shopping", {
         method: "POST",
@@ -93,36 +153,30 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
           quantity: d.quantity,
           category: d.category_id || undefined,
           despensa_item_id: d.id,
+          list_id: effectiveTarget,
         }),
       });
       if (res.ok) fetchData();
     } catch {}
   }
 
-  async function handleAddOtro() {
-    const name = otroInput.trim();
+  async function handleAddOtro(listId: string) {
+    const name = (otroInputs[listId] ?? "").trim();
     if (!name) return;
     try {
       const res = await fetch("/api/shopping", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, quantity: 1 }),
+        body: JSON.stringify({ name, quantity: 1, list_id: listId }),
       });
       if (res.ok) {
-        setOtroInput("");
+        setOtroInputs(d => ({ ...d, [listId]: "" }));
         fetchData();
       }
     } catch {}
   }
 
-  async function handleComplete() {
-    try {
-      const res = await fetch("/api/shopping/complete", { method: "POST" });
-      if (res.ok) fetchData();
-    } catch {}
-  }
-
-  async function handleDelete(id: string) {
+  async function handleDeleteItem(id: string) {
     try {
       const res = await fetch(`/api/shopping/${id}`, { method: "DELETE" });
       if (res.ok) fetchData();
@@ -142,11 +196,11 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
     return a.localeCompare(b);
   });
 
-  const historyByMonth: Record<string, ShoppingItem[]> = {};
-  for (const h of historyItems) {
-    const month = h.completed_at ? h.completed_at.slice(0, 7) : h.updated_at.slice(0, 7);
+  const historyByMonth: Record<string, ShoppingList[]> = {};
+  for (const l of completedLists) {
+    const month = (l.completed_at ?? l.updated_at).slice(0, 7);
     if (!historyByMonth[month]) historyByMonth[month] = [];
-    historyByMonth[month].push(h);
+    historyByMonth[month].push(l);
   }
 
   function monthLabel(m: string) {
@@ -194,23 +248,46 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
 
       {activeTab === "list" && (
         <div className="space-y-4" role="tabpanel" id="panel-list" aria-labelledby="tab-list" tabIndex={0}>
+          <div className="flex items-center justify-end">
+            <button
+              onClick={handleNewList}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover"
+            >
+              {labels.shopping.newList}
+            </button>
+          </div>
+
           {Object.keys(groupedPantry).length > 0 && (
             <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-string mb-3">{labels.shopping.fromPantry}</h2>
+              <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                <h2 className="text-sm font-semibold text-string">{labels.shopping.fromPantry}</h2>
+                {activeLists.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-string-muted">{labels.shopping.addTo}</span>
+                    <Select
+                      value={effectiveTarget}
+                      onChange={v => setTargetListId(v)}
+                      options={activeLists.map(l => ({ value: l.id, label: listTitle(l) }))}
+                      ariaLabel={labels.shopping.addTo}
+                      fitWidest
+                    />
+                  </div>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2">
                 {sortedCategories.map(cat => (
                   <div key={cat} className="w-full">
                     <p className="text-xs text-string-muted mb-1 font-medium">{cat}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {groupedPantry[cat].map(d => {
-                        const alreadyInList = items.some(i => i.despensa_item_id === d.id);
+                        const alreadyInList = items.some(i => i.despensa_item_id === d.id && i.list_id === effectiveTarget);
                         return (
                           <button
                             key={d.id}
                             onClick={() => handleAddFromDespensa(d)}
-                            disabled={alreadyInList}
+                            disabled={alreadyInList || !effectiveTarget}
                             className={`text-xs px-2.5 py-1 rounded-full transition-colors ${
-                              alreadyInList
+                              alreadyInList || !effectiveTarget
                                 ? "bg-surface-alt text-string-muted cursor-not-allowed"
                                 : "bg-primary-bg text-primary-text border border-primary-border"
                             }`}
@@ -226,85 +303,119 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
             </div>
           )}
 
-          <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-string mb-3">{labels.shopping.addAnother}</h2>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={otroInput}
-                onChange={e => setOtroInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") handleAddOtro(); }}
-                placeholder={labels.shopping.searchPlaceholder}
-                className="flex-1 text-sm border border-border rounded-lg px-3 py-2 bg-surface text-string placeholder-text-muted"
-              />
-              <button
-                onClick={handleAddOtro}
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover"
-              >
-                {labels.common.add}
-              </button>
-            </div>
-          </div>
-
-          {activeItems.length > 0 && (
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <h2 className="text-sm font-semibold text-string mb-3">{labels.shopping.toBuy(activeItems.length)}</h2>
-              <div className="space-y-1">
-                {activeItems.map(i => (
-                  <div key={i.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-nav-hover group">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={i.is_checked}
-                        onChange={() => handleToggleCheck(i.id)}
-                        className="w-4 h-4 accent-primary cursor-pointer"
-                      />
-                      <span className="text-sm font-medium text-string">{i.name}</span>
-                      <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
-                    </div>
-                    <button onClick={() => handleDelete(i.id)} className="text-xs text-danger hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity">{labels.common.delete}</button>
-
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {checkedItems.length > 0 && (
-            <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-string">{labels.shopping.bought(checkedItems.length)}</h2>
-                <button
-                  onClick={handleComplete}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white hover:bg-success-hover"
-                >
-                  {labels.cta.completePurchase}
-                </button>
-              </div>
-              <div className="space-y-1">
-                {checkedItems.map(i => (
-                  <div key={i.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-nav-hover opacity-60">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={i.is_checked}
-                        onChange={() => handleToggleCheck(i.id)}
-                        className="w-4 h-4 accent-primary cursor-pointer"
-                      />
-                      <span className="text-sm line-through text-string-muted">{i.name}</span>
-                      <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeItems.length === 0 && checkedItems.length === 0 && (
+          {activeLists.length === 0 && (
             <div className="bg-panel rounded-xl border border-border p-8 shadow-sm text-center">
-              <p className="text-string-muted text-sm">{labels.empty.shoppingActive}</p>
+              <p className="text-string-muted text-sm">{labels.shopping.emptyLists}</p>
             </div>
           )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+            {activeLists.map(list => {
+            const listItems = items.filter(i => i.list_id === list.id);
+            const activeItems = listItems.filter(i => !i.is_checked);
+            const checkedItems = listItems.filter(i => i.is_checked);
+            const title = nameDrafts[list.id] ?? listTitle(list);
+            return (
+              <div key={list.id} className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={e => setNameDrafts(d => ({ ...d, [list.id]: e.target.value }))}
+                    onBlur={() => commitRename(list.id)}
+                    onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                    placeholder={labels.shopping.listNamePlaceholder}
+                    aria-label={labels.shopping.listNamePlaceholder}
+                    className="flex-1 min-w-0 text-sm font-semibold text-string bg-transparent border border-transparent hover:border-border focus:border-border focus:bg-surface rounded px-2 py-1 focus:outline-none"
+                  />
+                  <span className="text-xs text-string-muted whitespace-nowrap">{labels.shopping.itemCount(listItems.length)}</span>
+                  <button
+                    onClick={() => handleCompleteList(list.id)}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white hover:bg-success-hover"
+                  >
+                    {labels.shopping.finalizeList}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteListId(confirmDeleteListId === list.id ? null : list.id)}
+                    className="text-xs text-danger hover:text-danger-hover cursor-pointer"
+                  >
+                    {labels.shopping.deleteList}
+                  </button>
+                </div>
+
+                {confirmDeleteListId === list.id && (
+                  <div className="flex items-center justify-between gap-2 mb-2 px-3 py-2 rounded-lg bg-danger-bg border border-danger-border">
+                    <span className="text-xs text-danger-text">{labels.shopping.confirmDeleteList}</span>
+                    <div className="flex gap-3 shrink-0">
+                      <button onClick={() => handleDeleteList(list.id)} className="text-xs font-medium text-danger hover:text-danger-hover cursor-pointer">
+                        {labels.common.delete}
+                      </button>
+                      <button onClick={() => setConfirmDeleteListId(null)} className="text-xs text-string-muted hover:text-string cursor-pointer">
+                        {labels.common.cancel}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {activeItems.length > 0 && (
+                  <div className="space-y-1">
+                    {activeItems.map(i => (
+                      <div key={i.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-nav-hover group">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={i.is_checked}
+                            onChange={() => handleToggleCheck(i.id)}
+                            className="w-4 h-4 accent-primary cursor-pointer"
+                          />
+                          <span className="text-sm font-medium text-string">{i.name}</span>
+                          <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
+                        </div>
+                        <button onClick={() => handleDeleteItem(i.id)} className="text-xs text-danger hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">{labels.common.delete}</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {checkedItems.length > 0 && (
+                  <div className="space-y-1 mt-1">
+                    {checkedItems.map(i => (
+                      <div key={i.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg opacity-60">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={i.is_checked}
+                            onChange={() => handleToggleCheck(i.id)}
+                            className="w-4 h-4 accent-primary cursor-pointer"
+                          />
+                          <span className="text-sm line-through text-string-muted">{i.name}</span>
+                          <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2 mt-2 pt-2 border-t border-border/60">
+                  <input
+                    type="text"
+                    value={otroInputs[list.id] ?? ""}
+                    onChange={e => setOtroInputs(d => ({ ...d, [list.id]: e.target.value }))}
+                    onKeyDown={e => { if (e.key === "Enter") handleAddOtro(list.id); }}
+                    placeholder={labels.shopping.searchPlaceholder}
+                    className="flex-1 text-sm border border-border rounded-lg px-3 py-2 bg-surface text-string placeholder-text-muted"
+                  />
+                  <button
+                    onClick={() => handleAddOtro(list.id)}
+                    className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover"
+                  >
+                    {labels.common.add}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          </div>
         </div>
       )}
 
@@ -315,20 +426,38 @@ export default function ShoppingList({ initialTab, initialItems, initialPantry, 
               <p className="text-string-muted text-sm">{labels.empty.shoppingHistory}</p>
             </div>
           ) : (
-            Object.entries(historyByMonth).sort(([a], [b]) => b.localeCompare(a)).map(([month, monthItems]) => (
+            Object.entries(historyByMonth).sort(([a], [b]) => b.localeCompare(a)).map(([month, monthLists]) => (
               <div key={month} className="bg-panel rounded-xl border border-border p-4 shadow-sm">
                 <h3 className="text-sm font-semibold text-string mb-3">{monthLabel(month)}</h3>
-                <div className="space-y-1">
-                  {monthItems.map(i => (
-                    <div key={i.id} className="flex items-center justify-between py-1 px-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                        <span className="text-sm text-string">{i.name}</span>
-                        <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+                  {monthLists.map(list => {
+                    const listItems = items.filter(i => i.list_id === list.id);
+                    return (
+                      <div key={list.id} className="rounded-lg border border-border/60 p-3">
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <h4 className="text-sm font-semibold text-string">{listTitle(list)}</h4>
+                          <span className="text-xs text-string-muted">
+                            {labels.shopping.completedOn} {list.completed_at ? formatDate(list.completed_at) : ""}
+                          </span>
+                        </div>
+                        {listItems.length === 0 ? (
+                          <p className="text-xs text-string-muted">{labels.empty.shoppingHistory}</p>
+                        ) : (
+                          <div className="space-y-1">
+                            {listItems.map(i => (
+                              <div key={i.id} className="flex items-center justify-between py-1 px-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                                  <span className="text-sm text-string">{i.name}</span>
+                                  <span className="text-xs text-string-muted">{i.quantity}{i.unit ? " " + i.unit : ""}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <span className="text-xs text-string-muted">{i.completed_at ? formatDate(i.completed_at) : ""}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))

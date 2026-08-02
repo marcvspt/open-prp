@@ -9,7 +9,7 @@ export type { Card, CardInput } from "@/types/card.ts";
 export type { Installment, InstallmentInput, InstallmentFilter } from "@/types/installment.ts";
 export type { RecurringPayment, RecurringPaymentInput, RecurringPaymentMonthly, RecurringPaymentMonthlyUpdate } from "@/types/recurring-payment.ts";
 export type { Cashback, CashbackInput } from "@/types/cashback.ts";
-export type { ShoppingItem, ShoppingItemInput, ShoppingItemUpdate, ShoppingFilter } from "@/types/shopping.ts";
+export type { ShoppingItem, ShoppingItemInput, ShoppingItemUpdate, ShoppingFilter, ShoppingList, ShoppingListInput, ShoppingListUpdate } from "@/types/shopping.ts";
 export type { PaymentMethod, CreatePaymentMethodInput, UpdatePaymentMethodInput } from "@/types/payment-method.ts";
 export type { CardMonthly, CardMonthlyInput, CardMonthlyUpdate, CalculatedDebt } from "@/types/card-monthly.ts";
 

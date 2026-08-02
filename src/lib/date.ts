@@ -111,6 +111,15 @@ export function formatDate(dateStr: string, locale = "es", options?: Intl.DateTi
   return new Date(y, m - 1, d).toLocaleDateString(locale, options);
 }
 
+/** Safely format a YYYY-MM-DD[ HH:MM[:SS]] datetime string in the given locale, without timezone shift. */
+export function formatDateTime(dateStr: string, locale = "es"): string {
+  const [y, m, d, hh, mm, ss] = dateStr.slice(0, 19).split(/[-T: ]/).map(Number);
+  return new Date(y, m - 1, d, hh ?? 0, mm ?? 0, ss ?? 0).toLocaleString(locale, {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+}
+
 export function monthLabel(month: string): string {
   const [y, m] = month.split("-").map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString("es", { year: "numeric", month: "long" });
