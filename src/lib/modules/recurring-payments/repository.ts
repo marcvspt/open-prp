@@ -81,14 +81,20 @@ export class RecurringPaymentRepository {
     }
 
     const id = crypto.randomUUID();
-    const svc = await db.execute({
+    const svcRes = await db.execute({
       sql: "SELECT default_amount, category_id, payment_method_id, type FROM recurring_payments WHERE id = ?",
       args: [paymentId],
     });
-    const defaultAmount = Number(svc.rows[0]?.default_amount ?? data.amount ?? 0);
-    const categoryId = (svc.rows[0] as Record<string, unknown>)?.category_id ?? null;
-    const paymentMethodId = (svc.rows[0] as Record<string, unknown>)?.payment_method_id as string;
-    const paymentType = (svc.rows[0] as Record<string, unknown>)?.type ?? "expense";
+    const row = svcRes.rows[0] as unknown as {
+      default_amount?: number | string | null;
+      category_id?: string | null;
+      payment_method_id?: string | null;
+      type?: string | null;
+    } | undefined;
+    const defaultAmount = Number(row?.default_amount ?? data.amount ?? 0);
+    const categoryId: string | null = row?.category_id ?? null;
+    const paymentMethodId: string | null = row?.payment_method_id ?? null;
+    const paymentType: string = row?.type ?? "expense";
     const seq = await nextSeq("recurring_payment_monthly");
     const timestamp = now();
 

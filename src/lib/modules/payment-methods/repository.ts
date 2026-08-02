@@ -18,7 +18,7 @@ export class PaymentMethodRepository {
       sql: "SELECT * FROM payment_methods WHERE id = ? AND (user_id = ? OR type = 'global')",
       args: [id, userId],
     });
-    return (result.rows[0] as PaymentMethod | undefined) ?? null;
+    return (result.rows[0] as unknown as PaymentMethod | undefined) ?? null;
   }
 
   async create(data: CreatePaymentMethodInput, userId: string): Promise<PaymentMethod> {
@@ -46,7 +46,7 @@ export class PaymentMethodRepository {
       sql: "SELECT * FROM payment_methods WHERE id = ?",
       args: [id],
     });
-    return result.rows[0] as PaymentMethod;
+    return result.rows[0] as unknown as PaymentMethod;
   }
 
   async updateCardMethodName(cardId: string, name: string): Promise<void> {

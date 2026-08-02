@@ -24,7 +24,7 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
     sql: "SELECT cutoff_day FROM cards WHERE id = ? AND user_id = ?",
     args: [cardId, userId],
   });
-  const card = cardRes.rows[0] as { cutoff_day: number | null } | undefined;
+  const card = cardRes.rows[0] as unknown as { cutoff_day: number | null } | undefined;
   if (!card) throw new Error("Card not found");
 
   const [year, mon] = month.split("-").map(Number);
@@ -37,7 +37,7 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
           WHERE pm.card_id = ? AND t.user_id = ? AND t.type = 'expense' AND t.date >= ? AND t.date <= ?`,
     args: [cardId, userId, period.start, period.end],
   });
-  const totalPurchases = Number((txResult.rows[0] as { total: number }).total);
+  const totalPurchases = Number((txResult.rows[0] as unknown as { total: number }).total);
 
   const instRes = await db.execute({
     sql: `SELECT i.monthly_amount, i.start_date, i.total_months FROM installments i
@@ -47,7 +47,7 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
   });
   let totalInstallments = 0;
   let committedInstallments = 0;
-  for (const row of instRes.rows as { monthly_amount: number; start_date: string; total_months: number }[]) {
+  for (const row of instRes.rows as unknown as { monthly_amount: number; start_date: string; total_months: number }[]) {
     const { start_date, total_months, monthly_amount } = row;
     let found = false;
     for (let n = 0; n < total_months; n++) {
@@ -73,7 +73,7 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
           WHERE card_id = ? AND user_id = ? AND date >= ? AND date <= ?`,
     args: [cardId, userId, period.start, period.end],
   });
-  const totalCashback = Number((cbRes.rows[0] as { total: number }).total);
+  const totalCashback = Number((cbRes.rows[0] as unknown as { total: number }).total);
 
   const rpRes = await db.execute({
     sql: `SELECT COALESCE(SUM(rpm.amount), 0) AS total FROM recurring_payment_monthly rpm
@@ -81,7 +81,7 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
           WHERE pm.card_id = ? AND rpm.user_id = ? AND rpm.month = ? AND rpm.is_paid = 1 AND rpm.type = 'expense'`,
     args: [cardId, userId, month],
   });
-  const totalRecurring = Number((rpRes.rows[0] as { total: number }).total);
+  const totalRecurring = Number((rpRes.rows[0] as unknown as { total: number }).total);
 
   const statementBalance = totalPurchases + totalInstallments + totalRecurring - totalCashback;
 
