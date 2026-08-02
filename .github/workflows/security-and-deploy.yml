@@ -2,7 +2,8 @@ name: security-and-deploy
 
 on:
   push:
-    branches: [main]
+    branches: [master]
+  workflow_dispatch:
 
 jobs:
   sast:
@@ -20,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: npx audit-ci --moderate
       - uses: aquasecurity/trivy-action@master
-        with: { scan-type: 'fs', exit-code: '1', severity: 'CRITICAL,HIGH' }
+        with: { scan-type: "fs", exit-code: "1", severity: "CRITICAL,HIGH" }
 
   secrets:
     runs-on: ubuntu-latest
