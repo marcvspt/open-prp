@@ -8,11 +8,12 @@ export const FILTER_CTA_CLASS = "hidden sm:block sm:shrink-0 px-3 py-2 text-sm f
 
 export const BTN_CLEAR = labels.filter.btnClear;
 
-export const FILTER_ALL = labels.filter.all;
+export const FILTER_ALL_TYPES = labels.filter.allTypes;
+export const FILTER_ALL_STATUS_TASKS = labels.filter.allStatusTasks;
 export const FILTER_ALL_CATEGORIES = labels.filter.allCategories;
 export const FILTER_ALL_CARDS = labels.filter.allCards;
 export const FILTER_ALL_PAYMENT_METHODS = labels.filter.allPaymentMethods;
-export const FILTER_ALL_STATUS = labels.filter.allStatus;
+export const FILTER_ALL_STATUS_INSTALLMENTS = labels.filter.allStatusInstallments;
 export const FILTER_ALL_MONTHS = labels.filter.allMonths;
 
 export const FILTER_ALL_SECTIONS = labels.filter.allSections;

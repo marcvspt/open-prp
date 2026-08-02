@@ -229,6 +229,7 @@ Deuda = SUM(transacciones del mes)
 ## Textos UI centralizados
 
 - **`src/lib/labels.ts`** — diccionario `labels` con `as const` organizado por dominio (`common`, `field`, `table`, `empty`, `badge`, `stat`, `tabs`, `nav`, `theme`, `page`, `cta`, `singular`, `filter`, `currency`, `shopping`, `cards`, `recurring`, `dashboard`, `sections`, `select`, `error`). Estructura preparada para futuro i18n (**no implementar i18n**).
+- **Cadenas compartidas**: diccionario interno `shared` (no exportado) con los valores repetidos entre secciones; cada sección apunta a él con su propia clave (`field.category: shared.category`, `filter.allCategories: shared.allCategories`). Las secciones siguen independientes y pueden divergir creando una clave `shared` distinta. Existen claves separadas para singular/plural/título y para textos canónicos distintos (`allCategories: "Todas las categorías"`).
 - **Nunca hardcodear textos UI**: importar `labels` o las constantes derivadas en `general-fields.ts` / `filter-fields.ts` / `form-fields.ts`. Los datos del usuario (nombres, descripciones) nunca van a labels.
 - Strings dinámicos como funciones: `labels.common.deleteConfirm(label)`, `labels.shopping.toBuy(n)`, `labels.error.message(msg)`.
 
