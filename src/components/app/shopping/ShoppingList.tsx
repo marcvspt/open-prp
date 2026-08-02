@@ -226,7 +226,17 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
 
   return (
     <div>
-      <div className="flex gap-0 border-b border-border mb-6" role="tablist" aria-label={labels.shopping.ariaSections}>
+      <div className="flex md:hidden items-center gap-2 mb-4">
+        <div className="flex-1">
+          <Select
+            value={activeTab}
+            onChange={(v) => selectTab(v as TabKey)}
+            options={SHOPPING_TABS.map(t => ({ value: t.key, label: t.label }))}
+            ariaLabel={labels.shopping.ariaSections}
+          />
+        </div>
+      </div>
+      <div className="hidden md:flex gap-0 border-b border-border mb-6" role="tablist" aria-label={labels.shopping.ariaSections}>
         {SHOPPING_TABS.map(t => (
           <button
             key={t.key}
