@@ -1,5 +1,5 @@
 ﻿import type { APIContext, APIRoute } from "astro";
-import { errorResponse, getSearchParams, jsonResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { errorResponse, getSearchParams, jsonResponse, readJsonBody, requireUserId, withErrorHandling } from "@/lib/api-helpers.ts";
 
 interface IdCrudRepo<T, U> {
   findById: (id: string, userId: string) => Promise<T | null>;
@@ -23,7 +23,7 @@ export function createIdRoutes<T, U>(repo: IdCrudRepo<T, U>, options: IdRouteOpt
   const routes: Record<string, APIRoute> = {};
 
   if (get) {
-    routes.GET = async (context) => {
+    routes.GET = withErrorHandling(async (context) => {
       const uid = requireUserId(context);
       if (uid instanceof Response) return uid;
 
@@ -31,25 +31,27 @@ export function createIdRoutes<T, U>(repo: IdCrudRepo<T, U>, options: IdRouteOpt
       if (!row) return notFound();
 
       return jsonResponse(row);
-    };
+    });
   }
 
-  const writeHandler: APIRoute = async (context) => {
+  const writeHandler: APIRoute = withErrorHandling(async (context) => {
     const uid = requireUserId(context);
     if (uid instanceof Response) return uid;
 
-    const body = await context.request.json();
-    const row = await repo.update(context.params.id!, body, uid);
+    const body = await readJsonBody(context);
+    if (!body) return errorResponse("Body inválido", 400);
+
+    const row = await repo.update(context.params.id!, body as unknown as U, uid);
     if (!row) return notFound();
 
     return jsonResponse(row);
-  };
+  });
 
   if (patch) routes.PATCH = writeHandler;
   if (put) routes.PUT = writeHandler;
 
   if (del) {
-    routes.DELETE = async (context) => {
+    routes.DELETE = withErrorHandling(async (context) => {
       const uid = requireUserId(context);
       if (uid instanceof Response) return uid;
 
@@ -57,7 +59,7 @@ export function createIdRoutes<T, U>(repo: IdCrudRepo<T, U>, options: IdRouteOpt
       if (!ok) return notFound();
 
       return jsonResponse({ deleted: true });
-    };
+    });
   }
 
   return routes;
@@ -75,7 +77,7 @@ interface IndexRouteOptions<F> {
 
 /** Handlers GET/POST for a "/api/" CRUD list route. */
 export function createIndexRoutes<F, C>(repo: IndexCrudRepo<F, C>, options: IndexRouteOptions<F> = {}) {
-  const GET: APIRoute = async (context) => {
+  const GET: APIRoute = withErrorHandling(async (context) => {
     const uid = requireUserId(context);
     if (uid instanceof Response) return uid;
 
@@ -84,19 +86,21 @@ export function createIndexRoutes<F, C>(repo: IndexCrudRepo<F, C>, options: Inde
       : await repo.findAll(uid);
 
     return jsonResponse(result);
-  };
+  });
 
-  const POST: APIRoute = async (context) => {
+  const POST: APIRoute = withErrorHandling(async (context) => {
     const uid = requireUserId(context);
     if (uid instanceof Response) return uid;
 
-    const body = await context.request.json();
+    const body = await readJsonBody(context);
+    if (!body) return errorResponse("Body inválido", 400);
+
     const error = options.validateCreate?.(body);
     if (error) return errorResponse(error);
 
-    const row = await repo.create(body, uid);
+    const row = await repo.create(body as unknown as C, uid);
     return jsonResponse(row, 201);
-  };
+  });
 
   return { GET, POST };
 }

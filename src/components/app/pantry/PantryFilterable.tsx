@@ -12,12 +12,17 @@ interface Props {
 
 export default function PantryFilterable({ categories, initialData }: Props) {
   const parsedInitial = initialData ? JSON.parse(initialData) as PantryItem[] : undefined;
-  const { filters, setFilter, clearFilters, data, loading } = useFilteredData<PantryItem[]>("/api/pantry", {}, parsedInitial);
+  const { filters, setFilter, clearFilters, data, loading, error } = useFilteredData<PantryItem[]>("/api/pantry", {}, parsedInitial);
 
   const items = data ?? [];
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="rounded-xl border border-danger-border bg-danger-bg px-4 py-3 text-sm text-danger-text" role="alert">
+          {error}
+        </div>
+      )}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className={FILTER_GRID_CLASS}>
           <div className={`${FILTER_WRAP_CLASS} col-span-2 sm:col-span-1`}>

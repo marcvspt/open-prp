@@ -1,11 +1,11 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, requireUserId } from "@/lib/api-helpers.ts";
+import { jsonResponse, requireUserId, withErrorHandling } from "@/lib/api-helpers.ts";
 import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
 import { lastYearWindow } from "@/lib/date.ts";
 
 const repo = new RecurringPaymentRepository();
 
-export const GET: APIRoute = async (context) => {
+export const GET: APIRoute = withErrorHandling(async (context) => {
   const uid = requireUserId(context);
   if (uid instanceof Response) return uid;
 
@@ -17,4 +17,4 @@ export const GET: APIRoute = async (context) => {
     return jsonResponse(history.filter(d => d.month === month));
   }
   return jsonResponse(history);
-};
+});

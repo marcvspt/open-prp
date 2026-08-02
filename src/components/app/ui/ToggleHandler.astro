@@ -14,8 +14,16 @@ const { module, key = "is_checked", endpoint = `/api/${module}/toggle` } = Astro
     if (toggle) {
       const id = toggle.getAttribute(`data-toggle-${module}`);
       const value = /** @type {HTMLInputElement} */(toggle).checked;
-      await fetch(endpoint, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, [key]: value }) });
-      window.location.reload();
+      try {
+        const res = await fetch(endpoint, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, [key]: value }) });
+        if (!res.ok) {
+          console.error(`Toggle ${module} ${id} failed with ${res.status}`);
+          return;
+        }
+        window.location.reload();
+      } catch (err) {
+        console.error(`Toggle ${module} ${id} threw:`, err);
+      }
     }
   });
 </script>

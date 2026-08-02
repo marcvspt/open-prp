@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { labels } from "@/lib/labels.ts";
 
 interface FilterState {
   [key: string]: string;
@@ -21,6 +22,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
   const [filters, setFilters] = useState<FilterState>(() => filtersFromUrl(initial));
   const [data, setData] = useState<T | null>(initialData ?? null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const prevQsRef = useRef<string>("");
   const isFirstRender = useRef(true);
@@ -67,7 +69,10 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
     fetch(`${apiEndpoint}?${qs}`)
       .then(r => r.json())
       .then(d => setData((d?.data ?? d) as T))
-      .catch(() => setData([] as unknown as T))
+      .catch((err: unknown) => {
+        console.error(`Fetch ${apiEndpoint} failed:`, err);
+        setError(labels.error.message(labels.common.errorUnknown));
+      })
       .finally(() => setLoading(false));
 
     const params = new URLSearchParams(location.search);
@@ -79,5 +84,5 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
     history.replaceState(null, "", nextQs ? `${location.pathname}?${nextQs}` : location.pathname);
   }, [filters, apiEndpoint]);
 
-  return { filters, setFilter, clearFilters, data, loading };
+  return { filters, setFilter, clearFilters, data, loading, error };
 }

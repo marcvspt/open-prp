@@ -18,7 +18,7 @@ const cardEmoji = (type: string) => type === "credit" ? "💳" : type === "debit
 
 export default function CashbackFilterable({ initialMonth, cards, initialData, createdAt }: Props) {
   const parsedInitial = initialData ? JSON.parse(initialData) as Cashback[] : undefined;
-  const { filters, setFilter, clearFilters, data, loading } = useFilteredData<Cashback[]>("/api/cashback", {
+  const { filters, setFilter, clearFilters, data, loading, error } = useFilteredData<Cashback[]>("/api/cashback", {
     ...(initialMonth ? { month: initialMonth } : {}),
   }, parsedInitial);
 
@@ -26,6 +26,11 @@ export default function CashbackFilterable({ initialMonth, cards, initialData, c
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="rounded-xl border border-danger-border bg-danger-bg px-4 py-3 text-sm text-danger-text" role="alert">
+          {error}
+        </div>
+      )}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className={FILTER_GRID_CLASS}>
           <div className={FILTER_WRAP_CLASS}>

@@ -55,6 +55,7 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
   const [nameDrafts, setNameDrafts] = useState<Record<string, string>>({});
   const [targetListId, setTargetListId] = useState("");
   const [confirmDeleteListId, setConfirmDeleteListId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const fetchData = useCallback(async () => {
     try {
@@ -72,7 +73,10 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       setItems(itemsJson.data ?? itemsJson ?? []);
       setPantryItems(pantryJson.data ?? pantryJson ?? []);
       setCategories(catJson.data ?? catJson ?? []);
-    } catch {}
+    } catch (err: unknown) {
+      console.error("Failed to load shopping data:", err);
+      setError(labels.error.message(labels.common.errorUnknown));
+    }
   }, []);
 
   const activeLists = lists.filter(l => !l.is_completed);
@@ -92,8 +96,13 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
         setOtroInputs({});
         setConfirmDeleteListId(null);
         fetchData();
+      } else {
+        setError(labels.error.message(labels.common.errorUnknown));
       }
-    } catch {}
+    } catch (err: unknown) {
+      console.error("Failed to create list:", err);
+      setError(labels.error.message(labels.common.errorUnknown));
+    }
   }
 
   function commitRename(listId: string) {
@@ -110,7 +119,15 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: draft }),
-      }).then(r => { if (r.ok) fetchData(); }).catch(() => {});
+      })
+        .then(r => {
+          if (r.ok) fetchData();
+          else setError(labels.error.message(labels.common.errorUnknown));
+        })
+        .catch((err: unknown) => {
+          console.error(`Failed to rename list ${listId}:`, err);
+          setError(labels.error.message(labels.common.errorUnknown));
+        });
     }
   }
 
@@ -120,15 +137,24 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       if (res.ok) {
         setConfirmDeleteListId(null);
         fetchData();
+      } else {
+        setError(labels.error.message(labels.common.errorUnknown));
       }
-    } catch {}
+    } catch (err: unknown) {
+      console.error(`Failed to delete list ${listId}:`, err);
+      setError(labels.error.message(labels.common.errorUnknown));
+    }
   }
 
   async function handleCompleteList(listId: string) {
     try {
       const res = await fetch(`/api/shopping/lists/${listId}/complete`, { method: "POST" });
       if (res.ok) fetchData();
-    } catch {}
+      else setError(labels.error.message(labels.common.errorUnknown));
+    } catch (err: unknown) {
+      console.error(`Failed to complete list ${listId}:`, err);
+      setError(labels.error.message(labels.common.errorUnknown));
+    }
   }
 
   async function handleToggleCheck(id: string) {
@@ -139,7 +165,11 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
         body: JSON.stringify({ id }),
       });
       if (res.ok) fetchData();
-    } catch {}
+      else setError(labels.error.message(labels.common.errorUnknown));
+    } catch (err: unknown) {
+      console.error(`Failed to toggle item ${id}:`, err);
+      setError(labels.error.message(labels.common.errorUnknown));
+    }
   }
 
   async function handleAddFromDespensa(d: PantryItem) {
@@ -157,7 +187,11 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
         }),
       });
       if (res.ok) fetchData();
-    } catch {}
+      else setError(labels.error.message(labels.common.errorUnknown));
+    } catch (err: unknown) {
+      console.error("Failed to add from pantry:", err);
+      setError(labels.error.message(labels.common.errorUnknown));
+    }
   }
 
   async function handleAddOtro(listId: string) {
@@ -172,15 +206,24 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       if (res.ok) {
         setOtroInputs(d => ({ ...d, [listId]: "" }));
         fetchData();
+      } else {
+        setError(labels.error.message(labels.common.errorUnknown));
       }
-    } catch {}
+    } catch (err: unknown) {
+      console.error(`Failed to add item to list ${listId}:`, err);
+      setError(labels.error.message(labels.common.errorUnknown));
+    }
   }
 
   async function handleDeleteItem(id: string) {
     try {
       const res = await fetch(`/api/shopping/${id}`, { method: "DELETE" });
       if (res.ok) fetchData();
-    } catch {}
+      else setError(labels.error.message(labels.common.errorUnknown));
+    } catch (err: unknown) {
+      console.error(`Failed to delete item ${id}:`, err);
+      setError(labels.error.message(labels.common.errorUnknown));
+    }
   }
 
   const groupedPantry: Record<string, PantryItem[]> = {};
@@ -226,6 +269,18 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
 
   return (
     <div>
+      {error && (
+        <div className="mb-4 rounded-xl border border-danger-border bg-danger-bg px-4 py-3 text-sm text-danger-text" role="alert">
+          {error}
+          <button
+            onClick={() => setError("")}
+            className="ml-2 font-medium hover:underline"
+            aria-label={labels.common.dismiss}
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="flex md:hidden items-center gap-2 mb-4">
         <div className="flex-1">
           <Select

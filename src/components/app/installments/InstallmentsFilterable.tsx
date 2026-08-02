@@ -18,7 +18,7 @@ interface Props {
 
 export default function InstallmentsFilterable({ initialMonth, activeOnly: initialActive, paymentMethods, categories, initialData, createdAt }: Props) {
   const parsedInitial = initialData ? JSON.parse(initialData) as Installment[] : undefined;
-  const { filters, setFilter, clearFilters, data, loading } = useFilteredData<Installment[]>("/api/installments", {
+  const { filters, setFilter, clearFilters, data, loading, error } = useFilteredData<Installment[]>("/api/installments", {
     ...(initialActive ? { active_only: "true" } : {}),
     ...(initialMonth ? { month: initialMonth } : {}),
   }, parsedInitial);
@@ -27,6 +27,11 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="rounded-xl border border-danger-border bg-danger-bg px-4 py-3 text-sm text-danger-text" role="alert">
+          {error}
+        </div>
+      )}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className={FILTER_GRID_CLASS}>
           <div className={FILTER_WRAP_CLASS}>
