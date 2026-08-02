@@ -28,7 +28,7 @@ const fields = [
 const defaultForm = { description: "", category_id: "", location: "", start_date: "", end_date: "", status: "pending", is_all_day: false };
 ---
 
-<AppLayout title={`${labels.page.events} - Open PRP`}>
+<AppLayout title={`${labels.page.events}`}>
   <div data-module="events" class="space-y-4">
     <PageHeader title={labels.page.events} createLabel={labels.cta.newEvent} createModule="events" />
     {items.length === 0 ? (

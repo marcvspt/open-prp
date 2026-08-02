@@ -16,7 +16,7 @@ const FEATURE_ICONS = [DollarIcon, CardIcon, ClipboardIcon, RecurringIcon, Packa
 const FEATURES_INFO = labels.landing.features.map((feature, i) => ({ icon: FEATURE_ICONS[i], ...feature }));
 ---
 
-<LandingLayout>
+<LandingLayout title={`${labels.page.home}`}>
   <Hero />
   <section id="features" class="border-t border-border bg-surface-alt py-24">
     <div class="mx-auto max-w-6xl px-6">

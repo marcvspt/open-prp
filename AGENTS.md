@@ -27,11 +27,12 @@ astro dev stop | status | logs
 - **Hosting**: Netlify (adapter en `astro.config.mjs`)
 - **Base de datos**: TursoDB (`@libsql/client/web`, compatible con Netlify Functions)
 - **Autenticación**: Clerk
-- **Variables de entorno**: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
+- **Variables de entorno**: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`. Se declaran con el schema de `envField` de Astro en `astro.config.mjs` (`env.schema`), con `context` (`server`/`client`) y `access` (`secret`/`public`). Ventajas: valida en build que existan las obligatorias (`optional: false`), da tipos e IntelliSense para `import.meta.env.*`, y evita fugas al cliente (solo las `PUBLIC_*` con `access: 'public'` llegan al bundle del cliente; los secretos nunca se exponen).
 
 ## Arquitectura general
 
 - **SSR-first**: se prioriza Server-Side Rendering con Astro. Los datos se obtienen en SSR siempre que sea posible; la página llega ya renderizada al cliente.
+- **Mejores prácticas y rendimiento**: seguir siempre las mejores prácticas de cada tecnología (Astro, React, Tailwind, TypeScript, Clerk, TursoDB) y priorizar el rendimiento web (Core Web Vitals, bundle en cliente reducido, SSR/SSG donde aplique, queries eficientes, caching, hydration mínima).
 - React 19 se usa únicamente en componentes que requieren comportamiento dinámico en cliente (filtros, tabs, modales CRUD, interacciones en lista de compras).
 - Se prioriza la componentización y reutilización de componentes, utilidades y estilos. Cualquier funcionalidad compartida entre secciones debe implementarse como recurso reutilizable, nunca duplicado.
 - **Patrón de datos iniciales SSR**: las islas React reciben datos del primer render vía props (`initialData={JSON.stringify(...)}` desde repositorios en el frontmatter de la `.astro`). Re-fetch en cliente al cambiar filtros (vía `useFilteredData` o escuchando el evento `monthchange`) o tras una mutación. Aplica a: `ShoppingList`, `RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary`, `CardsHistory`, `CurrencySelect`, componentes `*Filterable`.
@@ -51,7 +52,7 @@ astro dev stop | status | logs
 - `needsSync()` — sincroniza el perfil si email/nombre están vacíos o pasaron >5 min desde el último sync.
 - Hooks React desde `@clerk/astro/react` (**no** `@clerk/clerk-react`).
 - `UserButton` con `afterSignOutUrl="/app/login"` y `client:load`.
-- Redirects de Clerk configurados en `astro.config.mjs`: `afterSignInUrl`, `afterSignUpUrl`, `afterSignOutUrl`.
+- Redirects de Clerk configurados en `astro.config.mjs`: `afterSignOutUrl`.
 
 ## Estructura del proyecto
 
@@ -80,6 +81,27 @@ astro dev stop | status | logs
 - `BaseLayout.astro` — `<html>`, `<head>`, meta, favicon, dark mode inline script, título `"Open PRP | {title}"`, `<slot name="head" />`.
 - `AppLayout.astro` — extiende `BaseLayout`. Inyecta manifest PWA + theme-color vía `slot="head"`. Sidebar + main + pantalla de login. Registra el service worker.
 - `LandingLayout.astro` — extiende `BaseLayout`. Header + slot + Footer.
+- Todo layout específico (ej. `BlogLayout.astro`) debe envolverse en `BaseLayout.astro`, reenviando como mínimo la prop `title` (y otras si aplica) para que `BaseLayout` controle el `<head>` y el título de la página.
+
+```astro
+---
+// BlogLayout.astro
+import BaseLayout from '@/layouts/BaseLayout.astro';
+const { title } = Astro.props;
+---
+<BaseLayout title={title}>
+  <slot />
+</BaseLayout>
+```
+
+- No dupliques lógica de `<head>`/SEO en el layout hijo: eso vive solo en `BaseLayout.astro`.
+
+- El título `title=` de las páginas debe ser el nombre de la sección/página (ej. **Dashboard**), y se renderizará como `Open PRP | Dashboard`. Si no se pasa `title=`, se muestra solo `Open PRP` ya que se tiene realizado la siguiente configuracion en `BaseLayout.astro`
+
+```astro
+const { title } = Astro.props;
+const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
+```
 
 ### Sidebar (app)
 
@@ -129,9 +151,18 @@ astro dev stop | status | logs
 - `findAll()` en recurring-payments: `LEFT JOIN` con categories y payment_methods.
 - Card repository: al crear/actualizar/eliminar una tarjeta, sincroniza automáticamente el `PaymentMethod` asociado vía `PaymentMethodRepository`.
 
+### API routes (factories)
+
+- **`src/lib/api-routes.ts`** centraliza el esqueleto de los CRUD de la API:
+  - `createIdRoutes(repo, { get?, patch?, put?, delete?, notFoundMessage? })` → handlers `GET`/`PATCH`/`PUT`/`DELETE` para `/api/*/[id]`. `repo` debe exponer `findById`/`update`/`delete` (con scope por `userId`). Variantes: `{ get: false }` (payment-methods, categories), `{ patch: false }` (pantry), `{ patch: false, notFoundMessage: "No encontrado" }` (recurring-payments).
+  - `createIndexRoutes(repo, { buildFilter?, validateCreate? })` → handlers `GET`/`POST` para `/api/*/`. `buildFilter(params, context)` construye el filtro del repo; `validateCreate(body)` devuelve `string | null` (mensaje de error o `null`). Si no hay `buildFilter`, el GET llama `findAll(uid)` sin filtro (payment-methods, recurring-payments, cards).
+  - Uso: `export const { GET, PATCH, PUT, DELETE } = createIdRoutes(new XRepository())`. Astro resuelve los handlers leyendo `mod[method]`, así que los exports destructurados son válidos.
+- **`src/lib/api-helpers.ts`** — helpers compartidos de rutas: `jsonResponse`, `errorResponse`, `requireUserId`, `getSearchParams`, `parsePageParams`, **`parseBoolParam`** (parsea `?x=true|false` → `boolean | undefined`) y **`getDateRange`** (aplica la ventana "Último año" vía `lastYearWindow`/`lastDayOfMonth` cuando no hay `month` ni `date_from`/`date_to`; usada en transactions, installments, cashback).
+- **Rutas custom (no usan factory)**: `categories/index.ts` (dup-check 409 + merge de secciones), `pantry/index.ts` (default `category_id` + try/catch con 500), `recurring-payment-monthly/index.ts` (by month, PATCH/DELETE por query param), `card-monthly/index.ts` (upsert/toggle), `notes/tags/*` y `pantry/categories/*` (repo/métodos custom).
+
 ## Componentes UI reutilizables
 
-- **Select**: usar el custom `src/components/ui/Select.tsx` (filtros y formularios). Dropdown portaleado a `body` con `position: fixed`, viewport-aware (`maxHeight` dinámico). Props `ariaLabel`, `aria-activedescendant`, `role="combobox"`.
+- **Select**: usar el custom `src/components/ui/Select.tsx` (filtros y formularios). Dropdown portaleado a `body` con `position: fixed`, viewport-aware (`maxHeight` dinámico). Props `ariaLabel`, `aria-activedescendant`, `role="combobox"`. `fitWidest` fija el ancho del botón a la opción más larga (mide las opciones con un contenedor oculto + ResizeObserver), evitando que el ancho cambie al cambiar de opción (usado por `ThemeToggle`).
 - **MultiSelect**: usar el custom `src/components/ui/MultiSelect.tsx`. Mismo patrón de dropdown portaleado y accesibilidad que `Select`.
 - **Tabs**: usar `src/components/app/ui/TabBar.tsx` (no confundir con `src/components/ui/`). Mismo estilo y comportamiento en todas las secciones; en móvil se convierten en un Select custom. Recibe opcionalmente un `monthSelector` para mostrar junto a las tabs.
 - **TabBarWithMonth**: wrapper de `TabBar` que añade `MonthSelector` y dispatchea el evento `monthchange` al cambiar el filtro. Props: `tabs`, `initialTab`, `defaultTab`, `ariaLabel`, `initialMonth`, `createdAt`, `allLabel`. Cuando la tab activa no es `"history"`, oculta la opción "allLabel" y si estaba seleccionada fuerza al mes actual.

@@ -1,4 +1,4 @@
-export type CategoryType = "global" | "personal";
+type CategoryType = "global" | "personal";
 
 export interface Category {
   id: string;

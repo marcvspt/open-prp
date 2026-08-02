@@ -33,6 +33,7 @@ export default function ThemeToggle() {
       onChange={handleChange}
       options={options}
       className="w-full"
+      fitWidest
       ariaLabel={labels.theme.label}
     />
   );

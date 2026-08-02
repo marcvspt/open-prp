@@ -1,6 +1,5 @@
 import { getDb } from "@/lib/db/client.ts";
-import { nextSeq } from "@/lib/db/utils.ts";
-import { localISOString } from "@/lib/date.ts";
+import { nextSeq, scopedFindById, scopedDelete, insertRow, applyUpdate, now, type SqlValue } from "@/lib/db/utils.ts";
 import type { RecurringPayment, RecurringPaymentInput, RecurringPaymentMonthly, RecurringPaymentMonthlyUpdate } from "@/lib/types/recurring-payment.ts";
 
 export class RecurringPaymentRepository {
@@ -19,36 +18,23 @@ export class RecurringPaymentRepository {
   }
 
   async findById(id: string, userId: string): Promise<RecurringPayment | null> {
-    const result = await getDb().execute({
-      sql: "SELECT * FROM recurring_payments WHERE id = ? AND user_id = ?",
-      args: [id, userId],
-    });
-    return (result.rows[0] as unknown as RecurringPayment | undefined) ?? null;
+    return scopedFindById<RecurringPayment>("recurring_payments", id, userId);
   }
 
   async create(data: RecurringPaymentInput, userId: string): Promise<RecurringPayment> {
-    const db = getDb();
-    const id = crypto.randomUUID();
-    const seq = await nextSeq("recurring_payments");
-    const now = localISOString();
-
-    await db.execute({
-      sql: `INSERT INTO recurring_payments (id, user_id, name, default_amount, currency, type, category_id, payment_method_id, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, data.name, data.default_amount, data.currency ?? "MXN", data.type ?? "expense", data.category_id || null, data.payment_method_id, seq, now, now],
-    });
-
-    const result = await db.execute({ sql: "SELECT * FROM recurring_payments WHERE id = ?", args: [id] });
-    return result.rows[0] as unknown as RecurringPayment;
+    return insertRow<RecurringPayment>("recurring_payments", userId, [
+      "name", "default_amount", "currency", "type", "category_id", "payment_method_id",
+    ], [
+      data.name, data.default_amount, data.currency ?? "MXN", data.type ?? "expense", data.category_id || null, data.payment_method_id,
+    ]);
   }
 
   async update(id: string, data: Partial<RecurringPaymentInput>, userId: string): Promise<RecurringPayment | null> {
-    const db = getDb();
     const existing = await this.findById(id, userId);
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: (string | number | boolean | null)[] = [];
+    const args: SqlValue[] = [];
 
     if (data.name !== undefined) { sets.push("name = ?"); args.push(data.name); }
     if (data.default_amount !== undefined) { sets.push("default_amount = ?"); args.push(data.default_amount); }
@@ -57,27 +43,11 @@ export class RecurringPaymentRepository {
     if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id); }
     if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }
 
-    if (sets.length === 0) return existing;
-
-    sets.push("updated_at = ?");
-    args.push(localISOString());
-    args.push(id, userId);
-
-    await db.execute({
-      sql: `UPDATE recurring_payments SET ${sets.join(", ")} WHERE id = ? AND user_id = ?`,
-      args,
-    });
-
-    const result = await db.execute({ sql: "SELECT * FROM recurring_payments WHERE id = ?", args: [id] });
-    return result.rows[0] as unknown as RecurringPayment;
+    return applyUpdate<RecurringPayment>("recurring_payments", id, userId, sets, args, { existing });
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
-    const result = await getDb().execute({
-      sql: "DELETE FROM recurring_payments WHERE id = ? AND user_id = ?",
-      args: [id, userId],
-    });
-    return result.rowsAffected > 0;
+    return scopedDelete("recurring_payments", id, userId);
   }
 
   async getMonthly(paymentId: string, month: string): Promise<RecurringPaymentMonthly | null> {
@@ -120,12 +90,12 @@ export class RecurringPaymentRepository {
     const paymentMethodId = (svc.rows[0] as Record<string, unknown>)?.payment_method_id as string;
     const paymentType = (svc.rows[0] as Record<string, unknown>)?.type ?? "expense";
     const seq = await nextSeq("recurring_payment_monthly");
-    const now = localISOString();
+    const timestamp = now();
 
     await db.execute({
       sql: `INSERT INTO recurring_payment_monthly (id, user_id, payment_id, month, amount, type, category_id, payment_method_id, is_active, is_paid, seq, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, paymentId, month, data.amount ?? defaultAmount, paymentType, categoryId, paymentMethodId, data.is_active !== false ? 1 : 0, data.is_paid ? 1 : 0, seq, now],
+      args: [id, userId, paymentId, month, data.amount ?? defaultAmount, paymentType, categoryId, paymentMethodId, data.is_active !== false ? 1 : 0, data.is_paid ? 1 : 0, seq, timestamp],
     });
 
     return (await this.getMonthly(paymentId, month))!;

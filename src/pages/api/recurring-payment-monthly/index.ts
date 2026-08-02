@@ -26,7 +26,7 @@ export const PATCH: APIRoute = async (context) => {
   const body = await context.request.json() as RecurringPaymentMonthlyUpdate;
   if (!body) return errorResponse("Body inválido");
 
-  const ok = await repo.update(id, body);
+  const ok = await repo.update(id, body, uid);
   if (!ok) return errorResponse("No encontrado", 404);
   return jsonResponse({ updated: true });
 };
@@ -38,7 +38,7 @@ export const DELETE: APIRoute = async (context) => {
   const id = context.url.searchParams.get("id");
   if (!id) return errorResponse("id es requerido");
 
-  const ok = await repo.delete(id);
+  const ok = await repo.delete(id, uid);
   if (!ok) return errorResponse("No encontrado", 404);
   return jsonResponse({ deleted: true });
 };

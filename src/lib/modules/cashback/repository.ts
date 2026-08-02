@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db/client.ts";
-import { nextSeq } from "@/lib/db/utils.ts";
+import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
+import { lastDayOfMonth } from "@/lib/date.ts";
 import type { Cashback, CashbackInput } from "@/lib/types/cashback.ts";
 
 export class CashbackRepository {
@@ -12,8 +13,7 @@ export class CashbackRepository {
     if (filter?.q) { conditions.push("description LIKE ?"); args.push(`%${filter.q}%`); }
     if (filter?.month) {
       conditions.push("date >= ? AND date <= ?");
-      const lastDay = new Date(Number(filter.month.slice(0, 4)), Number(filter.month.slice(5, 7)), 0).getDate();
-      args.push(`${filter.month}-01`, `${filter.month}-${String(lastDay).padStart(2, "0")}`);
+      args.push(`${filter.month}-01`, lastDayOfMonth(filter.month));
     }
     if (filter?.date_from) { conditions.push("date >= ?"); args.push(filter.date_from); }
     if (filter?.date_to) { conditions.push("date <= ?"); args.push(filter.date_to); }
@@ -26,36 +26,23 @@ export class CashbackRepository {
   }
 
   async findById(id: string, userId: string): Promise<Cashback | null> {
-    const result = await getDb().execute({
-      sql: "SELECT * FROM cashback WHERE id = ? AND user_id = ?",
-      args: [id, userId],
-    });
-    return (result.rows[0] as unknown as Cashback | undefined) ?? null;
+    return scopedFindById<Cashback>("cashback", id, userId);
   }
 
   async create(data: CashbackInput, userId: string): Promise<Cashback> {
-    const db = getDb();
-    const id = crypto.randomUUID();
-    const seq = await nextSeq("cashback");
-    const now = new Date().toISOString();
-
-    await db.execute({
-      sql: `INSERT INTO cashback (id, user_id, card_id, amount, currency, description, date, seq, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, data.card_id, data.amount, data.currency ?? "MXN", data.description ?? null, data.date, seq, now],
-    });
-
-    const result = await db.execute({ sql: "SELECT * FROM cashback WHERE id = ?", args: [id] });
-    return result.rows[0] as unknown as Cashback;
+    return insertRow<Cashback>("cashback", userId, [
+      "card_id", "amount", "currency", "description", "date",
+    ], [
+      data.card_id, data.amount, data.currency ?? "MXN", data.description ?? null, data.date,
+    ], { withUpdatedAt: false });
   }
 
   async update(id: string, data: Partial<CashbackInput>, userId: string): Promise<Cashback | null> {
-    const db = getDb();
     const existing = await this.findById(id, userId);
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: (string | number | boolean | null)[] = [];
+    const args: SqlValue[] = [];
 
     if (data.card_id !== undefined) { sets.push("card_id = ?"); args.push(data.card_id); }
     if (data.amount !== undefined) { sets.push("amount = ?"); args.push(data.amount); }
@@ -63,23 +50,10 @@ export class CashbackRepository {
     if (data.description !== undefined) { sets.push("description = ?"); args.push(data.description ?? null); }
     if (data.date !== undefined) { sets.push("date = ?"); args.push(data.date); }
 
-    if (sets.length === 0) return existing;
-
-    args.push(id, userId);
-    await db.execute({
-      sql: `UPDATE cashback SET ${sets.join(", ")} WHERE id = ? AND user_id = ?`,
-      args,
-    });
-
-    const result = await db.execute({ sql: "SELECT * FROM cashback WHERE id = ?", args: [id] });
-    return result.rows[0] as unknown as Cashback;
+    return applyUpdate<Cashback>("cashback", id, userId, sets, args, { existing });
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
-    const result = await getDb().execute({
-      sql: "DELETE FROM cashback WHERE id = ? AND user_id = ?",
-      args: [id, userId],
-    });
-    return result.rowsAffected > 0;
+    return scopedDelete("cashback", id, userId);
   }
 }

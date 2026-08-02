@@ -1,15 +1,6 @@
 import { getDb } from "@/lib/db/client.ts";
+import { addMonths } from "@/lib/date.ts";
 import type { CalculatedDebt } from "@/lib/types/card-monthly.ts";
-
-function addMonths(dateStr: string, n: number): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const totalM = m - 1 + n;
-  const newY = y + Math.floor(totalM / 12);
-  const newM = totalM % 12 + 1;
-  const lastDay = new Date(newY, newM, 0).getDate();
-  const newD = Math.min(d, lastDay);
-  return `${newY}-${String(newM).padStart(2, "0")}-${String(newD).padStart(2, "0")}`;
-}
 
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();

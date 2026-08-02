@@ -1,5 +1,6 @@
 import type { APIContext } from "astro";
 import type { ApiResponse } from "@/types/general.ts";
+import { lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
 
 export function jsonResponse<T>(data: T, status = 200): Response {
   return new Response(JSON.stringify({ success: true, data } satisfies ApiResponse<T>), {
@@ -35,4 +36,30 @@ export function parsePageParams(url: URL): { page: number; pageSize: number } {
   const page = parseInt(url.searchParams.get("page") ?? "1", 10);
   const pageSize = parseInt(url.searchParams.get("pageSize") ?? "50", 10);
   return { page: Math.max(1, page), pageSize: Math.min(100, Math.max(1, pageSize)) };
+}
+
+/** True/false from a `?x=true|false` query param; undefined when absent or invalid. */
+export function parseBoolParam(value: string | undefined): boolean | undefined {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return undefined;
+}
+
+/**
+ * Date window for list endpoints: explicit `date_from`/`date_to` are kept, but when
+ * neither a month nor dates are given the "Último año" window is applied
+ * (registration month or 12 months ago, through the next month).
+ */
+export function getDateRange(
+  params: Record<string, string | undefined>,
+  createdAt: string
+): { date_from?: string; date_to?: string } {
+  let date_from = params.date_from;
+  let date_to = params.date_to;
+  if (!params.month && !date_from && !date_to) {
+    const { from, to } = lastYearWindow(createdAt);
+    date_from = `${from}-01`;
+    date_to = lastDayOfMonth(to);
+  }
+  return { date_from, date_to };
 }

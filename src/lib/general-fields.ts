@@ -1,7 +1,7 @@
 import { labels } from "@/lib/labels.ts";
 
-export const INPUT_BASE = "mt-1 block w-full rounded-lg border border-border";
-export const INPUT_PADDING = "px-3 py-2 text-sm";
+const INPUT_BASE = "mt-1 block w-full rounded-lg border border-border";
+const INPUT_PADDING = "px-3 py-2 text-sm";
 export const INPUT_CLASS = `${INPUT_BASE} ${INPUT_PADDING}`;
 export const COLOR_CLASS = `${INPUT_BASE} h-10 cursor-pointer`;
 

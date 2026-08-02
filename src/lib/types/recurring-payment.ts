@@ -50,9 +50,3 @@ export interface RecurringPaymentMonthlyUpdate {
   is_active?: boolean;
   is_paid?: boolean;
 }
-
-export interface RecurringPaymentMonthlyInput {
-  payment_id: string;
-  month: string;
-  amount: number;
-}

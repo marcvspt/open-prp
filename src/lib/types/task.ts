@@ -18,14 +18,6 @@ export interface TaskInput {
   category?: string;
 }
 
-export interface TaskUpdate {
-  description?: string;
-  is_completed?: boolean;
-  due_date?: string;
-  priority?: number;
-  category?: string;
-}
-
 export interface TaskFilter {
   is_completed?: boolean;
   category?: string;

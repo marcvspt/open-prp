@@ -16,42 +16,105 @@ const typeLabels: Record<string, string> = {
   card: labels.badge.card,
 };
 const typeColors: Record<string, string> = {
-  global: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
-  personal: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+  global:
+    "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
+  personal:
+    "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
   card: "bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300",
 };
 const fields = [
-  { name: "name", label: labels.field.name, type: "text" as const, required: true },
-  { name: "icon", label: labels.field.iconEmoji, type: "text" as const, placeholder: labels.field.iconPlaceholder },
+  {
+    name: "name",
+    label: labels.field.name,
+    type: "text" as const,
+    required: true,
+  },
+  {
+    name: "icon",
+    label: labels.field.iconEmoji,
+    type: "text" as const,
+    placeholder: labels.field.iconPlaceholder,
+  },
   { name: "color", label: labels.field.color, type: "color" as const },
 ];
-const defaultForm = { name: "", type: "personal", icon: "💳", color: "#6366f1" };
+const defaultForm = {
+  name: "",
+  type: "personal",
+  icon: "💳",
+  color: "#6366f1",
+};
 ---
 
-<AppLayout title={`${labels.page.paymentMethods} - Open PRP`}>
+<AppLayout title={`${labels.page.paymentMethods}`}>
   <div data-module="payment-methods" class="space-y-4">
-    <PageHeader title={labels.page.paymentMethods} createLabel={labels.cta.newPaymentMethod} createModule="payment-methods" />
-    <DataTable columns={[labels.table.name, labels.table.type, { label: labels.table.icon, align: "center" }, labels.table.color, { label: labels.table.actions, align: "right" }]} emptyMessage={labels.empty.paymentMethods}>
-      {items.map(m => {
-        const isSystem = m.type === "global" || m.type === "card";
-        return (
-        <tr class="hover:bg-nav-hover">
-          <td class="px-4 py-3 font-medium">{m.name}</td>
-          <td class="px-4 py-3"><span class={`text-xs font-medium px-2 py-0.5 rounded ${typeColors[m.type] || "bg-surface-alt text-string-muted"}`}>{typeLabels[m.type] || m.type}</span></td>
-          <td class="px-4 py-3 text-center">{m.icon || "-"}</td>
-          <td class="px-4 py-3">
-            <span class="inline-block w-5 h-5 rounded-full border border-border" style={{ backgroundColor: m.color || "#6366f1" }} />
-          </td>
-          <td class="px-4 py-3 text-right space-x-2">
-            {!isSystem && <>
-              <button data-edit-payment-methods={m.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">{BTN_EDIT}</button>
-              <button data-delete-payment-methods={m.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">{BTN_DELETE}</button>
-            </>}
-          </td>
-        </tr>
-      );})}
+    <PageHeader
+      title={labels.page.paymentMethods}
+      createLabel={labels.cta.newPaymentMethod}
+      createModule="payment-methods"
+    />
+    <DataTable
+      columns={[
+        labels.table.name,
+        labels.table.type,
+        { label: labels.table.icon, align: "center" },
+        labels.table.color,
+        { label: labels.table.actions, align: "right" },
+      ]}
+      emptyMessage={labels.empty.paymentMethods}
+    >
+      {
+        items.map((m) => {
+          const isSystem = m.type === "global" || m.type === "card";
+          return (
+            <tr class="hover:bg-nav-hover">
+              <td class="px-4 py-3 font-medium">{m.name}</td>
+              <td class="px-4 py-3">
+                <span
+                  class={`text-xs font-medium px-2 py-0.5 rounded ${typeColors[m.type] || "bg-surface-alt text-string-muted"}`}
+                >
+                  {typeLabels[m.type] || m.type}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-center">{m.icon || "-"}</td>
+              <td class="px-4 py-3">
+                <span
+                  class="inline-block w-5 h-5 rounded-full border border-border"
+                  style={{ backgroundColor: m.color || "#6366f1" }}
+                />
+              </td>
+              <td class="px-4 py-3 text-right space-x-2">
+                {!isSystem && (
+                  <>
+                    <button
+                      data-edit-payment-methods={m.id}
+                      class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer"
+                    >
+                      {BTN_EDIT}
+                    </button>
+                    <button
+                      data-delete-payment-methods={m.id}
+                      class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer"
+                    >
+                      {BTN_DELETE}
+                    </button>
+                  </>
+                )}
+              </td>
+            </tr>
+          );
+        })
+      }
     </DataTable>
   </div>
-  <CrudModal client:load module="payment-methods" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.paymentMethod} />
-  <DeleteHandler module="payment-methods" label={labels.singular.paymentMethod} />
+  <CrudModal
+    client:load
+    module="payment-methods"
+    fields={JSON.stringify(fields)}
+    defaultForm={JSON.stringify(defaultForm)}
+    titleSingular={labels.singular.paymentMethod}
+  />
+  <DeleteHandler
+    module="payment-methods"
+    label={labels.singular.paymentMethod}
+  />
 </AppLayout>

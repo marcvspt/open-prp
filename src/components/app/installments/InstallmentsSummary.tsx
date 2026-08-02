@@ -16,59 +16,62 @@ export default function InstallmentsSummary({ initialData, initialCards, initial
   const cards: Card[] = useMemo(() => JSON.parse(initialCards), [initialCards]);
   const paymentMethods: PaymentMethod[] = useMemo(() => JSON.parse(initialPaymentMethods), [initialPaymentMethods]);
 
-  if (installments.length === 0) {
-    return <p className="text-string-muted text-sm">{labels.empty.activeInstallments}</p>;
-  }
+  const remainingToPay = installments.reduce((s, i) => s + Number(i.remaining_months) * Number(i.monthly_amount), 0);
+  const totalFees = installments.reduce((s, i) => s + Number(i.total_months), 0);
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="p-4 rounded-xl bg-panel border border-border shadow-sm text-center">
           <p className="text-xs text-string-muted mb-1">{labels.stat.activeInstallments}</p>
           <p className="text-2xl font-bold text-primary">{installments.length}</p>
         </div>
         <div className="p-4 rounded-xl bg-panel border border-border shadow-sm text-center">
           <p className="text-xs text-string-muted mb-1">{labels.stat.remainingToPay}</p>
-          <p className="text-2xl font-bold text-danger">{formatCurrency(installments.reduce((s, i) => s + Number(i.remaining_months) * Number(i.monthly_amount), 0))}</p>
+          <p className="text-2xl font-bold text-danger">{formatCurrency(remainingToPay)}</p>
         </div>
-        <div className="p-4 rounded-xl bg-panel border border-border shadow-sm text-center">
+        <div className="col-span-2 lg:col-span-1 p-4 rounded-xl bg-panel border border-border shadow-sm text-center">
           <p className="text-xs text-string-muted mb-1">{labels.stat.totalFees}</p>
-          <p className="text-2xl font-bold text-warning">{installments.reduce((s, i) => s + Number(i.total_months), 0)}</p>
+          <p className="text-2xl font-bold text-warning">{totalFees}</p>
         </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {installments.map(i => {
-          const pm = paymentMethods.find(p => p.id === i.payment_method_id);
-          const card = pm?.card_id ? cards.find(c => c.id === pm.card_id) : undefined;
-          const remainingAmount = Number(i.remaining_months) * Number(i.monthly_amount);
-          const totalAmount = Number(i.total_amount);
-          return (
-            <div key={i.id} className="bg-panel rounded-xl border border-border p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <span className={`text-xs font-medium px-2 py-0.5 rounded ${i.remaining_months <= 0 ? "bg-success-bg text-success-text" : i.remaining_months <= 3 ? "bg-warning-bg text-warning-text" : "bg-info-bg text-info-text"}`}>
-                  {i.remaining_months}/{i.total_months}
-                </span>
+      {installments.length === 0 ? (
+        <p className="text-string-muted text-sm">{labels.empty.activeInstallments}</p>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {installments.map(i => {
+            const pm = paymentMethods.find(p => p.id === i.payment_method_id);
+            const card = pm?.card_id ? cards.find(c => c.id === pm.card_id) : undefined;
+            const remainingAmount = Number(i.remaining_months) * Number(i.monthly_amount);
+            const totalAmount = Number(i.total_amount);
+            return (
+              <div key={i.id} className="bg-panel rounded-xl border border-border p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded ${i.remaining_months <= 0 ? "bg-success-bg text-success-text" : i.remaining_months <= 3 ? "bg-warning-bg text-warning-text" : "bg-info-bg text-info-text"}`}>
+                    {i.remaining_months}/{i.total_months}
+                  </span>
+                </div>
+                <p className="font-semibold text-sm text-string mb-1">{i.description}</p>
+                <p className="text-xs text-string-muted mb-3">{card?.name ?? pm?.name ?? labels.field.noCard}</p>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-string-muted">{labels.stat.total}</span>
+                    <span className="font-mono font-medium text-string">{formatCurrency(totalAmount)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-string-muted">{labels.stat.fee}</span>
+                    <span className="font-mono font-medium text-danger">{formatCurrency(Number(i.monthly_amount))}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-string-muted">{labels.stat.remaining}</span>
+                    <span className="font-mono font-medium text-warning">{formatCurrency(remainingAmount)}</span>
+                  </div>
+                </div>
               </div>
-              <p className="font-semibold text-sm text-string mb-1">{i.description}</p>
-              <p className="text-xs text-string-muted mb-3">{card?.name ?? pm?.name ?? labels.field.noCard}</p>
-              <div className="space-y-1.5 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-string-muted">{labels.stat.total}</span>
-                  <span className="font-mono font-medium text-string">{formatCurrency(totalAmount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-string-muted">{labels.stat.fee}</span>
-                  <span className="font-mono font-medium text-danger">{formatCurrency(Number(i.monthly_amount))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-string-muted">{labels.stat.remaining}</span>
-                  <span className="font-mono font-medium text-warning">{formatCurrency(remainingAmount)}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

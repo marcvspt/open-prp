@@ -11,7 +11,12 @@ import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/rep
 import { RecurringPaymentMonthlyRepository } from "@/lib/modules/recurring-payment-monthly/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
-import { FIELD_TYPE_CURRENCY, FIELD_TYPE, paymentMethodField, categoryField } from "@/lib/form-fields.ts";
+import {
+  FIELD_TYPE_CURRENCY,
+  FIELD_TYPE,
+  paymentMethodField,
+  categoryField,
+} from "@/lib/form-fields.ts";
 import { CURRENCY_SYMBOL, BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
 import { labels } from "@/lib/labels.ts";
 import { FILTER_ALL_MONTHS } from "@/lib/filter-fields.ts";
@@ -21,40 +26,73 @@ const userId = Astro.locals.userId;
 const rpRepo = new RecurringPaymentRepository();
 const items = await rpRepo.findAll(userId);
 const paramMonth = Astro.url.searchParams.get("month");
-const urlMonth = paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : "";
+const urlMonth =
+  paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : "";
 const selectedMonth = urlMonth || currentMonthStr();
-const monthlyItems = await new RecurringPaymentMonthlyRepository().findByMonth(selectedMonth, userId);
-const { from: fromMonth, to: nextMonth } = lastYearWindow(Astro.locals.createdAt);
+const monthlyItems = await new RecurringPaymentMonthlyRepository().findByMonth(
+  selectedMonth,
+  userId,
+);
+const { from: fromMonth, to: nextMonth } = lastYearWindow(
+  Astro.locals.createdAt,
+);
 const fullHistory = await rpRepo.getHistory(userId, fromMonth, nextMonth);
-const recurringHistory = urlMonth ? fullHistory.filter(h => h.month === selectedMonth) : fullHistory;
+const recurringHistory = urlMonth
+  ? fullHistory.filter((h) => h.month === selectedMonth)
+  : fullHistory;
 const paramTab = Astro.url.searchParams.get("tab");
-const initialTab = paramTab === "list" ? "list" : paramTab === "history" ? "history" : "monthly";
+const initialTab =
+  paramTab === "list" ? "list" : paramTab === "history" ? "history" : "monthly";
 const catRepo = new CategoryRepository();
-const svcCategories = await catRepo.findBySections(userId, ["recurring-payments"]);
+const svcCategories = await catRepo.findBySections(userId, [
+  "recurring-payments",
+]);
 const allRecurringCategories = svcCategories;
 const pmRepo = new PaymentMethodRepository();
 const paymentMethods = await pmRepo.findAll(userId);
-const pmMap = Object.fromEntries(paymentMethods.map(pm => [pm.id, pm]));
-const catMap = Object.fromEntries(allRecurringCategories.map(c => [c.id, c]));
+const pmMap = Object.fromEntries(paymentMethods.map((pm) => [pm.id, pm]));
+const catMap = Object.fromEntries(allRecurringCategories.map((c) => [c.id, c]));
 const currencySymbol = CURRENCY_SYMBOL;
 const fields = [
   FIELD_TYPE,
-  { name: "name", label: labels.field.description, type: "text" as const, required: true },
-  { name: "default_amount", label: labels.field.amount, type: "number" as const, required: true, step: "0.01" },
+  {
+    name: "name",
+    label: labels.field.description,
+    type: "text" as const,
+    required: true,
+  },
+  {
+    name: "default_amount",
+    label: labels.field.amount,
+    type: "number" as const,
+    required: true,
+    step: "0.01",
+  },
   FIELD_TYPE_CURRENCY,
   paymentMethodField(paymentMethods),
   categoryField(allRecurringCategories),
 ];
-const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expense", payment_method_id: paymentMethods[0]?.id ?? "", category_id: "" };
+const defaultForm = {
+  name: "",
+  default_amount: 0,
+  currency: "MXN",
+  type: "expense",
+  payment_method_id: paymentMethods[0]?.id ?? "",
+  category_id: "",
+};
 ---
 
-<AppLayout title={`${labels.page.recurringPayments} - Open PRP`}>
+<AppLayout title={`${labels.page.recurringPayments}`}>
   <div data-module="recurring-payments" class="space-y-4">
     <PageHeader title={labels.page.recurringPayments} />
     <div class="tabs-container">
       <TabBarWithMonth
         client:load
-        tabs={[{ key: "monthly", label: labels.tabs.summary }, { key: "list", label: labels.tabs.adminRecurring }, { key: "history", label: labels.tabs.history }]}
+        tabs={[
+          { key: "monthly", label: labels.tabs.summary },
+          { key: "list", label: labels.tabs.adminRecurring },
+          { key: "history", label: labels.tabs.history },
+        ]}
         initialTab={initialTab}
         defaultTab="monthly"
         ariaLabel={labels.recurring.ariaTabs}
@@ -62,7 +100,14 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
         createdAt={Astro.locals.createdAt}
         allLabel={FILTER_ALL_MONTHS}
       />
-      <div data-tab-content="monthly" role="tabpanel" id="panel-monthly" aria-labelledby="tab-monthly" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "monthly" }]}>
+      <div
+        data-tab-content="monthly"
+        role="tabpanel"
+        id="panel-monthly"
+        aria-labelledby="tab-monthly"
+        tabindex="0"
+        class:list={["tab-content pt-4", { hidden: initialTab !== "monthly" }]}
+      >
         <RecurringPaymentsMonthly
           client:load
           initialMonth={selectedMonth}
@@ -70,29 +115,104 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
           initialMonthly={JSON.stringify(monthlyItems)}
         />
       </div>
-      <div data-tab-content="list" role="tabpanel" id="panel-list" aria-labelledby="tab-list" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "list" }]}>
+      <div
+        data-tab-content="list"
+        role="tabpanel"
+        id="panel-list"
+        aria-labelledby="tab-list"
+        tabindex="0"
+        class:list={["tab-content pt-4", { hidden: initialTab !== "list" }]}
+      >
         <div class="flex items-center justify-between mb-4">
-          <p class="text-sm text-string-muted">{labels.recurring.allRegistered}</p>
-          <button data-create="recurring-payments" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">{labels.cta.newRecurring}</button>
+          <p class="text-sm text-string-muted">
+            {labels.recurring.allRegistered}
+          </p>
+          <button
+            data-create="recurring-payments"
+            class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer"
+            >{labels.cta.newRecurring}</button
+          >
         </div>
-        <DataTable columns={[labels.table.description, { label: labels.table.amount, align: "right" }, labels.table.type, labels.table.currency, labels.table.method, labels.table.category, { label: labels.table.actions, align: "right" }]} emptyMessage={labels.empty.recurring}>
-          {items.map(s => (
-            <tr class="hover:bg-nav-hover">
-              <td class="px-4 py-3 font-medium">{s.name}</td>
-              <td class={`px-4 py-3 text-right font-mono ${s.type === "income" ? "text-success" : "text-danger"}`}>{s.type === "income" ? "+" : "-"}{currencySymbol[s.currency] || "$"}{Number(s.default_amount).toFixed(2)}</td>
-              <td class="px-4 py-3"><span class={`text-xs px-2 py-0.5 rounded font-medium ${s.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>{s.type === "income" ? labels.badge.income : labels.badge.expense}</span></td>
-              <td class="px-4 py-3 text-xs text-string-muted">{currencySymbol[s.currency] || "$"} {s.currency || "MXN"}</td>
-              <td class="px-4 py-3"><span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{pmMap[s.payment_method_id] ? `${pmMap[s.payment_method_id].icon || "💳"} ${pmMap[s.payment_method_id].name}` : "-"}</span></td>
-              <td class="px-4 py-3">{s.category_id ? <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">{catMap[s.category_id] ? `${catMap[s.category_id].icon || "📂"} ${displayCategoryName(catMap[s.category_id])}` : "-"}</span> : "-"}</td>
-              <td class="px-4 py-3 text-right space-x-2">
-                <button data-edit-recurring-payments={s.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">{BTN_EDIT}</button>
-                <button data-delete-recurring-payments={s.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">{BTN_DELETE}</button>
-              </td>
-            </tr>
-          ))}
+        <DataTable
+          columns={[
+            labels.table.description,
+            { label: labels.table.amount, align: "right" },
+            labels.table.type,
+            labels.table.currency,
+            labels.table.method,
+            labels.table.category,
+            { label: labels.table.actions, align: "right" },
+          ]}
+          emptyMessage={labels.empty.recurring}
+        >
+          {
+            items.map((s) => (
+              <tr class="hover:bg-nav-hover">
+                <td class="px-4 py-3 font-medium">{s.name}</td>
+                <td
+                  class={`px-4 py-3 text-right font-mono ${s.type === "income" ? "text-success" : "text-danger"}`}
+                >
+                  {s.type === "income" ? "+" : "-"}
+                  {currencySymbol[s.currency] || "$"}
+                  {Number(s.default_amount).toFixed(2)}
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    class={`text-xs px-2 py-0.5 rounded font-medium ${s.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}
+                  >
+                    {s.type === "income"
+                      ? labels.badge.income
+                      : labels.badge.expense}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-xs text-string-muted">
+                  {currencySymbol[s.currency] || "$"} {s.currency || "MXN"}
+                </td>
+                <td class="px-4 py-3">
+                  <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">
+                    {pmMap[s.payment_method_id]
+                      ? `${pmMap[s.payment_method_id].icon || "💳"} ${pmMap[s.payment_method_id].name}`
+                      : "-"}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  {s.category_id ? (
+                    <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">
+                      {catMap[s.category_id]
+                        ? `${catMap[s.category_id].icon || "📂"} ${displayCategoryName(catMap[s.category_id])}`
+                        : "-"}
+                    </span>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+                <td class="px-4 py-3 text-right space-x-2">
+                  <button
+                    data-edit-recurring-payments={s.id}
+                    class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer"
+                  >
+                    {BTN_EDIT}
+                  </button>
+                  <button
+                    data-delete-recurring-payments={s.id}
+                    class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer"
+                  >
+                    {BTN_DELETE}
+                  </button>
+                </td>
+              </tr>
+            ))
+          }
         </DataTable>
       </div>
-      <div data-tab-content="history" role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "history" }]}>
+      <div
+        data-tab-content="history"
+        role="tabpanel"
+        id="panel-history"
+        aria-labelledby="tab-history"
+        tabindex="0"
+        class:list={["tab-content pt-4", { hidden: initialTab !== "history" }]}
+      >
         <RecurringPaymentsHistory
           client:load
           initialData={JSON.stringify(recurringHistory)}
@@ -101,7 +221,15 @@ const defaultForm = { name: "", default_amount: 0, currency: "MXN", type: "expen
       </div>
     </div>
   </div>
-  <CrudModal client:load module="recurring-payments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.recurringPayment} />
-  <DeleteHandler module="recurring-payments" label={labels.singular.recurringPayment} />
+  <CrudModal
+    client:load
+    module="recurring-payments"
+    fields={JSON.stringify(fields)}
+    defaultForm={JSON.stringify(defaultForm)}
+    titleSingular={labels.singular.recurringPayment}
+  />
+  <DeleteHandler
+    module="recurring-payments"
+    label={labels.singular.recurringPayment}
+  />
 </AppLayout>
-

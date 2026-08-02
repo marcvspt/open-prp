@@ -44,7 +44,7 @@ const fields = [
 const defaultForm = { name: "", type: "personal", sections: JSON.stringify(["transactions"]), icon: "📁", color: "#6366f1" };
 ---
 
-<AppLayout title={`${labels.page.categories} - Open PRP`}>
+<AppLayout title={`${labels.page.categories}`}>
   <div data-module="categories" class="space-y-4">
     <PageHeader title={labels.page.categories} createLabel={labels.cta.newCategory} createModule="categories" />
     <DataTable columns={[labels.table.name, labels.table.type, labels.table.sections, { label: labels.table.icon, align: "center" }, labels.table.color, { label: labels.table.actions, align: "right" }]} emptyMessage={labels.empty.categories}>

@@ -1,4 +1,4 @@
-export type PaymentMethodType = "global" | "personal" | "card";
+type PaymentMethodType = "global" | "personal" | "card";
 
 export interface PaymentMethod {
   id: string;

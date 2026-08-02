@@ -28,8 +28,6 @@ export interface UpdateNoteInput {
 export interface NoteFilter {
   is_pinned?: boolean;
   tag_id?: string;
-  page?: number;
-  pageSize?: number;
 }
 
 export interface NoteTag {

@@ -18,71 +18,170 @@ const q: Record<string, unknown> = {};
 if (filter === "pending") q.is_completed = false;
 if (filter === "done") q.is_completed = true;
 const items = await new TaskRepository().findAll(userId, q);
-const categories = await new CategoryRepository().findBySections(userId, ["tasks"]);
-const catMap = Object.fromEntries(categories.map(c => [c.id, c]));
-const catOptions = [{ value: "", label: labels.field.noCategory }, ...categories.map(c => ({ value: c.id, label: `${c.icon || "📋"} ${displayCategoryName(c)}` }))];
-const priorityLabels: Record<number, string> = { 1: labels.badge.low, 2: labels.badge.medium, 3: labels.badge.high };
-const priorityColor: Record<number, string> = { 1: "bg-success-bg text-success-text", 2: "bg-warning-bg text-warning-text", 3: "bg-danger-bg text-danger-text" };
-const fields = [
-  { name: "description", label: labels.field.description, type: "textarea" as const, required: true },
-  { name: "due_date", label: labels.field.dueDate, type: "date" as const },
-  { name: "priority", label: labels.field.priority, type: "select" as const, options: [{ value: "1", label: labels.badge.lowOption }, { value: "2", label: labels.badge.mediumOption }, { value: "3", label: labels.badge.highOption }] },
-  { name: "category", label: labels.field.category, type: "select" as const, options: catOptions },
+const categories = await new CategoryRepository().findBySections(userId, [
+  "tasks",
+]);
+const catMap = Object.fromEntries(categories.map((c) => [c.id, c]));
+const catOptions = [
+  { value: "", label: labels.field.noCategory },
+  ...categories.map((c) => ({
+    value: c.id,
+    label: `${c.icon || "📋"} ${displayCategoryName(c)}`,
+  })),
 ];
-const defaultForm = { description: "", due_date: "", priority: 1, category: "" };
+const priorityLabels: Record<number, string> = {
+  1: labels.badge.low,
+  2: labels.badge.medium,
+  3: labels.badge.high,
+};
+const priorityColor: Record<number, string> = {
+  1: "bg-success-bg text-success-text",
+  2: "bg-warning-bg text-warning-text",
+  3: "bg-danger-bg text-danger-text",
+};
+const fields = [
+  {
+    name: "description",
+    label: labels.field.description,
+    type: "textarea" as const,
+    required: true,
+  },
+  { name: "due_date", label: labels.field.dueDate, type: "date" as const },
+  {
+    name: "priority",
+    label: labels.field.priority,
+    type: "select" as const,
+    options: [
+      { value: "1", label: labels.badge.lowOption },
+      { value: "2", label: labels.badge.mediumOption },
+      { value: "3", label: labels.badge.highOption },
+    ],
+  },
+  {
+    name: "category",
+    label: labels.field.category,
+    type: "select" as const,
+    options: catOptions,
+  },
+];
+const defaultForm = {
+  description: "",
+  due_date: "",
+  priority: 1,
+  category: "",
+};
 const taskFilters = [
   { value: "all", label: FILTER_ALL, href: "/app/tasks" },
-  { value: "pending", label: labels.filter.pendingTasks, href: "/app/tasks?filter=pending" },
-  { value: "done", label: labels.filter.doneTasks, href: "/app/tasks?filter=done" },
+  {
+    value: "pending",
+    label: labels.filter.pendingTasks,
+    href: "/app/tasks?filter=pending",
+  },
+  {
+    value: "done",
+    label: labels.filter.doneTasks,
+    href: "/app/tasks?filter=done",
+  },
 ];
 ---
 
-<AppLayout title={`${labels.page.tasks} - Open PRP`}>
+<AppLayout title={`${labels.page.tasks}`}>
   <div data-module="tasks" class="space-y-4">
-    <PageHeader title={labels.page.tasks} createLabel={labels.cta.newTask} createModule="tasks" mobileOnlyCTA={true} />
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-      <FilterLinks filters={taskFilters} active={filter} class={FILTER_WRAP_CLASS} />
-      <button data-create="tasks" class="hidden sm:block sm:shrink-0 px-3 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer">{labels.cta.newTask}</button>
+    <PageHeader
+      title={labels.page.tasks}
+      createLabel={labels.cta.newTask}
+      createModule="tasks"
+      mobileOnlyCTA={true}
+    />
+    <div
+      class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"
+    >
+      <FilterLinks
+        filters={taskFilters}
+        active={filter}
+        class={FILTER_WRAP_CLASS}
+      />
+      <button
+        data-create="tasks"
+        class="hidden sm:block sm:shrink-0 px-3 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer"
+        >{labels.cta.newTask}</button
+      >
     </div>
-    {items.length === 0 ? (
-      <div class="text-string-muted text-sm">{labels.empty.tasks}</div>
-    ) : (
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {items.map(t => {
-          const cat = t.category && catMap[t.category];
-          return (
-            <div class={`relative rounded-xl border p-4 transition-all hover:shadow-sm ${
-              t.is_completed ? "border-success-border bg-success-border/10 opacity-60" :
-              "border-border bg-panel"
-            }`}>
-              <div class="flex items-start gap-3 mb-2">
-                <input type="checkbox" checked={t.is_completed} data-toggle-tasks={t.id} class="mt-0.5 w-4 h-4 accent-primary cursor-pointer shrink-0" />
-                <div class="flex-1 min-w-0">
-                  <div class={`text-sm leading-snug ${t.is_completed ? "line-through text-string-muted" : "font-medium text-string"}`}>
-                    {t.description}
+    {
+      items.length === 0 ? (
+        <div class="text-string-muted text-sm">{labels.empty.tasks}</div>
+      ) : (
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {items.map((t) => {
+            const cat = t.category && catMap[t.category];
+            return (
+              <div
+                class={`relative rounded-xl border p-4 transition-all hover:shadow-sm ${
+                  t.is_completed
+                    ? "border-success-border bg-success-border/10 opacity-60"
+                    : "border-border bg-panel"
+                }`}
+              >
+                <div class="flex items-start gap-3 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={t.is_completed}
+                    data-toggle-tasks={t.id}
+                    class="mt-0.5 w-4 h-4 accent-primary cursor-pointer shrink-0"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <div
+                      class={`text-sm leading-snug ${t.is_completed ? "line-through text-string-muted" : "font-medium text-string"}`}
+                    >
+                      {t.description}
+                    </div>
                   </div>
+                  <span
+                    class={`shrink-0 text-xs px-2 py-0.5 rounded font-medium ${priorityColor[t.priority] || "bg-surface-alt text-string-muted"}`}
+                  >
+                    {priorityLabels[t.priority] || "⚪"}
+                  </span>
                 </div>
-                <span class={`shrink-0 text-xs px-2 py-0.5 rounded font-medium ${priorityColor[t.priority] || "bg-surface-alt text-string-muted"}`}>
-                  {priorityLabels[t.priority] || "⚪"}
-                </span>
+                <div class="flex items-center gap-3 text-xs text-string-muted ml-7">
+                  {cat && (
+                    <span>
+                      {cat.icon || "📋"} {displayCategoryName(cat)}
+                    </span>
+                  )}
+                  {t.due_date && (
+                    <span class="font-semibold">
+                      📅 {formatDate(t.due_date)}
+                    </span>
+                  )}
+                </div>
+                <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-border ml-7">
+                  <button
+                    data-edit-tasks={t.id}
+                    class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer"
+                  >
+                    {BTN_EDIT}
+                  </button>
+                  <button
+                    data-delete-tasks={t.id}
+                    class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer"
+                  >
+                    {BTN_DELETE}
+                  </button>
+                </div>
               </div>
-              <div class="flex items-center gap-3 text-xs text-string-muted ml-7">
-                {cat && <span>{cat.icon || "📋"} {displayCategoryName(cat)}</span>}
-                {t.due_date && (
-                  <span class="font-semibold">📅 {formatDate(t.due_date)}</span>
-                )}
-              </div>
-              <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-border ml-7">
-                <button data-edit-tasks={t.id} class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer">{BTN_EDIT}</button>
-                <button data-delete-tasks={t.id} class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer">{BTN_DELETE}</button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    )}
+            );
+          })}
+        </div>
+      )
+    }
   </div>
-  <CrudModal client:load module="tasks" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.task} />
+  <CrudModal
+    client:load
+    module="tasks"
+    fields={JSON.stringify(fields)}
+    defaultForm={JSON.stringify(defaultForm)}
+    titleSingular={labels.singular.task}
+  />
   <DeleteHandler module="tasks" label={labels.singular.task} />
   <ToggleHandler module="tasks" key="is_completed" />
 </AppLayout>
