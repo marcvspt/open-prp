@@ -1,4 +1,6 @@
 ---
+import { ClientRouter } from "astro:transitions";
+
 import "@/styles/global.css";
 
 export interface Props {
@@ -15,19 +17,23 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <title>{pageTitle}</title>
+    <ClientRouter />
     <slot name="head" />
     <script is:inline>
       (function () {
-        try {
-          var t = localStorage.getItem("theme") || "system";
-          if (
+        function applyTheme() {
+          var t = "system";
+          try {
+            t = localStorage.getItem("theme") || "system";
+          } catch (e) {}
+          var dark =
             t === "dark" ||
             (t === "system" &&
-              window.matchMedia("(prefers-color-scheme: dark)").matches)
-          ) {
-            document.documentElement.classList.add("dark");
-          }
-        } catch (e) {}
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+        }
+        applyTheme();
+        document.addEventListener("astro:after-swap", applyTheme);
       })();
     </script>
   </head>
