@@ -126,9 +126,9 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
           <button
             onClick={() => handleRemoveFromMonth(payment.id)}
             className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center text-xs text-string-muted hover:text-danger hover:bg-danger/10 rounded transition-colors cursor-pointer"
-            title={isPaid ? labels.cta.backToPending : labels.cta.removeFromMonth}
+            aria-label={isPaid ? labels.cta.backToPending : labels.cta.removeFromMonth}
           >
-            ✕
+            <span aria-hidden="true">✕</span>
           </button>
         )}
         <div className="space-y-2">

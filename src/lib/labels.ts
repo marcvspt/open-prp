@@ -174,7 +174,7 @@ export const labels = {
     adminCards: "Administrar tarjetas",
     adminInstallments: "Administrar plazos",
     adminRecurring: "Administrar pagos recurrentes",
-    currentList: "Lista actual",
+    currentList: "Listas de compras",
     ariaInstallments: "Secciones de plazos",
   },
 
