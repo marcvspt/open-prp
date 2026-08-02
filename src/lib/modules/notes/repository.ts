@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db/client.ts";
-import { nextSeq } from "@/lib/db/utils.ts";
+import { scopedFindById, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
 import type { Note, CreateNoteInput, UpdateNoteInput, NoteFilter } from "@/lib/types/note.ts";
 
 export class NoteRepository {
@@ -26,34 +26,26 @@ export class NoteRepository {
   }
 
   async findById(id: string, userId: string): Promise<Note | null> {
-    const result = await getDb().execute({
-      sql: "SELECT * FROM notes WHERE id = ? AND user_id = ?",
-      args: [id, userId],
-    });
-    return (result.rows[0] as unknown as Note | undefined) ?? null;
+    return scopedFindById<Note>("notes", id, userId);
   }
 
   async create(data: CreateNoteInput, userId: string): Promise<Note> {
     const db = getDb();
-    const id = crypto.randomUUID();
-    const seq = await nextSeq("notes");
-    const now = new Date().toISOString();
     const title = data.title?.trim() || new Date().toLocaleString("es");
 
-    await db.execute({
-      sql: `INSERT INTO notes (id, user_id, title, content, is_pinned, color, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, title, data.content ?? null, data.is_pinned ? 1 : 0, data.color ?? null, seq, now, now],
-    });
+    const note = await insertRow<Note>("notes", userId, [
+      "title", "content", "is_pinned", "color",
+    ], [
+      title, data.content ?? null, data.is_pinned ? 1 : 0, data.color ?? null,
+    ]);
 
     if (data.tag_ids?.length) {
       for (const tagId of data.tag_ids) {
-        await db.execute({ sql: "INSERT INTO notes_tags (note_id, tag_id) VALUES (?, ?)", args: [id, tagId] });
+        await db.execute({ sql: "INSERT INTO notes_tags (note_id, tag_id) VALUES (?, ?)", args: [note.id, tagId] });
       }
     }
 
-    const result = await db.execute({ sql: "SELECT * FROM notes WHERE id = ?", args: [id] });
-    return result.rows[0] as unknown as Note;
+    return note;
   }
 
   async update(id: string, data: UpdateNoteInput, userId: string): Promise<Note | null> {
@@ -62,23 +54,14 @@ export class NoteRepository {
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: (string | number | boolean | null)[] = [];
+    const args: SqlValue[] = [];
 
     if (data.title !== undefined) { sets.push("title = ?"); args.push(data.title); }
     if (data.content !== undefined) { sets.push("content = ?"); args.push(data.content ?? null); }
     if (data.is_pinned !== undefined) { sets.push("is_pinned = ?"); args.push(data.is_pinned ? 1 : 0); }
     if (data.color !== undefined) { sets.push("color = ?"); args.push(data.color ?? null); }
 
-    if (sets.length > 0) {
-      sets.push("updated_at = ?");
-      args.push(new Date().toISOString());
-      args.push(id, userId);
-
-      await db.execute({
-        sql: `UPDATE notes SET ${sets.join(", ")} WHERE id = ? AND user_id = ?`,
-        args,
-      });
-    }
+    await applyUpdate<Note>("notes", id, userId, sets, args, { existing });
 
     if (data.tag_ids !== undefined) {
       await db.execute({ sql: "DELETE FROM notes_tags WHERE note_id = ?", args: [id] });
@@ -87,8 +70,7 @@ export class NoteRepository {
       }
     }
 
-    const result = await db.execute({ sql: "SELECT * FROM notes WHERE id = ?", args: [id] });
-    return result.rows[0] as unknown as Note;
+    return (await this.findById(id, userId))!;
   }
 
   async delete(id: string, userId: string): Promise<boolean> {

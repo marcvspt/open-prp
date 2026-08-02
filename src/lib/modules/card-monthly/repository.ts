@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db/client.ts";
-import { localISOString } from "@/lib/date.ts";
+import { now } from "@/lib/db/utils.ts";
 import type { CardMonthly, CardMonthlyInput, CardMonthlyUpdate } from "@/lib/types/card-monthly.ts";
 
 export class CardMonthlyRepository {
@@ -35,19 +35,19 @@ export class CardMonthlyRepository {
       sql: "SELECT * FROM card_monthly WHERE card_id = ? AND month = ?",
       args: [data.card_id, data.month],
     });
-    const now = localISOString();
+    const timestamp = now();
 
     if (existing.rows.length > 0) {
       await db.execute({
         sql: `UPDATE card_monthly SET statement_balance = ?, updated_at = ? WHERE card_id = ? AND month = ?`,
-        args: [data.statement_balance, now, data.card_id, data.month],
+        args: [data.statement_balance, timestamp, data.card_id, data.month],
       });
     } else {
       const id = crypto.randomUUID();
       await db.execute({
         sql: `INSERT INTO card_monthly (id, card_id, user_id, month, statement_balance, created_at, updated_at)
               VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        args: [id, data.card_id, userId, data.month, data.statement_balance, now, now],
+        args: [id, data.card_id, userId, data.month, data.statement_balance, timestamp, timestamp],
       });
     }
 
@@ -64,10 +64,10 @@ export class CardMonthlyRepository {
     const existing = await this.findById(id, userId);
     if (!existing) return null;
 
-    const now = localISOString();
+    const timestamp = now();
     await db.execute({
       sql: `UPDATE card_monthly SET is_paid = ?, paid_at = ?, updated_at = ? WHERE id = ? AND user_id = ?`,
-      args: [isPaid ? 1 : 0, isPaid ? (paidAt ?? now) : null, now, id, userId],
+      args: [isPaid ? 1 : 0, isPaid ? (paidAt ?? timestamp) : null, timestamp, id, userId],
     });
 
     return this.findById(id, userId);

@@ -12,8 +12,6 @@ export const labels = {
     backHome: "← Volver al inicio",
     loading: "Cargando...",
     add: "Agregar",
-    pay: "Pagar",
-    empty: "Sin datos",
     element: "elemento",
     errorUnknown: "Error desconocido",
     errorDelete: "No se pudo eliminar. Inténtalo de nuevo.",
@@ -34,7 +32,6 @@ export const labels = {
     notes: "Notas",
     method: "Método",
     card: "Tarjeta",
-    total: "Total",
     date: "Fecha",
     status: "Estado",
     title: "Título",
@@ -46,7 +43,6 @@ export const labels = {
     start: "Inicio",
     end: "Fin",
     allDay: "Día completo",
-    icon: "Icono",
     sections: "Secciones",
     noCategory: "Sin categoría",
     noCard: "Sin tarjeta",
@@ -62,7 +58,6 @@ export const labels = {
     paymentDate: "Fecha de pago",
     partialPayment: "Pago parcial",
     iconPlaceholder: "💳",
-    quantityPlaceholder: "🛒",
   },
 
   table: {
@@ -120,8 +115,6 @@ export const labels = {
     expense: "Gasto",
     incomeOption: "📥 Ingreso",
     expenseOption: "💸 Gasto",
-    incomes: "Ingresos",
-    expenses: "Gastos",
     paid: "Pagado",
     paidF: "Pagada",
     paidLate: "Pagada tarde",
@@ -216,6 +209,7 @@ export const labels = {
   },
 
   page: {
+    home: "Inicio",
     dashboard: "Dashboard",
     transactions: "Transacciones",
     cards: "Tarjetas",
@@ -319,7 +313,6 @@ export const labels = {
     remainingNote: (amount: string) => `Restante: ${amount} — se agregará como gasto al mes siguiente`,
     dueIn: (days: number, day: number) => `En ${days} días (día ${day})`,
     historyTitle: "Historial de tarjetas",
-    ariaTable: "Tarjetas",
     allCardsRegistered: "Todas tus tarjetas registradas",
     ariaTabs: "Secciones de tarjetas",
   },

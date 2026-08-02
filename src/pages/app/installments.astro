@@ -10,7 +10,12 @@ import { InstallmentRepository } from "@/lib/modules/installments/repository.ts"
 import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
-import { FIELD_TYPE_CURRENCY, paymentMethodField, categoryField, dateField } from "@/lib/form-fields.ts";
+import {
+  FIELD_TYPE_CURRENCY,
+  paymentMethodField,
+  categoryField,
+  dateField,
+} from "@/lib/form-fields.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
 import { currentMonthStr, lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
 import { labels } from "@/lib/labels.ts";
@@ -37,33 +42,83 @@ if (!filterMonth) {
   instFilter.date_from = `${from}-01`;
   instFilter.date_to = lastDayOfMonth(to);
 }
-const initialData = await new InstallmentRepository().findAll(userId, instFilter);
+const initialData = await new InstallmentRepository().findAll(
+  userId,
+  instFilter,
+);
 const allCards = await new CardRepository().findAll(userId);
 const fields = [
   dateField("start_date"),
-  { name: "description", label: labels.field.description, type: "text" as const, required: true },
-  { name: "total_amount", label: labels.field.totalAmount, type: "number" as const, required: true, step: "0.01" },
-  { name: "monthly_amount", label: labels.field.monthlyFee, type: "number" as const, required: true, step: "0.01" },
-  { name: "total_months", label: labels.field.totalMonths, type: "number" as const, required: true, min: 1 },
+  {
+    name: "description",
+    label: labels.field.description,
+    type: "text" as const,
+    required: true,
+  },
+  {
+    name: "total_amount",
+    label: labels.field.totalAmount,
+    type: "number" as const,
+    required: true,
+    step: "0.01",
+  },
+  {
+    name: "monthly_amount",
+    label: labels.field.monthlyFee,
+    type: "number" as const,
+    required: true,
+    step: "0.01",
+  },
+  {
+    name: "total_months",
+    label: labels.field.totalMonths,
+    type: "number" as const,
+    required: true,
+    min: 1,
+  },
   FIELD_TYPE_CURRENCY,
   paymentMethodField(paymentMethods),
   categoryField(instCategories),
 ];
-const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_amount: 0, currency: "MXN", total_months: 1, payment_method_id: paymentMethods[0]?.id ?? "", category_id: "" };
+const defaultForm = {
+  start_date: "",
+  description: "",
+  total_amount: 0,
+  monthly_amount: 0,
+  currency: "MXN",
+  total_months: 1,
+  payment_method_id: paymentMethods[0]?.id ?? "",
+  category_id: "",
+};
 ---
 
-<AppLayout title={`${labels.page.installments} - Open PRP`}>
+<AppLayout title={`${labels.page.installments}`}>
   <div data-module="installments" class="space-y-4">
-    <PageHeader title={labels.page.installments} createLabel={labels.cta.newInstallment} createModule="installments" mobileOnlyCTA={true} />
+    <PageHeader
+      title={labels.page.installments}
+      createLabel={labels.cta.newInstallment}
+      createModule="installments"
+      mobileOnlyCTA={true}
+    />
     <div class="tabs-container">
       <TabBar
         client:load
-        tabs={[{ key: "summary", label: labels.tabs.summary }, { key: "admin", label: labels.tabs.adminInstallments }]}
+        tabs={[
+          { key: "summary", label: labels.tabs.summary },
+          { key: "admin", label: labels.tabs.adminInstallments },
+        ]}
         initialTab={initialTab}
         defaultTab="summary"
         ariaLabel={labels.tabs.ariaInstallments}
       />
-      <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "summary" }]}>
+      <div
+        data-tab-content="summary"
+        role="tabpanel"
+        id="panel-summary"
+        aria-labelledby="tab-summary"
+        tabindex="0"
+        class:list={["tab-content pt-4", { hidden: initialTab !== "summary" }]}
+      >
         <InstallmentsSummary
           client:load
           initialData={JSON.stringify(initialData)}
@@ -71,20 +126,40 @@ const defaultForm = { start_date: "", description: "", total_amount: 0, monthly_
           initialPaymentMethods={JSON.stringify(paymentMethods)}
         />
       </div>
-      <div data-tab-content="admin" role="tabpanel" id="panel-admin" aria-labelledby="tab-admin" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "admin" }]}>
+      <div
+        data-tab-content="admin"
+        role="tabpanel"
+        id="panel-admin"
+        aria-labelledby="tab-admin"
+        tabindex="0"
+        class:list={["tab-content pt-4", { hidden: initialTab !== "admin" }]}
+      >
         <InstallmentsFilterable
           client:load
           initialMonth={filterMonth}
           createdAt={Astro.locals.createdAt}
           activeOnly={activeOnly}
-          paymentMethods={paymentMethods.map(pm => ({ id: pm.id, icon: pm.icon, name: pm.name }))}
-          categories={instCategories.map(c => ({ id: c.id, icon: c.icon, name: displayCategoryName(c) }))}
+          paymentMethods={paymentMethods.map((pm) => ({
+            id: pm.id,
+            icon: pm.icon,
+            name: pm.name,
+          }))}
+          categories={instCategories.map((c) => ({
+            id: c.id,
+            icon: c.icon,
+            name: displayCategoryName(c),
+          }))}
           initialData={JSON.stringify(initialData)}
         />
       </div>
     </div>
   </div>
-  <CrudModal client:load module="installments" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.installment} />
+  <CrudModal
+    client:load
+    module="installments"
+    fields={JSON.stringify(fields)}
+    defaultForm={JSON.stringify(defaultForm)}
+    titleSingular={labels.singular.installment}
+  />
   <DeleteHandler module="installments" label={labels.singular.installment} />
 </AppLayout>
-

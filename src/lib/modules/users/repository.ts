@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db/client.ts";
-import { nextSeq } from "@/lib/db/utils.ts";
+import { nextSeq, now } from "@/lib/db/utils.ts";
 import type { User } from "@/lib/types/user.ts";
 
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000;
@@ -15,10 +15,10 @@ export class UserRepository {
 
     const id = crypto.randomUUID();
     const seq = await nextSeq("users");
-    const now = new Date().toISOString();
+    const timestamp = now();
     await db.execute({
       sql: "INSERT INTO users (id, clerk_id, email, display_name, seq, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      args: [id, clerkId, email, name ?? null, seq, now, now],
+      args: [id, clerkId, email, name ?? null, seq, timestamp, timestamp],
     });
 
     const result = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [id] });
@@ -38,10 +38,9 @@ export class UserRepository {
   }
 
   async syncProfile(userId: string, email: string, name?: string): Promise<void> {
-    const now = new Date().toISOString();
     await getDb().execute({
       sql: "UPDATE users SET email = ?, display_name = ?, updated_at = ? WHERE id = ?",
-      args: [email, name ?? null, now, userId],
+      args: [email, name ?? null, now(), userId],
     });
   }
 

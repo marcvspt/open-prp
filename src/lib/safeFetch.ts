@@ -1,8 +1,4 @@
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+import type { ApiResponse } from "@/types/general.ts";
 
 export async function safeFetch<T>(url: string): Promise<T | undefined>;
 export async function safeFetch(url: string, init: RequestInit): Promise<boolean>;

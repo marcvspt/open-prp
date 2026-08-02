@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useId } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import ChevronIcon from "@/assets/chevron.svg?react";
 import { FILTER_SELECT_FALLBACK } from "@/lib/filter-fields.ts";
@@ -19,19 +19,34 @@ interface SelectProps {
   disabled?: boolean;
   className?: string;
   ariaLabel?: string;
+  fitWidest?: boolean;
 }
 
-export default function Select({ value, onChange, options, placeholder, required, disabled, className, ariaLabel }: SelectProps) {
+export default function Select({ value, onChange, options, placeholder, required, disabled, className, ariaLabel, fitWidest }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const [pos, setPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
+  const [widest, setWidest] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
   const id = useId();
 
   const selected = options.find(o => o.value === value);
   const display = selected?.label ?? placeholder ?? FILTER_SELECT_FALLBACK;
+
+  useLayoutEffect(() => {
+    if (!fitWidest || !measureRef.current) return;
+    const measure = () => {
+      const widths = Array.from(measureRef.current!.children).map(el => el.getBoundingClientRect().width);
+      setWidest(widths.length ? Math.max(...widths) : 0);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(measureRef.current);
+    return () => ro.disconnect();
+  }, [fitWidest, options]);
 
   useEffect(() => {
     if (!open) { setHighlighted(-1); setPos(null); return; }
@@ -117,6 +132,7 @@ export default function Select({ value, onChange, options, placeholder, required
         aria-activedescendant={highlighted >= 0 ? `${id}-opt-${highlighted}` : undefined}
         disabled={disabled}
         onClick={() => setOpen(p => !p)}
+        style={fitWidest && widest > 0 ? { minWidth: widest } : undefined}
         className={`flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary"}
           ${open ? "border-primary ring-1 ring-primary" : "border-border"}
@@ -127,6 +143,22 @@ export default function Select({ value, onChange, options, placeholder, required
         <span className="flex-1 text-left">{display}</span>
         <ChevronIcon aria-hidden="true" className={`w-4 h-4 text-string-muted transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
+      {fitWidest && (
+        <div
+          ref={measureRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 left-[-9999px] flex flex-col items-start"
+          style={{ visibility: "hidden" }}
+        >
+          {options.map(o => (
+            <div key={o.value} className="flex items-center gap-2 px-3 py-2 text-sm border border-transparent whitespace-nowrap">
+              {o.icon && <span className="w-4 h-4 shrink-0">{o.icon}</span>}
+              <span>{o.label}</span>
+              <ChevronIcon aria-hidden="true" className="w-4 h-4 shrink-0 text-string-muted" />
+            </div>
+          ))}
+        </div>
+      )}
       {open && pos && createPortal(
         <ul
           ref={listRef}

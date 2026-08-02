@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db/client.ts";
-import { nextSeq } from "@/lib/db/utils.ts";
+import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
+import { lastDayOfMonth } from "@/lib/date.ts";
 import type { Transaction, CreateTransactionInput, UpdateTransactionInput, TransactionFilter } from "@/lib/types/transaction.ts";
 
 export class TransactionRepository {
@@ -14,8 +15,7 @@ export class TransactionRepository {
     if (filter?.q) { conditions.push("description LIKE ?"); args.push(`%${filter.q}%`); }
     if (filter?.month) {
       conditions.push("date >= ? AND date <= ?");
-      const lastDay = new Date(Number(filter.month.slice(0, 4)), Number(filter.month.slice(5, 7)), 0).getDate();
-      args.push(`${filter.month}-01`, `${filter.month}-${String(lastDay).padStart(2, "0")}`);
+      args.push(`${filter.month}-01`, lastDayOfMonth(filter.month));
     }
     if (filter?.date_from) { conditions.push("date >= ?"); args.push(filter.date_from); }
     if (filter?.date_to) { conditions.push("date <= ?"); args.push(filter.date_to); }
@@ -28,41 +28,25 @@ export class TransactionRepository {
   }
 
   async findById(id: string, userId: string): Promise<Transaction | null> {
-    const result = await getDb().execute({
-      sql: "SELECT * FROM transactions WHERE id = ? AND user_id = ?",
-      args: [id, userId],
-    });
-    return (result.rows[0] as unknown as Transaction | undefined) ?? null;
+    return scopedFindById<Transaction>("transactions", id, userId);
   }
 
   async create(data: CreateTransactionInput, userId: string): Promise<Transaction> {
-    const db = getDb();
-    const id = crypto.randomUUID();
-    const seq = await nextSeq("transactions");
-    const now = new Date().toISOString();
-
-    await db.execute({
-      sql: `INSERT INTO transactions (id, user_id, type, amount, description, category_id, payment_method_id, date, currency, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [
-        id, userId, data.type, data.amount, data.description ?? null,
-        data.category_id || null, data.payment_method_id,
-        data.date, data.currency ?? "USD",
-        seq, now, now,
-      ],
-    });
-
-    const result = await db.execute({ sql: "SELECT * FROM transactions WHERE id = ?", args: [id] });
-    return result.rows[0] as unknown as Transaction;
+    return insertRow<Transaction>("transactions", userId, [
+      "type", "amount", "description", "category_id", "payment_method_id", "date", "currency",
+    ], [
+      data.type, data.amount, data.description ?? null,
+      data.category_id || null, data.payment_method_id,
+      data.date, data.currency ?? "USD",
+    ]);
   }
 
   async update(id: string, data: UpdateTransactionInput, userId: string): Promise<Transaction | null> {
-    const db = getDb();
     const existing = await this.findById(id, userId);
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: (string | number | boolean | null)[] = [];
+    const args: SqlValue[] = [];
 
     if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }
     if (data.amount !== undefined) { sets.push("amount = ?"); args.push(data.amount); }
@@ -72,26 +56,10 @@ export class TransactionRepository {
     if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id); }
     if (data.currency !== undefined) { sets.push("currency = ?"); args.push(data.currency); }
 
-    if (sets.length === 0) return existing;
-
-    sets.push("updated_at = ?");
-    args.push(new Date().toISOString());
-    args.push(id, userId);
-
-    await db.execute({
-      sql: `UPDATE transactions SET ${sets.join(", ")} WHERE id = ? AND user_id = ?`,
-      args,
-    });
-
-    const result = await db.execute({ sql: "SELECT * FROM transactions WHERE id = ?", args: [id] });
-    return result.rows[0] as unknown as Transaction;
+    return applyUpdate<Transaction>("transactions", id, userId, sets, args, { existing });
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
-    const result = await getDb().execute({
-      sql: "DELETE FROM transactions WHERE id = ? AND user_id = ?",
-      args: [id, userId],
-    });
-    return result.rowsAffected > 0;
+    return scopedDelete("transactions", id, userId);
   }
 }

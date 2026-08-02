@@ -179,7 +179,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
         <div className="flex items-center gap-2">
           <h3 className={`text-base font-semibold ${colorClass}`}>{icon} {label}</h3>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
             <div className="text-xs text-string-muted mb-1">{labels.stat.total}</div>
             <div className={`text-lg font-semibold ${colorClass}`}>
@@ -190,7 +190,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
             <div className="text-xs text-string-muted mb-1">{type === "income" ? labels.stat.received : labels.stat.paid}</div>
             <div className="text-lg font-semibold text-success">{typeReceived.length}/{typeMonthly.length}</div>
           </div>
-          <div className="p-3 rounded-lg bg-panel border border-border text-center">
+          <div className="col-span-2 lg:col-span-1 p-3 rounded-lg bg-panel border border-border text-center">
             <div className="text-xs text-string-muted mb-1">{labels.stat.pending}</div>
             <div className="text-lg font-semibold text-warning">
               ${Number(typePending.reduce((s, sm) => s + Number(sm.amount), 0)).toLocaleString()}

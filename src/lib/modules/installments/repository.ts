@@ -1,17 +1,7 @@
 import { getDb } from "@/lib/db/client.ts";
-import { nextSeq } from "@/lib/db/utils.ts";
-import { localISOString } from "@/lib/date.ts";
+import { scopedFindById, scopedDelete, insertRow, applyUpdate, now, type SqlValue } from "@/lib/db/utils.ts";
+import { addMonths, lastDayOfMonth } from "@/lib/date.ts";
 import type { Installment, InstallmentInput, InstallmentFilter } from "@/lib/types/installment.ts";
-
-function addMonths(dateStr: string, n: number): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const totalM = m - 1 + n;
-  const newY = y + Math.floor(totalM / 12);
-  const newM = totalM % 12 + 1;
-  const lastDay = new Date(newY, newM, 0).getDate();
-  const newD = Math.min(d, lastDay);
-  return `${newY}-${String(newM).padStart(2, "0")}-${String(newD).padStart(2, "0")}`;
-}
 
 function computeRemaining(startDate: string, totalMonths: number): number {
   const today = new Date();
@@ -41,14 +31,13 @@ export class InstallmentRepository {
       args,
     });
     const rows = result.rows as unknown as Installment[];
-    const now = localISOString();
-    const currentMonthStart = `${now.slice(0, 7)}-01`;
+    const currentMonthStart = `${now().slice(0, 7)}-01`;
     const monthFilter = filter?.month || (filter?.active_only ? undefined : undefined);
     const targetMonthStart = monthFilter ? `${monthFilter}-01` : currentMonthStart;
     return rows.map(r => {
       const computed = computeRemaining(r.start_date, r.total_months);
       if (computed !== r.remaining_months) {
-        db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now, r.id] });
+        db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now(), r.id] });
       }
       return { ...r, remaining_months: computed };
       // Active = its last payment falls in the month or later, so an
@@ -56,8 +45,7 @@ export class InstallmentRepository {
     }).filter(i => {
       const lastPaymentDate = addMonths(i.start_date, Math.max(0, i.total_months - 1));
       if (filter?.month) {
-        const lastDay = new Date(Number(filter.month.slice(0, 4)), Number(filter.month.slice(5, 7)), 0).getDate();
-        const monthEnd = `${filter.month}-${String(lastDay).padStart(2, "0")}`;
+        const monthEnd = lastDayOfMonth(filter.month);
         return i.start_date <= monthEnd && lastPaymentDate >= targetMonthStart;
       }
       if (filter?.active_only) return lastPaymentDate >= targetMonthStart;
@@ -70,49 +58,35 @@ export class InstallmentRepository {
 
   async findById(id: string, userId: string): Promise<Installment | null> {
     const db = getDb();
-    const result = await db.execute({
-      sql: "SELECT * FROM installments WHERE id = ? AND user_id = ?",
-      args: [id, userId],
-    });
-    const row = result.rows[0] as unknown as Installment | undefined;
+    const row = await scopedFindById<Installment>("installments", id, userId);
     if (!row) return null;
     const computed = computeRemaining(row.start_date, row.total_months);
     if (computed !== row.remaining_months) {
-      db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, localISOString(), row.id] });
+      db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now(), row.id] });
     }
     return { ...row, remaining_months: computed };
   }
 
   async create(data: InstallmentInput, userId: string): Promise<Installment> {
-    const db = getDb();
-    const id = crypto.randomUUID();
-    const seq = await nextSeq("installments");
-    const now = localISOString();
-
-    await db.execute({
-      sql: `INSERT INTO installments (id, user_id, category_id, payment_method_id, description, total_amount, monthly_amount, total_months, remaining_months, start_date, currency, seq, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [
-        id, userId, data.category_id || null,
-        data.payment_method_id,
-        data.description, data.total_amount,
-        data.monthly_amount, data.total_months,
-        data.remaining_months ?? data.total_months,
-        data.start_date, data.currency ?? "MXN", seq, now, now,
-      ],
-    });
-
-    const result = await db.execute({ sql: "SELECT * FROM installments WHERE id = ?", args: [id] });
-    return result.rows[0] as unknown as Installment;
+    return insertRow<Installment>("installments", userId, [
+      "category_id", "payment_method_id", "description", "total_amount", "monthly_amount",
+      "total_months", "remaining_months", "start_date", "currency",
+    ], [
+      data.category_id || null,
+      data.payment_method_id,
+      data.description, data.total_amount,
+      data.monthly_amount, data.total_months,
+      data.remaining_months ?? data.total_months,
+      data.start_date, data.currency ?? "MXN",
+    ]);
   }
 
   async update(id: string, data: Partial<InstallmentInput>, userId: string): Promise<Installment | null> {
-    const db = getDb();
     const existing = await this.findById(id, userId);
     if (!existing) return null;
 
     const sets: string[] = [];
-    const args: (string | number | boolean | null)[] = [];
+    const args: SqlValue[] = [];
 
     if (data.description !== undefined) { sets.push("description = ?"); args.push(data.description); }
     if (data.total_amount !== undefined) { sets.push("total_amount = ?"); args.push(data.total_amount); }
@@ -124,26 +98,10 @@ export class InstallmentRepository {
     if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id || null); }
     if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id); }
 
-    if (sets.length === 0) return existing;
-
-    sets.push("updated_at = ?");
-    args.push(localISOString());
-    args.push(id, userId);
-
-    await db.execute({
-      sql: `UPDATE installments SET ${sets.join(", ")} WHERE id = ? AND user_id = ?`,
-      args,
-    });
-
-    const result = await db.execute({ sql: "SELECT * FROM installments WHERE id = ?", args: [id] });
-    return result.rows[0] as unknown as Installment;
+    return applyUpdate<Installment>("installments", id, userId, sets, args, { existing });
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
-    const result = await getDb().execute({
-      sql: "DELETE FROM installments WHERE id = ? AND user_id = ?",
-      args: [id, userId],
-    });
-    return result.rowsAffected > 0;
+    return scopedDelete("installments", id, userId);
   }
 }

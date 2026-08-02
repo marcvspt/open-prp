@@ -16,7 +16,7 @@ export class RecurringPaymentMonthlyRepository {
     }));
   }
 
-  async update(id: string, data: RecurringPaymentMonthlyUpdate): Promise<boolean> {
+  async update(id: string, data: RecurringPaymentMonthlyUpdate, userId: string): Promise<boolean> {
     const sets: string[] = [];
     const args: (string | number | boolean | null)[] = [];
 
@@ -26,18 +26,19 @@ export class RecurringPaymentMonthlyRepository {
 
     if (sets.length === 0) return false;
 
-    args.push(id);
+    args.push(id, userId);
     const result = await getDb().execute({
-      sql: `UPDATE recurring_payment_monthly SET ${sets.join(", ")} WHERE id = ?`,
+      sql: `UPDATE recurring_payment_monthly SET ${sets.join(", ")}
+            WHERE id = ? AND payment_id IN (SELECT id FROM recurring_payments WHERE user_id = ?)`,
       args,
     });
     return result.rowsAffected > 0;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string): Promise<boolean> {
     const result = await getDb().execute({
-      sql: "DELETE FROM recurring_payment_monthly WHERE id = ?",
-      args: [id],
+      sql: "DELETE FROM recurring_payment_monthly WHERE id = ? AND payment_id IN (SELECT id FROM recurring_payments WHERE user_id = ?)",
+      args: [id, userId],
     });
     return result.rowsAffected > 0;
   }

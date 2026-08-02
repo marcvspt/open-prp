@@ -1,4 +1,4 @@
-export const GLOBAL_CATEGORY_LABELS: Record<string, string> = {
+const GLOBAL_CATEGORY_LABELS: Record<string, string> = {
   cleaning: "Limpieza",
   food: "Comida",
   candy: "Golosinas",

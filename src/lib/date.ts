@@ -5,7 +5,7 @@ export function localISOString(): string {
 }
 
 /** Days from today to `date` (YYYY-MM-DD); negative when the date is in the past. */
-export function daysUntilDate(date: string): number {
+function daysUntilDate(date: string): number {
   const [y, m, d] = date.split("-").map(Number);
   const target = new Date(y, m - 1, d);
   const now = new Date();
@@ -31,7 +31,7 @@ export function resolvePaymentDueDate(month: string, cutoffDay: number, paymentD
 }
 
 /** Same as `resolvePaymentDueDate` but tolerates a null cutoff (falls back to the last day of the month). */
-export function paymentDueDate(month: string, cutoffDay: number | null, paymentDueDay: number): string {
+function paymentDueDate(month: string, cutoffDay: number | null, paymentDueDay: number): string {
   const [y, m] = month.split("-").map(Number);
   const cutoff = cutoffDay ?? new Date(y, m, 0).getDate();
   return resolvePaymentDueDate(month, cutoff, paymentDueDay);
@@ -122,16 +122,18 @@ export function lastDayOfMonth(month: string): string {
   return `${month}-${String(d).padStart(2, "0")}`;
 }
 
+/** Adds `n` months to a YYYY-MM-DD date, clamping the day to the target month. */
+export function addMonths(dateStr: string, n: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const totalM = m - 1 + n;
+  const newY = y + Math.floor(totalM / 12);
+  const newM = totalM % 12 + 1;
+  const lastDay = new Date(newY, newM, 0).getDate();
+  const newD = Math.min(d, lastDay);
+  return `${newY}-${String(newM).padStart(2, "0")}-${String(newD).padStart(2, "0")}`;
+}
+
 export function isInstallmentInMonth(month: string, startDate: string, totalMonths: number): boolean {
-  function addMonths(dateStr: string, n: number): string {
-    const [y, m, d] = dateStr.split("-").map(Number);
-    const totalM = m - 1 + n;
-    const newY = y + Math.floor(totalM / 12);
-    const newM = totalM % 12 + 1;
-    const lastDay = new Date(newY, newM, 0).getDate();
-    const newD = Math.min(d, lastDay);
-    return `${newY}-${String(newM).padStart(2, "0")}-${String(newD).padStart(2, "0")}`;
-  }
   const [my, mm] = month.split("-").map(Number);
   for (let n = 0; n < totalMonths; n++) {
     const pd = addMonths(startDate, n);

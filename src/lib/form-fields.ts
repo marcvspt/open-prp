@@ -4,9 +4,9 @@ import type { Card } from "@/lib/types/card.ts";
 import { displayCategoryName } from "@/lib/category-labels.ts";
 import { labels } from "@/lib/labels.ts";
 
-export const CURRENCY_OPTIONS = labels.currency.options;
+const CURRENCY_OPTIONS = labels.currency.options;
 
-export const TYPE_OPTIONS = [
+const TYPE_OPTIONS = [
   { value: "expense", label: labels.badge.expenseOption },
   { value: "income", label: labels.badge.incomeOption },
 ];

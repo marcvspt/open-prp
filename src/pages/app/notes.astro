@@ -11,8 +11,11 @@ const userId = Astro.locals.userId;
 const items = (await new NoteRepository().findAll(userId)) ?? [];
 
 const colorMap: Record<string, string> = {
-  blue: "#3b82f6", green: "#22c55e", yellow: "#eab308",
-  pink: "#ec4899", purple: "#a855f7",
+  blue: "#3b82f6",
+  green: "#22c55e",
+  yellow: "#eab308",
+  pink: "#ec4899",
+  purple: "#a855f7",
 };
 
 const fields = [
@@ -24,34 +27,71 @@ const fields = [
 const defaultForm = { title: "", content: "", color: "", is_pinned: false };
 ---
 
-<AppLayout title={`${labels.page.notes} - Open PRP`}>
+<AppLayout title={`${labels.page.notes}`}>
   <div data-module="notes" class="space-y-4">
-    <PageHeader title={labels.page.notes} createLabel={labels.cta.newNote} createModule="notes" />
-    {items.length === 0 ? (
-      <p class="text-center text-string-muted py-8">{labels.empty.notes}</p>
-    ) : (
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map(note => {
-          const raw = note.color ?? "";
-          const hex = raw.startsWith("#") ? raw : (colorMap[raw] ?? "");
-          const hasColor = !!hex;
-          return (
-            <div class={`rounded-xl p-4 shadow-sm border border-border bg-panel ${hasColor ? "border-l-4" : ""} ${note.is_pinned ? "ring-2 ring-primary-border" : ""}`} style={hasColor ? `border-left-color: ${hex}; background-color: ${hex}08` : ""}>
-              <div class="flex items-start justify-between gap-2">
-                <h3 class="font-semibold text-string truncate">{note.title || labels.empty.noTitle}</h3>
-                <div class="flex gap-1 shrink-0">
-                  <button data-edit-notes={note.id} class="text-xs font-medium text-primary hover:text-primary-hover cursor-pointer">{BTN_EDIT}</button>
-                  <button data-delete-notes={note.id} class="text-xs font-medium text-danger hover:text-danger-hover cursor-pointer">{BTN_DELETE}</button>
+    <PageHeader
+      title={labels.page.notes}
+      createLabel={labels.cta.newNote}
+      createModule="notes"
+    />
+    {
+      items.length === 0 ? (
+        <p class="text-center text-string-muted py-8">{labels.empty.notes}</p>
+      ) : (
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {items.map((note) => {
+            const raw = note.color ?? "";
+            const hex = raw.startsWith("#") ? raw : (colorMap[raw] ?? "");
+            const hasColor = !!hex;
+            return (
+              <div
+                class={`rounded-xl p-4 shadow-sm border border-border bg-panel ${hasColor ? "border-l-4" : ""} ${note.is_pinned ? "ring-2 ring-primary-border" : ""}`}
+                style={
+                  hasColor
+                    ? `border-left-color: ${hex}; background-color: ${hex}08`
+                    : ""
+                }
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <h3 class="font-semibold text-string truncate">
+                    {note.title || labels.empty.noTitle}
+                  </h3>
+                  <div class="flex gap-1 shrink-0">
+                    <button
+                      data-edit-notes={note.id}
+                      class="text-xs font-medium text-primary hover:text-primary-hover cursor-pointer"
+                    >
+                      {BTN_EDIT}
+                    </button>
+                    <button
+                      data-delete-notes={note.id}
+                      class="text-xs font-medium text-danger hover:text-danger-hover cursor-pointer"
+                    >
+                      {BTN_DELETE}
+                    </button>
+                  </div>
+                </div>
+                {note.content && (
+                  <p class="mt-2 text-sm text-nav whitespace-pre-wrap line-clamp-3">
+                    {note.content}
+                  </p>
+                )}
+                <div class="mt-3 text-xs text-string-muted">
+                  {formatDate(note.updated_at)}
                 </div>
               </div>
-              {note.content && <p class="mt-2 text-sm text-nav whitespace-pre-wrap line-clamp-3">{note.content}</p>}
-              <div class="mt-3 text-xs text-string-muted">{formatDate(note.updated_at)}</div>
-            </div>
-          );
-        })}
-      </div>
-    )}
+            );
+          })}
+        </div>
+      )
+    }
   </div>
-  <CrudModal client:load module="notes" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={labels.singular.note} />
+  <CrudModal
+    client:load
+    module="notes"
+    fields={JSON.stringify(fields)}
+    defaultForm={JSON.stringify(defaultForm)}
+    titleSingular={labels.singular.note}
+  />
   <DeleteHandler module="notes" label={labels.singular.note} />
 </AppLayout>

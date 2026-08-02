@@ -9,7 +9,7 @@ import type { ShoppingItem } from "@/lib/types/shopping.ts";
 import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import type { Category } from "@/lib/types/category.ts";
 
-export interface CardWithDebt extends Card {
+interface CardWithDebt extends Card {
   debt?: CardMonthly;
 }
 

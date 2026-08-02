@@ -81,6 +81,27 @@ astro dev stop | status | logs
 - `BaseLayout.astro` — `<html>`, `<head>`, meta, favicon, dark mode inline script, título `"Open PRP | {title}"`, `<slot name="head" />`.
 - `AppLayout.astro` — extiende `BaseLayout`. Inyecta manifest PWA + theme-color vía `slot="head"`. Sidebar + main + pantalla de login. Registra el service worker.
 - `LandingLayout.astro` — extiende `BaseLayout`. Header + slot + Footer.
+- Todo layout específico (ej. `BlogLayout.astro`) debe envolverse en `BaseLayout.astro`, reenviando como mínimo la prop `title` (y otras si aplica) para que `BaseLayout` controle el `<head>` y el título de la página.
+
+```astro
+---
+// BlogLayout.astro
+import BaseLayout from '@/layouts/BaseLayout.astro';
+const { title } = Astro.props;
+---
+<BaseLayout title={title}>
+  <slot />
+</BaseLayout>
+```
+
+- No dupliques lógica de `<head>`/SEO en el layout hijo: eso vive solo en `BaseLayout.astro`.
+
+- El título `title=` de las páginas debe ser el nombre de la sección/página (ej. **Dashboard**), y se renderizará como `Open PRP | Dashboard`. Si no se pasa `title=`, se muestra solo `Open PRP` ya que se tiene realizado la siguiente configuracion en `BaseLayout.astro`
+
+```astro
+const { title } = Astro.props;
+const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
+```
 
 ### Sidebar (app)
 
@@ -130,9 +151,18 @@ astro dev stop | status | logs
 - `findAll()` en recurring-payments: `LEFT JOIN` con categories y payment_methods.
 - Card repository: al crear/actualizar/eliminar una tarjeta, sincroniza automáticamente el `PaymentMethod` asociado vía `PaymentMethodRepository`.
 
+### API routes (factories)
+
+- **`src/lib/api-routes.ts`** centraliza el esqueleto de los CRUD de la API:
+  - `createIdRoutes(repo, { get?, patch?, put?, delete?, notFoundMessage? })` → handlers `GET`/`PATCH`/`PUT`/`DELETE` para `/api/*/[id]`. `repo` debe exponer `findById`/`update`/`delete` (con scope por `userId`). Variantes: `{ get: false }` (payment-methods, categories), `{ patch: false }` (pantry), `{ patch: false, notFoundMessage: "No encontrado" }` (recurring-payments).
+  - `createIndexRoutes(repo, { buildFilter?, validateCreate? })` → handlers `GET`/`POST` para `/api/*/`. `buildFilter(params, context)` construye el filtro del repo; `validateCreate(body)` devuelve `string | null` (mensaje de error o `null`). Si no hay `buildFilter`, el GET llama `findAll(uid)` sin filtro (payment-methods, recurring-payments, cards).
+  - Uso: `export const { GET, PATCH, PUT, DELETE } = createIdRoutes(new XRepository())`. Astro resuelve los handlers leyendo `mod[method]`, así que los exports destructurados son válidos.
+- **`src/lib/api-helpers.ts`** — helpers compartidos de rutas: `jsonResponse`, `errorResponse`, `requireUserId`, `getSearchParams`, `parsePageParams`, **`parseBoolParam`** (parsea `?x=true|false` → `boolean | undefined`) y **`getDateRange`** (aplica la ventana "Último año" vía `lastYearWindow`/`lastDayOfMonth` cuando no hay `month` ni `date_from`/`date_to`; usada en transactions, installments, cashback).
+- **Rutas custom (no usan factory)**: `categories/index.ts` (dup-check 409 + merge de secciones), `pantry/index.ts` (default `category_id` + try/catch con 500), `recurring-payment-monthly/index.ts` (by month, PATCH/DELETE por query param), `card-monthly/index.ts` (upsert/toggle), `notes/tags/*` y `pantry/categories/*` (repo/métodos custom).
+
 ## Componentes UI reutilizables
 
-- **Select**: usar el custom `src/components/ui/Select.tsx` (filtros y formularios). Dropdown portaleado a `body` con `position: fixed`, viewport-aware (`maxHeight` dinámico). Props `ariaLabel`, `aria-activedescendant`, `role="combobox"`.
+- **Select**: usar el custom `src/components/ui/Select.tsx` (filtros y formularios). Dropdown portaleado a `body` con `position: fixed`, viewport-aware (`maxHeight` dinámico). Props `ariaLabel`, `aria-activedescendant`, `role="combobox"`. `fitWidest` fija el ancho del botón a la opción más larga (mide las opciones con un contenedor oculto + ResizeObserver), evitando que el ancho cambie al cambiar de opción (usado por `ThemeToggle`).
 - **MultiSelect**: usar el custom `src/components/ui/MultiSelect.tsx`. Mismo patrón de dropdown portaleado y accesibilidad que `Select`.
 - **Tabs**: usar `src/components/app/ui/TabBar.tsx` (no confundir con `src/components/ui/`). Mismo estilo y comportamiento en todas las secciones; en móvil se convierten en un Select custom. Recibe opcionalmente un `monthSelector` para mostrar junto a las tabs.
 - **TabBarWithMonth**: wrapper de `TabBar` que añade `MonthSelector` y dispatchea el evento `monthchange` al cambiar el filtro. Props: `tabs`, `initialTab`, `defaultTab`, `ariaLabel`, `initialMonth`, `createdAt`, `allLabel`. Cuando la tab activa no es `"history"`, oculta la opción "allLabel" y si estaba seleccionada fuerza al mes actual.

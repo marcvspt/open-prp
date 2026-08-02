@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
-export interface FilterState {
+interface FilterState {
   [key: string]: string;
 }
 

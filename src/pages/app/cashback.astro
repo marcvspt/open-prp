@@ -36,7 +36,7 @@ const fields = [
 const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", card_id: creditCards[0]?.id ?? "" };
 ---
 
-<AppLayout title={`${labels.page.cashback} - Open PRP`}>
+<AppLayout title={`${labels.page.cashback}`}>
   <div data-module="cashback" class="space-y-4">
     <PageHeader title={labels.page.cashback} createLabel={labels.cta.newCashback} createModule="cashback" mobileOnlyCTA={true} />
     <CashbackFilterable
