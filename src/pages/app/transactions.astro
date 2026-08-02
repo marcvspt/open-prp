@@ -39,6 +39,7 @@ if (!filterMonth) {
   const { from, to } = lastYearWindow(Astro.locals.createdAt);
   txFilter.date_from = `${from}-01`;
   txFilter.date_to = lastDayOfMonth(to);
+  txFilter.limit = 200;
 }
 const initialData = await repo.findAll(userId, txFilter);
 const fields = [

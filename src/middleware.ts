@@ -10,7 +10,7 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
       const repo = new UserRepository();
       const user = await repo.findOrCreate(clerkId, "", undefined);
 
-      if (await repo.needsSync(clerkId)) {
+      if (!user.email || !user.display_name) {
         try {
           const clerkUser = await clerkApi.users.getUser(clerkId);
           const email = clerkUser.emailAddresses?.[0]?.emailAddress ?? "";

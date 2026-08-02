@@ -50,6 +50,17 @@ export default function CreditCardSummary({
   const [payAmount, setPayAmount] = useState("");
   const [payDate, setPayDate] = useState("");
 
+  const fetchCalculated = useCallback(async (month: string) => {
+    if (!month) return;
+    const creditCards = cards.filter(c => c.type === "credit");
+    const calcs: Record<string, CalculatedDebt> = {};
+    await Promise.all(creditCards.map(async (card) => {
+      const calc = await safeFetch<CalculatedDebt>(`/api/card-monthly/calculate?cardId=${card.id}&month=${month}`);
+      if (calc) calcs[card.id] = calc;
+    }));
+    setCalculatedDebts(calcs);
+  }, [cards]);
+
   const fetchData = useCallback(async (month: string) => {
     if (!month) return;
     loadedMonthRef.current = month;
@@ -59,14 +70,12 @@ export default function CreditCardSummary({
     ]);
     setCardDebts(debts);
 
-    const creditCards = cards.filter(c => c.type === "credit");
-    const calcs: Record<string, CalculatedDebt> = {};
-    await Promise.all(creditCards.map(async (card) => {
-      const calc = await safeFetch<CalculatedDebt>(`/api/card-monthly/calculate?cardId=${card.id}&month=${month}`);
-      if (calc) calcs[card.id] = calc;
-    }));
-    setCalculatedDebts(calcs);
-  }, [cards]);
+    await fetchCalculated(month);
+  }, [fetchCalculated]);
+
+  useEffect(() => {
+    fetchCalculated(loadedMonthRef.current);
+  }, [fetchCalculated]);
 
   useEffect(() => {
     const urlMonth = new URLSearchParams(location.search).get("month") || "";

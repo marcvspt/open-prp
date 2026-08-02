@@ -14,7 +14,6 @@ import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { CardMonthlyRepository } from "@/lib/modules/card-monthly/repository.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
-import { calculateCardDebt } from "@/lib/modules/card-monthly/calculator.ts";
 import { currentMonthStr, resolvePaymentDueDate as resolvePaymentDueDateISO, lastYearWindow } from "@/lib/date.ts";
 const userId = Astro.locals.userId;
 const cards = await new CardRepository().findAll(userId);
@@ -31,16 +30,7 @@ const { from: fromMonth, to: nextMonth } = lastYearWindow(Astro.locals.createdAt
 const fullHistory = await cardMonthlyRepo.getHistory(userId);
 const cardHistory = urlMonth ? fullHistory.filter(d => d.month === currentMonth) : fullHistory.filter(d => d.month >= fromMonth && d.month <= nextMonth);
 
-const creditCards = cards.filter(c => c.type === "credit");
-const calculatedDebts: Record<string, { total_purchases: number; total_installments: number; total_recurring: number; total_cashback: number; statement_balance: number; committed_installments: number; total_committed: number }> = {};
-for (const card of creditCards) {
-  try {
-    const calc = await calculateCardDebt(card.id, currentMonth, userId);
-    calculatedDebts[card.id] = calc;
-  } catch {
-    // Skip cards whose debt cannot be calculated
-  }
-}
+const calculatedDebts = {};
 const paymentMethods = await new PaymentMethodRepository().findAll(userId);
 const categories = await new CategoryRepository().findAll(userId);
 

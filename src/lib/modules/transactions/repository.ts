@@ -21,8 +21,8 @@ export class TransactionRepository {
     if (filter?.date_to) { conditions.push("date <= ?"); args.push(filter.date_to); }
 
     const result = await db.execute({
-      sql: `SELECT * FROM transactions WHERE ${conditions.join(" AND ")} ORDER BY date DESC, created_at DESC`,
-      args,
+      sql: `SELECT * FROM transactions WHERE ${conditions.join(" AND ")} ORDER BY date DESC, created_at DESC${filter?.limit ? " LIMIT ?" : ""}`,
+      args: filter?.limit ? [...args, filter.limit] : args,
     });
     return result.rows as unknown as Transaction[];
   }
