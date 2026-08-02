@@ -4,8 +4,21 @@ interface FilterState {
   [key: string]: string;
 }
 
+const NON_FILTER_PARAMS = new Set(["tab"]);
+
+function filtersFromUrl(initial: FilterState): FilterState {
+  const filters: FilterState = { ...initial };
+  if (typeof window === "undefined") return filters;
+  const params = new URLSearchParams(window.location.search);
+  for (const [key, value] of params) {
+    if (NON_FILTER_PARAMS.has(key)) continue;
+    if (value) filters[key] = value;
+  }
+  return filters;
+}
+
 export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, initialData?: T) {
-  const [filters, setFilters] = useState<FilterState>(initial);
+  const [filters, setFilters] = useState<FilterState>(() => filtersFromUrl(initial));
   const [data, setData] = useState<T | null>(initialData ?? null);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -57,9 +70,13 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
       .catch(() => setData([] as unknown as T))
       .finally(() => setLoading(false));
 
-    const url = new URL(location.href);
-    url.search = qs;
-    history.replaceState(null, "", url.pathname + url.search);
+    const params = new URLSearchParams(location.search);
+    for (const [key, value] of Object.entries(filters)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    }
+    const nextQs = params.toString();
+    history.replaceState(null, "", nextQs ? `${location.pathname}?${nextQs}` : location.pathname);
   }, [filters, apiEndpoint]);
 
   return { filters, setFilter, clearFilters, data, loading };

@@ -11,9 +11,7 @@ import { ShoppingRepository } from "@/lib/modules/shopping/repository.ts";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
-import { calculateCardDebt } from "@/lib/modules/card-monthly/calculator.ts";
 import type { DashboardMonthData } from "@/lib/types/dashboard.ts";
-import type { CalculatedDebt } from "@/lib/types/card-monthly.ts";
 
 /** Server-side equivalent of `fetchDashboardMonth` (api.ts): same queries via repositories, without HTTP round-trips. */
 export async function loadDashboardMonth(userId: string, month: string): Promise<DashboardMonthData> {
@@ -70,28 +68,10 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
     cardTotals[cb.card_id].income += Number(cb.amount);
   }
 
-  const calculatedDebts: Record<string, CalculatedDebt> = {};
-  await Promise.all(
-    cards
-      .filter((card) => card.type === "credit")
-      .map(async (card) => {
-        try {
-          const calc = await calculateCardDebt(card.id, month, userId);
-          await cardMonthlyRepo.upsert({ card_id: card.id, month, statement_balance: calc.statement_balance }, userId);
-          calculatedDebts[card.id] = calc;
-        } catch {
-          // Skip cards whose debt cannot be calculated (e.g. missing card row).
-        }
-      })
-  );
-
-  // Re-fetch card debts so balances reflect any recalculation side effects.
-  const cardDebts = await cardMonthlyRepo.findByMonth(month, userId);
-
   return {
     cards,
     services,
-    cardDebts: cardDebts.length > 0 ? cardDebts : cardDebtsRaw,
+    cardDebts: cardDebtsRaw,
     servicePayments,
     upcomingEvents: eventsResult.data,
     pendingTasks: tasksData.filter((t) => !t.due_date || t.due_date >= today),
@@ -99,7 +79,7 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
     activeShopping: shoppingData,
     paymentMethods,
     categories,
-    calculatedDebts,
+    calculatedDebts: {},
     cardTotals,
     incomes,
     expenses,

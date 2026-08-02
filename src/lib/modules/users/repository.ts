@@ -2,8 +2,6 @@ import { getDb } from "@/lib/db/client.ts";
 import { nextSeq, now } from "@/lib/db/utils.ts";
 import type { User } from "@/lib/types/user.ts";
 
-const SYNC_COOLDOWN_MS = 5 * 60 * 1000;
-
 export class UserRepository {
   async findOrCreate(clerkId: string, email: string, name?: string): Promise<User> {
     const db = getDb();
@@ -23,18 +21,6 @@ export class UserRepository {
 
     const result = await db.execute({ sql: "SELECT * FROM users WHERE id = ?", args: [id] });
     return result.rows[0] as unknown as User;
-  }
-
-  async needsSync(clerkId: string): Promise<boolean> {
-    const result = await getDb().execute({
-      sql: "SELECT updated_at, email, display_name FROM users WHERE clerk_id = ?",
-      args: [clerkId],
-    });
-    if (!result.rows[0]) return true;
-    const row = result.rows[0] as Record<string, string>;
-    if (!row.email || !row.display_name) return true;
-    const updatedAt = new Date(row.updated_at).getTime();
-    return Date.now() - updatedAt > SYNC_COOLDOWN_MS;
   }
 
   async syncProfile(userId: string, email: string, name?: string): Promise<void> {

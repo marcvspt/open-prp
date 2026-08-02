@@ -32,24 +32,25 @@ astro dev stop | status | logs
 ## Arquitectura general
 
 - **SSR-first**: se prioriza Server-Side Rendering con Astro. Los datos se obtienen en SSR siempre que sea posible; la página llega ya renderizada al cliente.
+- **Prefetch deshabilitado**: `prefetch: false` en `astro.config.mjs`. El `<ClientRouter />` de Astro activa por defecto `init({ prefetchAll: true })` (inyecta `<link rel="prefetch">` en hover, duplicando el fetch SSR por navegación); se desactiva explícitamente para evitarlo. No usar prefetch.
 - **Mejores prácticas y rendimiento**: seguir siempre las mejores prácticas de cada tecnología (Astro, React, Tailwind, TypeScript, Clerk, TursoDB) y priorizar el rendimiento web (Core Web Vitals, bundle en cliente reducido, SSR/SSG donde aplique, queries eficientes, caching, hydration mínima).
 - React 19 se usa únicamente en componentes que requieren comportamiento dinámico en cliente (filtros, tabs, modales CRUD, interacciones en lista de compras).
 - Se prioriza la componentización y reutilización de componentes, utilidades y estilos. Cualquier funcionalidad compartida entre secciones debe implementarse como recurso reutilizable, nunca duplicado.
 - **Patrón de datos iniciales SSR**: las islas React reciben datos del primer render vía props (`initialData={JSON.stringify(...)}` desde repositorios en el frontmatter de la `.astro`). Re-fetch en cliente al cambiar filtros (vía `useFilteredData` o escuchando el evento `monthchange`) o tras una mutación. Aplica a: `ShoppingList`, `RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary`, `CardsHistory`, `CurrencySelect`, componentes `*Filterable`.
-- `src/lib/dashboard/load.ts` → `loadDashboardMonth()`: mismas queries que la API pero vía repositorios (sin HTTP), usado directamente en `dashboard.astro`.
+- `src/lib/dashboard/load.ts` → `loadDashboardMonth()`: mismas queries que la API pero vía repositorios (sin HTTP), usado directamente en `dashboard.astro`. No recalcula deudas ni hace `upsert` de `card_monthly` por visita (eso ocurre bajo demanda desde el cliente vía `/api/card-monthly/calculate` y desde la página de tarjetas).
 - `src/lib/dashboard/api.ts` → fetch de datos + mutaciones del dashboard desde cliente.
 
 ## Cambio de filtros sin recarga
 
 - Las páginas de **tarjetas** y **pagos recurrentes** usan `TabBarWithMonth` que dispatchea un evento `monthchange` en `window` al cambiar el mes. Los componentes (`RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary`, `CardsHistory`) escuchan ese evento y refetchean datos desde los endpoints API sin recargar la página. La URL se actualiza vía `history.replaceState`.
-- Los componentes `*Filterable` (transacciones, plazos, cashback, despensa) usan el hook `useFilteredData` que maneja filtros, fetch y URL de forma autónoma.
+- Los componentes `*Filterable` (transacciones, plazos, cashback, despensa) usan el hook `useFilteredData` que maneja filtros, fetch y URL de forma autónoma. El estado inicial de filtros se restaura desde los query params de la URL (la URL es la fuente de verdad; excluye `tab`, gestionado por `TabBar`), y al cambiar filtros la URL se actualiza preservando los params no gestionados por el hook. Así la UI y los filtros aplicados (SSR) siempre coinciden tras un reload (p. ej. el de `CrudModal`).
 - `CrudModal` y `ConfirmDelete` actualmente **recargan la página** tras guardar o eliminar (`window.location.href = window.location.href` / `window.location.reload()`). Pendiente de migrar a refetch sin recarga.
 
 ## Autenticación / Middleware
 
 - `clerkMiddleware` desde `@clerk/astro/server` en `src/middleware.ts` (integración `@clerk/astro`).
 - Rutas públicas (sin autenticación requerida): `/` (landing) y `/app/login`. Middleware protege el resto de `/app/*`.
-- `needsSync()` — sincroniza el perfil si email/nombre están vacíos o pasaron >5 min desde el último sync.
+- `needsSync` — sincroniza el perfil **solo si falta email o display_name** (el check se hace en `middleware.ts` sobre el usuario devuelto por `findOrCreate`, sin query extra ni cooldown). Así se evita la llamada HTTP a la API de Clerk en cada request.
 - Hooks React desde `@clerk/astro/react` (**no** `@clerk/clerk-react`).
 - `UserButton` con `afterSignOutUrl="/app/login"` y `client:load`.
 - Redirects de Clerk configurados en `astro.config.mjs`: `afterSignOutUrl`.
@@ -213,7 +214,7 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
 - **Valor por defecto según tipo de vista**:
   - **Vistas de resumen general**: por defecto el **mes actual**.
   - **Vistas de historial/registros** (con creación, edición o eliminación): por defecto **"Últimos 12 meses"**.
-- **Ventana "Último año" en APIs y SSR**: sin param `month`, los endpoints (`/api/transactions`, `/api/installments`, `/api/cashback`, `/api/card-monthly/history`, `/api/recurring-payment-monthly/history`) y las páginas SSR aplican la ventana `lastYearWindow(createdAt)` de `src/lib/date.ts` (12 meses atrás o mes de registro, hasta el mes siguiente) en vez de devolver todo el histórico. Con `month` presente, filtran solo ese mes.
+- **Ventana "Último año" en APIs y SSR**: sin param `month`, los endpoints (`/api/transactions`, `/api/installments`, `/api/cashback`, `/api/card-monthly/history`, `/api/recurring-payment-monthly/history`) y las páginas SSR aplican la ventana `lastYearWindow(createdAt)` de `src/lib/date.ts` (12 meses atrás o mes de registro, hasta el mes siguiente) en vez de devolver todo el histórico. Con `month` presente, filtran solo ese mes. En el SSR de `transactions.astro`, cuando aplica la ventana por defecto se añade `limit: 200` para acotar el payload inicial (el refetch del cliente vía API no está limitado).
 
 ### Evento `monthchange`
 
@@ -238,6 +239,7 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
 - Datos desde `src/lib/dashboard/load.ts` (server-only), `src/lib/dashboard/api.ts` (cliente, para mutaciones de pago).
 - `StatCard`: props `label`, `value`, `colorClass`, `sub`.
 - `FilterLinks`: props `filters: { value, label, href }[]` + `active`.
+- La página de **tarjetas** no recalcula deudas en SSR: `CreditCardSummary` las fetchea bajo demanda en cliente (`/api/card-monthly/calculate`) al montar y al cambiar de mes (`monthchange`). El dashboard lee el `statement_balance` almacenado en `card_monthly`.
 
 ## Tema / CSS
 

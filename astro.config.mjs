@@ -12,6 +12,8 @@ import netlify from '@astrojs/netlify';
 export default defineConfig({
   output: "server",
 
+  prefetch: false,
+
   adapter: netlify(),
 
   integrations: [react(), clerk({
