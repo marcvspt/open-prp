@@ -92,7 +92,11 @@ Endpoints especiales:
 | `GET /api/card-monthly/history` | Historial de pagos de tarjetas |
 | `POST /api/recurring-payments/[id]/monthly` | Upsert snapshot mensual |
 | `POST /api/shopping/toggle` | Toggle check de item |
-| `POST /api/shopping/complete` | Completar todos los checked |
+| `GET /api/shopping/lists` | Listas de compras (activas y completadas) |
+| `POST /api/shopping/lists` | Crear lista de compras |
+| `PATCH /api/shopping/lists/[id]` | Renombrar lista |
+| `DELETE /api/shopping/lists/[id]` | Eliminar lista y sus artículos |
+| `POST /api/shopping/lists/[id]/complete` | Finalizar lista (completa sus artículos) |
 | `POST /api/tasks/toggle` | Toggle completado de tarea |
 | `GET /api/users/currency` | Obtener moneda preferida |
 | `PUT /api/users/currency` | Actualizar moneda preferida |
