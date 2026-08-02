@@ -8,7 +8,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
   const [filters, setFilters] = useState<FilterState>(initial);
   const [data, setData] = useState<T | null>(initialData ?? null);
   const [loading, setLoading] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const prevQsRef = useRef<string>("");
   const isFirstRender = useRef(true);
 
