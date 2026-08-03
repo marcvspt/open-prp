@@ -30,7 +30,7 @@ jobs:
           node-version: "24"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm dlx audit-ci --moderate
+      - run: pnpm dlx audit-ci --config ./audit-ci.jsonc
       - uses: aquasecurity/trivy-action@master
         with: { scan-type: "fs", exit-code: "1", severity: "CRITICAL,HIGH" }
 
