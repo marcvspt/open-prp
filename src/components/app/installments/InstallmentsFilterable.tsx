@@ -35,6 +35,9 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className={FILTER_GRID_CLASS}>
           <div className={FILTER_WRAP_CLASS}>
+            <MonthSelector value={filters.month || ""} onChange={(m) => setFilter("month", m)} createdAt={createdAt} allLabel={FILTER_ALL_MONTHS} />
+          </div>
+          <div className={FILTER_WRAP_CLASS}>
             <Select
               value={filters.active_only ?? "true"}
               onChange={(v) => setFilter("active_only", v)}
@@ -45,9 +48,6 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
               placeholder={FILTER_LABEL_STATUS}
               ariaLabel={FILTER_LABEL_STATUS}
             />
-          </div>
-          <div className={FILTER_WRAP_CLASS}>
-            <MonthSelector value={filters.month || ""} onChange={(m) => setFilter("month", m)} createdAt={createdAt} allLabel={FILTER_ALL_MONTHS} />
           </div>
           <div className={FILTER_WRAP_CLASS}>
             <Select
