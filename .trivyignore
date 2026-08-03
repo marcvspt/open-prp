@@ -1,0 +1,14 @@
+# opentelemetry/core - transitiva de @netlify/dev (build-time). DoS por memoria no acotada en baggage header.
+CVE-2026-54285 exp:2026-10-01
+
+# fast-uri - transitiva de ajv/edge-bundler y workbox-build (build-time). Host confusion vía backslash.
+CVE-2026-16221 exp:2026-10-01
+
+# sharp - transitiva de @netlify/images/ipx. No usamos transformación de imágenes en producción.
+GHSA-f88m-g3jw-g9cj exp:2026-10-01
+
+# tar - transitiva de edge-bundler/zip-it-and-ship-it (build-time). DoS por recursion en filtrado de paths.
+GHSA-r292-9mhp-454m exp:2026-10-01
+
+# brace-expansion - transitiva de glob/minimatch en tooling de build de Netlify. DoS por expansion sin límite.
+CVE-2026-14257 exp:2026-10-01
