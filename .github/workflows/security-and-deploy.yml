@@ -53,11 +53,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: "24", cache: "pnpm" }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
-      - uses: nwtgck/actions-netlify@v3
-        with:
-          publish-dir: "./dist"
-          production-deploy: true
+      - run: npm install -g netlify-cli
+      - run: netlify deploy --build --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
