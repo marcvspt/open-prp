@@ -1,0 +1,31 @@
+{
+    "$schema": "https://raw.githubusercontent.com/IBM/audit-ci/main/docs/schema.json",
+    "moderate": true,
+    "allowlist": [
+        {
+            "id": "GHSA-8988-4f7v-96qf",
+            "notes": "opentelemetry/core - transitiva de @netlify/dev (build-time). DoS por memoria no acotada en baggage header, no aplica a nuestro runtime.",
+            "expiry": "2026-10-01T00:00:00.000Z"
+        },
+        {
+            "id": "GHSA-f88m-g3jw-g9cj",
+            "notes": "sharp - transitiva de @netlify/images/ipx. No usamos transformación de imágenes en producción.",
+            "expiry": "2026-10-01T00:00:00.000Z"
+        },
+        {
+            "id": "GHSA-r292-9mhp-454m",
+            "notes": "tar - transitiva de edge-bundler/zip-it-and-ship-it (build-time). DoS por recursion en filtrado de paths.",
+            "expiry": "2026-10-01T00:00:00.000Z"
+        },
+        {
+            "id": "GHSA-mh99-v99m-4gvg",
+            "notes": "brace-expansion (v2 y v5) - transitiva de glob/minimatch en tooling de build de Netlify. DoS por expansion sin límite de longitud.",
+            "expiry": "2026-10-01T00:00:00.000Z"
+        },
+        {
+            "id": "GHSA-v2hh-gcrm-f6hx",
+            "notes": "fast-uri - transitiva de ajv en edge-bundler/workbox-build (build-time). Host confusion vía backslash, no procesa URLs de usuarios finales.",
+            "expiry": "2026-10-01T00:00:00.000Z"
+        }
+    ]
+}
