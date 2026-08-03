@@ -10,7 +10,7 @@ export default function DashboardHeader({ initialMonth, createdAt }: Props) {
     const params = new URLSearchParams(location.search);
     if (m) params.set("month", m);
     else params.delete("month");
-    window.location.href = `?${params.toString()}`;
+    window.location.search = params.toString();
   }
 
   return (

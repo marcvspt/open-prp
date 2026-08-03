@@ -16,8 +16,8 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
           const email = clerkUser.emailAddresses?.[0]?.emailAddress ?? "";
           const name = clerkUser.fullName ?? clerkUser.firstName ?? undefined;
           await repo.syncProfile(user.id, email, name);
-        } catch (e) {
-          console.error("Failed to fetch Clerk user data:", e);
+        } catch {
+          console.error("Failed to fetch Clerk user data");
         }
       }
 
@@ -26,8 +26,8 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
     } else if (context.url.pathname.startsWith("/app") && context.url.pathname !== "/app/login") {
       return context.redirect("/app/login");
     }
-  } catch (e) {
-    console.error("Middleware user resolution failed:", e);
+  } catch {
+    console.error("Middleware user resolution failed");
   }
   return next();
 });

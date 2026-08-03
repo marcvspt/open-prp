@@ -35,7 +35,8 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     // Legacy #tab links: the server can't see the hash, so adopt it on the client.
     const h = typeof location !== "undefined" ? location.hash.replace("#", "") : "";
-    return SHOPPING_TABS.some(t => t.key === h) ? (h as TabKey) : (initialTab as TabKey);
+    const tabKeys = SHOPPING_TABS.map(t => t.key);
+    return tabKeys.includes(h) ? (h as TabKey) : (initialTab as TabKey);
   });
 
   useEffect(() => {
@@ -73,8 +74,7 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       setItems(itemsJson.data ?? itemsJson ?? []);
       setPantryItems(pantryJson.data ?? pantryJson ?? []);
       setCategories(catJson.data ?? catJson ?? []);
-    } catch (err: unknown) {
-      console.error("Failed to load shopping data:", err);
+    } catch {
       setError(labels.error.message(labels.common.errorUnknown));
     }
   }, []);
@@ -99,8 +99,7 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       } else {
         setError(labels.error.message(labels.common.errorUnknown));
       }
-    } catch (err: unknown) {
-      console.error("Failed to create list:", err);
+    } catch {
       setError(labels.error.message(labels.common.errorUnknown));
     }
   }
@@ -124,8 +123,7 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
           if (r.ok) fetchData();
           else setError(labels.error.message(labels.common.errorUnknown));
         })
-        .catch((err: unknown) => {
-          console.error(`Failed to rename list ${listId}:`, err);
+        .catch(() => {
           setError(labels.error.message(labels.common.errorUnknown));
         });
     }
@@ -140,8 +138,7 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       } else {
         setError(labels.error.message(labels.common.errorUnknown));
       }
-    } catch (err: unknown) {
-      console.error(`Failed to delete list ${listId}:`, err);
+    } catch {
       setError(labels.error.message(labels.common.errorUnknown));
     }
   }
@@ -151,8 +148,7 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       const res = await fetch(`/api/shopping/lists/${listId}/complete`, { method: "POST" });
       if (res.ok) fetchData();
       else setError(labels.error.message(labels.common.errorUnknown));
-    } catch (err: unknown) {
-      console.error(`Failed to complete list ${listId}:`, err);
+    } catch {
       setError(labels.error.message(labels.common.errorUnknown));
     }
   }
@@ -166,8 +162,7 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       });
       if (res.ok) fetchData();
       else setError(labels.error.message(labels.common.errorUnknown));
-    } catch (err: unknown) {
-      console.error(`Failed to toggle item ${id}:`, err);
+    } catch {
       setError(labels.error.message(labels.common.errorUnknown));
     }
   }
@@ -188,8 +183,7 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       });
       if (res.ok) fetchData();
       else setError(labels.error.message(labels.common.errorUnknown));
-    } catch (err: unknown) {
-      console.error("Failed to add from pantry:", err);
+    } catch {
       setError(labels.error.message(labels.common.errorUnknown));
     }
   }
@@ -209,8 +203,7 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       } else {
         setError(labels.error.message(labels.common.errorUnknown));
       }
-    } catch (err: unknown) {
-      console.error(`Failed to add item to list ${listId}:`, err);
+    } catch {
       setError(labels.error.message(labels.common.errorUnknown));
     }
   }
@@ -220,8 +213,7 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
       const res = await fetch(`/api/shopping/${id}`, { method: "DELETE" });
       if (res.ok) fetchData();
       else setError(labels.error.message(labels.common.errorUnknown));
-    } catch (err: unknown) {
-      console.error(`Failed to delete item ${id}:`, err);
+    } catch {
       setError(labels.error.message(labels.common.errorUnknown));
     }
   }

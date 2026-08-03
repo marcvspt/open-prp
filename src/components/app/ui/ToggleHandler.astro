@@ -17,12 +17,11 @@ const { module, key = "is_checked", endpoint = `/api/${module}/toggle` } = Astro
       try {
         const res = await fetch(endpoint, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, [key]: value }) });
         if (!res.ok) {
-          console.error(`Toggle ${module} ${id} failed with ${res.status}`);
           return;
         }
         window.location.reload();
-      } catch (err) {
-        console.error(`Toggle ${module} ${id} threw:`, err);
+      } catch {
+        console.error("Toggle failed");
       }
     }
   });

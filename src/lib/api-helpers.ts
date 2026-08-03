@@ -7,8 +7,8 @@ export function withErrorHandling(handler: APIRoute): APIRoute {
   return async (context) => {
     try {
       return await handler(context);
-    } catch (err: unknown) {
-      console.error(`API ${context.request.method} ${context.url.pathname} failed:`, err);
+    } catch {
+      console.error("API request failed");
       return errorResponse("Error interno del servidor", 500);
     }
   };

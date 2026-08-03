@@ -6,17 +6,17 @@ export async function safeFetch<T>(url: string, init?: RequestInit): Promise<T |
   try {
     const res = await fetch(url, init);
     if (!res.ok) {
-      console.error(`Fetch ${init?.method ?? "GET"} ${url} failed with ${res.status}`);
+      console.error("Fetch request failed");
       return init ? false : undefined;
     }
     const json: ApiResponse<T> = await res.json();
     if (!json.success) {
-      console.error(`Fetch ${init?.method ?? "GET"} ${url} returned error:`, json.error);
+      console.error("Fetch returned an error");
       return init ? false : undefined;
     }
     return init ? true : json.data;
-  } catch (err: unknown) {
-    console.error(`Fetch ${init?.method ?? "GET"} ${url} threw:`, err);
+  } catch {
+    console.error("Fetch threw");
     return init ? false : undefined;
   }
 }

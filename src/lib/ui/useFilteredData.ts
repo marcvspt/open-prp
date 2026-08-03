@@ -69,8 +69,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
     fetch(`${apiEndpoint}?${qs}`)
       .then(r => r.json())
       .then(d => setData((d?.data ?? d) as T))
-      .catch((err: unknown) => {
-        console.error(`Fetch ${apiEndpoint} failed:`, err);
+      .catch(() => {
         setError(labels.error.message(labels.common.errorUnknown));
       })
       .finally(() => setLoading(false));
