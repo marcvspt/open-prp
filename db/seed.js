@@ -27,11 +27,11 @@ async function runSchemas() {
     for (const stmt of statements) {
       try {
         await client.execute(stmt);
-      } catch (err) {
-        console.error(`  ✗ ${file}: ${err.message}`);
+      } catch {
+        console.error("  ✗ failed to apply schema statement");
       }
     }
-    console.log(`  ✓ ${file}`);
+    console.log("  ✓ schema applied");
   }
   console.log("Schemas complete!\n");
 }
@@ -53,7 +53,7 @@ async function seed() {
       args: [crypto.randomUUID(), null, pm.name, pm.icon, pm.color, await nextSeq("payment_methods"), now, now],
     });
   }
-  console.log(`  ✓ ${paymentMethods.length} global payment methods created`);
+  console.log("  ✓ global payment methods created");
 
   // ── Categories (unified) ──
   const categories = [
@@ -100,7 +100,7 @@ async function seed() {
       args: [crypto.randomUUID(), null, cat.name, JSON.stringify(cat.sections), cat.icon, cat.color, await nextSeq("categories"), now, now],
     });
   }
-  console.log(`  ✓ ${categories.length} categories created`);
+  console.log("  ✓ categories created");
 
   console.log("\nSeed complete!");
   client.close();
@@ -111,7 +111,7 @@ async function main() {
   await seed();
 }
 
-main().catch((err) => {
-  console.error(err);
+main().catch(() => {
+  console.error("Seed failed");
   process.exit(1);
 });

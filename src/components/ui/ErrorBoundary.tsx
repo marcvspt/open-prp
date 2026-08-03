@@ -17,10 +17,6 @@ export default class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, message: error instanceof Error ? error.message : labels.common.errorUnknown };
   }
 
-  componentDidCatch(error: unknown) {
-    console.error("ErrorBoundary caught:", error);
-  }
-
   render() {
     if (this.state.hasError) {
       return (
