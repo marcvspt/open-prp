@@ -35,6 +35,9 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className={FILTER_GRID_CLASS}>
           <div className={FILTER_WRAP_CLASS}>
+            <MonthSelector value={filters.month || ""} onChange={(m) => setFilter("month", m)} createdAt={createdAt} allLabel={FILTER_ALL_MONTHS} />
+          </div>
+          <div className={FILTER_WRAP_CLASS}>
             <Select
               value={filters.type || ""}
               onChange={(v) => setFilter("type", v)}
@@ -46,9 +49,6 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
               placeholder={FILTER_LABEL_TYPE}
               ariaLabel={FILTER_LABEL_TYPE}
             />
-          </div>
-          <div className={FILTER_WRAP_CLASS}>
-            <MonthSelector value={filters.month || ""} onChange={(m) => setFilter("month", m)} createdAt={createdAt} allLabel={FILTER_ALL_MONTHS} />
           </div>
           <div className={FILTER_WRAP_CLASS}>
             <Select
