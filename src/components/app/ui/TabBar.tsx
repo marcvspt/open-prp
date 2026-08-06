@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
 import Select from "@/components/ui/Select.tsx";
+import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
+import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Tab {
   key: string;
@@ -15,9 +17,10 @@ interface TabBarProps {
   onChange?: (key: string) => void;
   /** Optional MonthSelector to show alongside tabs */
   monthSelector?: React.ReactNode;
+  locale?: LocaleCode;
 }
 
-export default function TabBar({ tabs, initialTab, defaultTab, ariaLabel, onChange, monthSelector }: TabBarProps) {
+export default function TabBar({ tabs, initialTab, defaultTab, ariaLabel, onChange, monthSelector, locale = "es" }: TabBarProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -61,43 +64,45 @@ export default function TabBar({ tabs, initialTab, defaultTab, ariaLabel, onChan
   }
 
   return (
-    <div ref={containerRef}>
-      <div className="flex md:hidden items-center gap-2 mb-4">
-        <div className="flex-1">
-          <Select
-            value={activeTab}
-            onChange={activate}
-            options={tabs.map(t => ({ value: t.key, label: t.label }))}
-            ariaLabel={ariaLabel}
-          />
+    <LocaleProvider locale={locale}>
+      <div ref={containerRef}>
+        <div className="flex md:hidden items-center gap-2 mb-4">
+          <div className="flex-1">
+            <Select
+              value={activeTab}
+              onChange={activate}
+              options={tabs.map(t => ({ value: t.key, label: t.label }))}
+              ariaLabel={ariaLabel}
+            />
+          </div>
+          {monthSelector && <div className="shrink-0">{monthSelector}</div>}
         </div>
-        {monthSelector && <div className="shrink-0">{monthSelector}</div>}
-      </div>
-      <div className={`hidden md:flex items-end justify-between gap-2 border-b border-border ${monthSelector ? "pb-0" : ""}`}>
-        <div className="flex gap-0" role="tablist" aria-label={ariaLabel}>
-          {tabs.map(t => (
-            <button
-              key={t.key}
-              data-tab={t.key}
-              role="tab"
-              id={`tab-${t.key}`}
-              aria-selected={activeTab === t.key}
-              aria-controls={`panel-${t.key}`}
-              tabIndex={activeTab === t.key ? 0 : -1}
-              onClick={() => activate(t.key)}
-              onKeyDown={onTabKeyDown}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition cursor-pointer ${
-                activeTab === t.key
-                  ? "text-primary border-primary -mb-px"
-                  : "text-string-muted hover:text-string border-transparent -mb-px"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className={`hidden md:flex items-end justify-between gap-2 border-b border-border ${monthSelector ? "pb-0" : ""}`}>
+          <div className="flex gap-0" role="tablist" aria-label={ariaLabel}>
+            {tabs.map(t => (
+              <button
+                key={t.key}
+                data-tab={t.key}
+                role="tab"
+                id={`tab-${t.key}`}
+                aria-selected={activeTab === t.key}
+                aria-controls={`panel-${t.key}`}
+                tabIndex={activeTab === t.key ? 0 : -1}
+                onClick={() => activate(t.key)}
+                onKeyDown={onTabKeyDown}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition cursor-pointer ${
+                  activeTab === t.key
+                    ? "text-primary border-primary -mb-px"
+                    : "text-string-muted hover:text-string border-transparent -mb-px"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {monthSelector && <div className="shrink-0 pb-2">{monthSelector}</div>}
         </div>
-        {monthSelector && <div className="shrink-0 pb-2">{monthSelector}</div>}
       </div>
-    </div>
+    </LocaleProvider>
   );
 }

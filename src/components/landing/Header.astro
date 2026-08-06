@@ -1,11 +1,18 @@
 ---
+import { getRelativeLocaleUrl } from "astro:i18n";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
+import LocaleSwitcher from "@/components/ui/LocaleSwitcher.tsx";
 import GithubIcon from "@/assets/github.svg";
-import { labels } from "@/lib/labels.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+
+const locale = Astro.currentLocale ?? "es";
+const t = getLocaleDict(locale);
+const homeHref = getRelativeLocaleUrl(locale, "/");
+const appHref = getRelativeLocaleUrl(locale, "/app");
 
 const LANDING_LINKS = [
-  { href: "#features", label: labels.landing.navFeatures },
-  { href: "https://www.marcvspt.tech", label: labels.landing.navAbout, external: true },
+  { href: "#features", label: t.landing.navFeatures },
+  { href: "https://www.marcvspt.tech", label: t.landing.navAbout, external: true },
 ];
 ---
 
@@ -13,13 +20,13 @@ const LANDING_LINKS = [
   class="fixed top-0 left-0 right-0 z-50 border-b border-border bg-surface/80 backdrop-blur-sm"
 >
   <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-    <a href="/" class="flex items-center gap-2">
+    <a href={homeHref} class="flex items-center gap-2">
       <span class="text-lg font-bold text-primary">Open PRP</span>
     </a>
     <button
       id="mobile-menu-btn"
       class="flex lg:hidden items-center justify-center w-8 h-8 text-string-muted hover:text-string transition-colors cursor-pointer"
-      aria-label={labels.landing.ariaMenu}
+      aria-label={t.landing.ariaMenu}
       aria-expanded="false"
     >
       <svg
@@ -66,17 +73,18 @@ const LANDING_LINKS = [
         target="_blank"
         rel="noopener"
         class="flex items-center text-string-muted hover:text-string transition-colors py-1.5"
-        aria-label={labels.nav.ariaGithub}
+        aria-label={t.nav.ariaGithub}
       >
         <GithubIcon class="h-5 w-5" />
       </a>
       <a
-        href="/app"
+        href={appHref}
         class="shrink-0 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
       >
-        {labels.landing.login}
+        {t.landing.login}
       </a>
-      <ThemeToggle client:load />
+      <ThemeToggle client:load locale={locale} />
+      <LocaleSwitcher client:load locale={locale} className="w-32 shrink-0" />
     </nav>
   </div>
   <div
@@ -103,18 +111,19 @@ const LANDING_LINKS = [
           target="_blank"
           rel="noopener"
           class="flex items-center gap-2 text-sm text-string-muted hover:text-string transition-colors"
-          aria-label={labels.nav.ariaGithub}
+          aria-label={t.nav.ariaGithub}
         >
           <GithubIcon class="h-5 w-5" />
-          {labels.nav.ariaGithub}
+          {t.nav.ariaGithub}
         </a>
         <a
-          href="/app"
+          href={appHref}
           class="inline-block rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
         >
-          {labels.landing.login}
+          {t.landing.login}
         </a>
-        <div class="w-36"><ThemeToggle client:load /></div>
+        <div class="w-36"><ThemeToggle client:load locale={locale} /></div>
+        <LocaleSwitcher client:load locale={locale} className="w-36" />
       </div>
     </div>
   </div>
@@ -122,7 +131,7 @@ const LANDING_LINKS = [
 
 <style>
   #mobile-dropdown.open {
-    max-height: 300px;
+    max-height: 380px;
     border-color: var(--color-border);
   }
 </style>

@@ -31,9 +31,8 @@ async function runSchemas() {
         console.error("  ✗ failed to apply schema statement");
       }
     }
-    console.log("  ✓ schema applied");
   }
-  console.log("Schemas complete!\n");
+  console.log("  ✓ schemas complete!\n");
 }
 
 async function seed() {

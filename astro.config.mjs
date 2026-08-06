@@ -16,8 +16,18 @@ export default defineConfig({
 
   adapter: netlify(),
 
+  i18n: {
+    defaultLocale: "es",
+    locales: ["es", "en"],
+    routing: {
+      prefixDefaultLocale: true,
+      redirectToDefaultLocale: true,
+      fallbackType: "redirect",
+    },
+  },
+
   integrations: [react(), clerk({
-    afterSignOutUrl: "/app/login",
+    afterSignOutUrl: "/es/app/login",
   })],
 
   vite: {

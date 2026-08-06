@@ -2,6 +2,8 @@ import { useState } from "react";
 import TabBar from "@/components/app/ui/TabBar.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import { currentMonthStr } from "@/lib/date.ts";
+import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
+import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Tab {
   key: string;
@@ -16,9 +18,10 @@ interface Props {
   initialMonth: string;
   createdAt?: string;
   allLabel?: string;
+  locale?: LocaleCode;
 }
 
-export default function TabBarWithMonth({ tabs, initialTab, defaultTab, ariaLabel, initialMonth, createdAt, allLabel }: Props) {
+export default function TabBarWithMonth({ tabs, initialTab, defaultTab, ariaLabel, initialMonth, createdAt, allLabel, locale = "es" }: Props) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [month, setMonth] = useState(initialMonth);
 
@@ -49,13 +52,15 @@ export default function TabBarWithMonth({ tabs, initialTab, defaultTab, ariaLabe
   const monthValue = isHistoryTab ? month : (month || currentMonthStr());
 
   return (
-    <TabBar
-      tabs={tabs}
-      initialTab={initialTab}
-      defaultTab={defaultTab}
-      ariaLabel={ariaLabel}
-      onChange={handleTabChange}
-      monthSelector={<MonthSelector value={monthValue} onChange={handleMonthChange} createdAt={createdAt} allLabel={isHistoryTab ? allLabel : undefined} />}
-    />
+    <LocaleProvider locale={locale}>
+      <TabBar
+        tabs={tabs}
+        initialTab={initialTab}
+        defaultTab={defaultTab}
+        ariaLabel={ariaLabel}
+        onChange={handleTabChange}
+        monthSelector={<MonthSelector value={monthValue} onChange={handleMonthChange} createdAt={createdAt} allLabel={isHistoryTab ? allLabel : undefined} locale={locale} />}
+      />
+    </LocaleProvider>
   );
 }

@@ -40,9 +40,9 @@ const shared = {
   creditCards: "Tarjetas de crédito",
   start: "Inicio",
   home: "Inicio",
-} as const;
+};
 
-export const labels = {
+export const es = {
   common: {
     edit: "Editar",
     delete: "Eliminar",
@@ -408,6 +408,48 @@ export const labels = {
     recurringPayments: shared.recurringPayments,
   },
 
+  categoryLabels: {
+    cleaning: "Limpieza",
+    food: "Comida",
+    candy: "Golosinas",
+    school: "Escuela",
+    hygiene: "Higiene",
+    drinks: "Bebidas",
+    automotive: "Automotriz",
+    personal: "Personal",
+    errand: "Encargo",
+    work: "Trabajo",
+    supermarket: "Supermercado",
+    transport: "Transporte",
+    health: "Salud",
+    leisure: "Ocio",
+    housing: "Vivienda",
+    salary: "Salario",
+    freelance: "Freelance",
+    electronics: "Electrónica",
+    furniture: "Muebles",
+    "card-balance": "Saldo de tarjeta",
+    subscriptions: "Suscripciones",
+    bills: "Facturas",
+    insurance: "Seguros",
+    social: "Social",
+    family: "Familiar",
+    entertainment: "Entretenimiento",
+    other: "Otro",
+  },
+
+  paymentMethodLabels: {
+    payroll: "Nómina",
+    transfer: "Transferencia",
+    cash: "Efectivo",
+  },
+
+  language: {
+    label: "Idioma",
+    es: "Español",
+    en: "English",
+  },
+
   landing: {
     heroTitle: "Controla tus",
     heroTitleAccent: "finanzas personales",
@@ -441,6 +483,6 @@ export const labels = {
   error: {
     message: (message: string) => `Error: ${message}`,
   },
-} as const;
+};
 
-export type Labels = typeof labels;
+export type Locale = typeof es;

@@ -1,5 +1,5 @@
 ---
-import { labels } from "@/lib/labels.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
 
 type Column = string | { label: string; align?: "left" | "right" | "center" };
 
@@ -9,7 +9,9 @@ export interface Props {
   ariaLabel?: string;
 }
 
-const { columns, emptyMessage = labels.empty.data, ariaLabel } = Astro.props;
+const locale = Astro.currentLocale ?? "es";
+const t = getLocaleDict(locale);
+const { columns, emptyMessage = t.empty.data, ariaLabel } = Astro.props;
 const colCount = columns.length;
 
 const alignMap: Record<string, string> = { left: "text-left", right: "text-right", center: "text-center" };

@@ -1,13 +1,14 @@
 ---
 import ConfirmDelete from "@/components/app/ui/ConfirmDelete.tsx";
-import { labels } from "@/lib/labels.ts";
+import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
 export interface Props {
   module: string;
   label?: string;
+  locale?: LocaleCode;
 }
 
-const { module, label = labels.common.element } = Astro.props;
+const { module, label, locale = Astro.currentLocale ?? "es" } = Astro.props;
 ---
 
-<ConfirmDelete client:load module={module} label={label} />
+<ConfirmDelete client:load module={module} label={label} locale={locale} />

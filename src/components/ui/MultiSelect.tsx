@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import ChevronIcon from "@/assets/chevron.svg?react";
-import { FILTER_ALL_SECTIONS, FILTER_MULTI_SELECT_FALLBACK } from "@/lib/filter-fields.ts";
-import { labels } from "@/lib/labels.ts";
+import { FILTER_ALL_SECTIONS, FILTER_MULTI_SELECT_FALLBACK } from "@/lib/i18n/filter-fields.ts";
+import { useLocaleDict } from "@/lib/i18n/LocaleProvider.tsx";
 
 export interface MultiSelectOption {
   value: string;
@@ -21,6 +21,7 @@ interface MultiSelectProps {
 }
 
 export default function MultiSelect({ value, onChange, options, placeholder, required, disabled, class: className, ariaLabel }: MultiSelectProps) {
+  const t = useLocaleDict();
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const [pos, setPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
@@ -35,12 +36,12 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
 
   const allSelected = selectedValues.length === options.length && options.length > 0;
   const display = allSelected
-    ? FILTER_ALL_SECTIONS
+    ? FILTER_ALL_SECTIONS(t)
     : selectedValues.length === 0
-      ? placeholder ?? FILTER_MULTI_SELECT_FALLBACK
+      ? placeholder ?? FILTER_MULTI_SELECT_FALLBACK(t)
       : selectedValues.length === 1
         ? options.find(o => o.value === selectedValues[0])?.label ?? selectedValues[0]
-        : labels.select.countSections(selectedValues.length);
+        : t.select.countSections(selectedValues.length);
 
   useEffect(() => {
     if (!open) { setHighlighted(-1); setPos(null); return; }
@@ -153,7 +154,7 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
           id={`${id}-listbox`}
           role="listbox"
           aria-multiselectable="true"
-          aria-label={ariaLabel ?? labels.select.ariaSections}
+          aria-label={ariaLabel ?? t.select.ariaSections}
           style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight, zIndex: 9999 }}
           className="rounded-lg border border-border bg-panel shadow-lg overflow-y-auto"
         >
@@ -168,7 +169,7 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
             onMouseEnter={() => setHighlighted(0)}
           >
             <input type="checkbox" checked={allSelected} aria-hidden="true" className="w-4 h-4 accent-primary pointer-events-none" />
-            <span className={allSelected ? "font-medium text-primary" : ""}>{FILTER_ALL_SECTIONS}</span>
+            <span className={allSelected ? "font-medium text-primary" : ""}>{FILTER_ALL_SECTIONS(t)}</span>
           </li>
           {options.map((o, i) => {
             const idx = i + 1;

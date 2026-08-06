@@ -1,11 +1,13 @@
-const CACHE = "open-prp-v1";
-const APP_PREFIX = "/app/";
+const CACHE = "open-prp-v2";
+const APP_PREFIX_ES = "/es/app/";
+const APP_PREFIX_EN = "/en/app/";
+const PRECACHE_URLS = ["/es/app/dashboard", "/es/app/login", "/es/app/transactions", "/es/app/cards", "/es/app/installments", "/es/app/recurring-payments", "/es/app/cashback", "/es/app/payment-methods", "/es/app/shopping", "/es/app/tasks", "/es/app/notes", "/es/app/events", "/es/app/pantry", "/es/app/categories"];
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE).then((cache) =>
-      cache.addAll(["/app/dashboard", "/app/login", "/app/transactions", "/app/cards", "/app/installments", "/app/recurring-payments", "/app/cashback", "/app/payment-methods", "/app/shopping", "/app/tasks", "/app/notes", "/app/events", "/app/pantry", "/app/categories"])
+      cache.addAll(PRECACHE_URLS)
     )
   );
 });
@@ -19,8 +21,18 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (!url.pathname.startsWith(APP_PREFIX)) return;
+  const isApp =
+    url.pathname.startsWith(APP_PREFIX_ES) || url.pathname.startsWith(APP_PREFIX_EN);
+  if (e.request.method !== "GET" || !isApp) return;
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request)
+      .then((res) => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((cache) => cache.put(e.request, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });

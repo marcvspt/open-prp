@@ -1,5 +1,8 @@
 ---
-import { labels } from "@/lib/labels.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+
+const locale = Astro.currentLocale ?? "es";
+const t = getLocaleDict(locale);
 ---
 
 <footer class="border-t border-border bg-panel" id="about">
@@ -11,7 +14,7 @@ import { labels } from "@/lib/labels.ts";
       </div>
       <div class="flex flex-col items-center gap-2 sm:items-end">
         <p class="text-xs text-string-muted">
-          {labels.landing.developedWith} <a
+          {t.landing.developedWith} <a
             href="https://opencode.ai"
             class="text-primary hover:text-primary-hover transition-colors"
             target="_blank"
