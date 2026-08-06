@@ -1,6 +1,9 @@
 // @ts-check
 import { defineConfig, envField } from 'astro/config';
 
+import { getClerkLocalization } from './src/lib/i18n/clerk-localizations.ts';
+import { DEFAULT_LOCALE } from './src/lib/i18n/locale.ts';
+
 import react from '@astrojs/react';
 import svgr from "vite-plugin-svgr";
 import tailwindcss from "@tailwindcss/vite";
@@ -28,6 +31,7 @@ export default defineConfig({
 
   integrations: [react(), clerk({
     afterSignOutUrl: "/es/app/login",
+    localization: getClerkLocalization(DEFAULT_LOCALE),
   })],
 
   vite: {

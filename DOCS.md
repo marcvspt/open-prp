@@ -63,6 +63,7 @@ src/
       en.ts               → Diccionario de textos UI (inglés)
       locale.ts           → `LOCALES`, `LocaleCode`, `getLocaleDict(code)`
       LocaleProvider.tsx  → `LocaleContext` + `useLocaleDict()` para islas React
+      clerk-localizations.ts → `getClerkLocalization` (mapeo locale → `@clerk/localizations`)
       category-labels.ts  → displayCategoryName (nombres de sistema → display)
       payment-method-labels.ts → displayPaymentMethodName (globales → display)
       form-fields.ts      → Helpers de campos de formulario (parametrizados con `t`)
@@ -119,6 +120,10 @@ Reglas de prerender: solo la landing `[locale]/index.astro` está prerenderizada
 5. Sin sesión en rutas `/app/*` o `/en/app/*` → redirige a `/app/login` localizado vía `context.currentLocale` + `getRelativeLocaleUrl`.
 
 Rutas públicas: `/`, `/en`, `/app/login` y `/en/app/login`. Hooks de React desde `@clerk/astro/react` (no `@clerk/clerk-react`).
+
+### Localización de componentes de Clerk
+
+Los componentes de Clerk (UserButton, SignIn/SignUp) se localizan por idioma con `@clerk/localizations`. El mapeo locale → recurso vive en `getClerkLocalization(locale)` (`src/lib/i18n/clerk-localizations.ts`): `es` → `esES`, `en` → `enUS` (default `esES`). La integración `clerk()` en `astro.config.mjs` recibe `localization: getClerkLocalization(DEFAULT_LOCALE)` como valor por defecto (solo afecta a componentes embebidos, no al Account Portal). `ClerkLocaleBridge` (`src/components/ui/ClerkLocaleBridge.tsx`, isla `client:load` en `AppLayout` y `LandingLayout`) ajusta la localización al locale de la página con `updateClerkOptions({ localization })` desde `@clerk/astro/client`.
 
 ## Base de datos
 

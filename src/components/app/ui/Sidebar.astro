@@ -133,7 +133,10 @@ const APP_LINKS: { title?: string; links: AppLink[] }[] = [
         data-user-area
       >
         {/* Caja fija: reserva el espacio del avatar (ClerkJS lo monta asíncrono) para evitar layout shift en el footer */}
-        <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-alt">
+        <div
+          class="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-alt"
+          transition:persist="user-button"
+        >
           <UserButton
             appearance={{
               elements: {

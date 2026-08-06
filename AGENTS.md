@@ -6,6 +6,8 @@ Guía de arquitectura y convenciones para agentes/IA que trabajen en este repo. 
 
 Cualquier cambio general, función nueva o componente importante que se agregue al proyecto debe reflejarse siempre en este `AGENTS.md`.
 
+La documentación técnica se mantiene en español como idioma principal (`README.md`, `DOCS.md`, este `AGENTS.md`); las traducciones al inglés viven en `README.en.md` y `DOCS.en.md` y se adaptan después de actualizar las fuentes en español. Al tocar documentación, actualizar primero la versión en español y luego (si aplica) la inglesa.
+
 ## Desarrollo
 
 ```bash
@@ -57,6 +59,8 @@ astro dev stop | status | logs
 - Hooks React desde `@clerk/astro/react` (**no** `@clerk/clerk-react`).
 - `UserButton` con `afterSignOutUrl="/es/app/login"` y `client:load`.
 - Redirects de Clerk configurados en `astro.config.mjs`: `afterSignOutUrl`.
+- **Localización de componentes de Clerk**: `@clerk/localizations` (versión alineada con `@clerk/astro`). El mapeo locale → recurso vive en `getClerkLocalization(locale)` (`src/lib/i18n/clerk-localizations.ts`): `es` → `esES`, `en` → `enUS` (default `esES` si falta la clave). Al añadir un idioma, añadir su clave al mapa.
+- La integración `clerk()` en `astro.config.mjs` recibe `localization: getClerkLocalization(DEFAULT_LOCALE)` como valor por defecto (solo afecta a componentes embebidos, no al Account Portal). `ClerkLocaleBridge` (isla `client:load` en `AppLayout` y `LandingLayout`) ajusta la localización al locale de la página con `updateClerkOptions({ localization })` desde `@clerk/astro/client`; se ejecuta tras la inicialización de Clerk (garantizada por el script `before-hydration` de la integración).
 
 ## Estructura del proyecto
 
@@ -65,11 +69,11 @@ astro dev stop | status | logs
 - **Páginas**: landing en `src/pages/[locale]/index.astro`; app en `src/pages/[locale]/app/*`; API en `src/pages/api/*/` (sin prefijo de locale).
 - **Landing**: componentes en `src/components/landing/*`, layout `LandingLayout.astro`.
 - **App**: componentes en `src/components/app/*`, layout `AppLayout.astro`.
-- **UI compartida** (landing + app): `src/components/ui/*` (ThemeToggle, Select, MultiSelect, ErrorBoundary, LocaleSwitcher).
+- **UI compartida** (landing + app): `src/components/ui/*` (ThemeToggle, Select, MultiSelect, ErrorBoundary, LocaleSwitcher, ClerkLocaleBridge).
 - **UI propia de la app**: `src/components/app/ui/` (CrudModal, DataTable, FormModal, ConfirmDelete, DeleteHandler, ToggleHandler, TabBar, TabBarWithMonth, MonthSelector, FilterSelect, FilterLinks, CurrencySelect, PageHeader, Sidebar).
 - **Módulos** (`src/lib/modules/`): `transactions`, `card-monthly`, `cards`, `cashback`, `events`, `installments`, `notes`, `pantry`, `payment-methods`, `recurring-payments`, `recurring-payment-monthly`, `shopping`, `tasks`, `users`.
 - **Tipos**: `src/lib/types/` — un archivo por dominio. Nunca tipos inline.
-- **Traducción/homologación de textos** (`src/lib/i18n/`): `es.ts` (diccionario es + tipo `Locale`) y `en.ts` (diccionario en), `locale.ts` (`LOCALES`, `LocaleCode`, `getLocaleDict`), `LocaleProvider.tsx` (`LocaleContext`, `useLocaleDict`), `category-labels.ts` y `payment-method-labels.ts` (nombres de sistema → display), `form-fields.ts`, `filter-fields.ts` y `general-fields.ts` (helpers/constantes de campos, filtros y botones, parametrizados con `t`).
+- **Traducción/homologación de textos** (`src/lib/i18n/`): `es.ts` (diccionario es + tipo `Locale`) y `en.ts` (diccionario en), `locale.ts` (`LOCALES`, `LocaleCode`, `getLocaleDict`), `LocaleProvider.tsx` (`LocaleContext`, `useLocaleDict`), `category-labels.ts` y `payment-method-labels.ts` (nombres de sistema → display), `clerk-localizations.ts` (mapeo locale → recurso de `@clerk/localizations`), `form-fields.ts`, `filter-fields.ts` y `general-fields.ts` (helpers/constantes de campos, filtros y botones, parametrizados con `t`).
 - **Lógica browser** (`src/lib/ui/`): `theme.ts`, `currency.ts`, `sidebar.ts`, `useFilteredData.ts`.
 - **Componentes React**: siempre directiva `client:load`.
 - **Imports**: alias `@/` con **extensión explícita** (`.ts`, `.tsx`, `.astro`, `.svg`).
@@ -113,6 +117,7 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
 - Navegación data-driven: `APP_LINKS` (grupos `{ title?, links: [{ href, label, icon }] }`), estado activo vía `currentPath.startsWith(href)`. Los hrefs se generan con `getRelativeLocaleUrl(locale, path)` para conservar el prefijo de idioma.
 - Footer: ícono GitHub, `LocaleSwitcher`, `ThemeToggle`, `CurrencySelect` (moneda vía `UserRepository` en SSR), `UserButton` (`@clerk/astro/components`) + "Mi cuenta".
   - `UserButton` envuelto en caja fija `h-8 w-8 rounded-full bg-surface-alt` (placeholder) + `appearance.userButtonAvatarBox` de 2rem: ClerkJS monta el avatar de forma asíncrona (CDN); sin la caja, el footer crece tarde y salta el layout.
+  - La caja del avatar lleva `transition:persist="user-button"`: al navegar con view transitions, Astro conserva el elemento montado de Clerk (su React root) en lugar de recrearlo, evitando que el `UserButton` desaparezca y reaparezca en cada navegación (la integración de Clerk delega el swap en `swapBodyElement` de Astro, que respeta `data-astro-transition-persist`). El label "Mi cuenta" queda fuera de la caja persistida para que se traduzca al cambiar de idioma.
 - **View transitions**: los scripts module bundled de Astro se ejecutan **solo una vez** y se ignoran en navegaciones posteriores del ClientRouter (se marcan `data-astro-exec`). Por eso `initSidebar()` (binding a elementos del DOM, que se reemplazan en cada swap) se registra dentro de `document.addEventListener("astro:page-load", ...)` en el script de `AppLayout.astro` (`astro:page-load` se dispara en la carga inicial y en cada navegación). En cambio `initUserAreaForward()` (listener a nivel `document`, que persiste) y el registro del service worker corren una sola vez fuera del listener. No usar `data-astro-rerun`: fuerza `is:inline` (rompe imports) y acumula listeners.
 
 ## TypeScript

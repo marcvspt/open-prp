@@ -2,6 +2,7 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { Show, SignInButton, SignUpButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
+import ClerkLocaleBridge from "@/components/ui/ClerkLocaleBridge.tsx";
 import Sidebar from "@/components/app/ui/Sidebar.astro";
 import MenuIcon from "@/assets/menu.svg";
 import { BTN_LOGIN, BTN_SIGNUP } from "@/lib/i18n/general-fields.ts";
@@ -20,6 +21,7 @@ const t = getLocaleDict(locale);
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
   </Fragment>
+  <ClerkLocaleBridge client:load locale={locale} />
   <Show when="signed-in">
     <Sidebar currentPath={currentPath} />
     <div
