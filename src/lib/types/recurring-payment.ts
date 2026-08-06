@@ -12,6 +12,7 @@ export interface RecurringPayment {
   /** Joined from payment_methods via findAll() */
   payment_method_name?: string;
   payment_method_icon?: string | null;
+  payment_method_type?: string;
   /** Joined from categories via findAll() */
   category_name?: string | null;
 }

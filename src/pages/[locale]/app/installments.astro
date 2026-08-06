@@ -11,14 +11,17 @@ import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import {
-  FIELD_TYPE_CURRENCY,
+  fieldTypeCurrency,
   paymentMethodField,
   categoryField,
   dateField,
-} from "@/lib/form-fields.ts";
-import { displayCategoryName } from "@/lib/category-labels.ts";
+} from "@/lib/i18n/form-fields.ts";
+import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
+import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
 import { currentMonthStr, lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
-import { labels } from "@/lib/labels.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+const locale = Astro.currentLocale ?? "es";
+const t = getLocaleDict(locale);
 const userId = Astro.locals.userId;
 const currentMonth = currentMonthStr();
 const params = Astro.url.searchParams;
@@ -28,10 +31,6 @@ const filterQ = params.get("q") || "";
 const filterPm = params.get("payment_method_id") || "";
 const filterCat = params.get("category_id") || "";
 const initialTab = params.get("tab") === "admin" ? "admin" : "summary";
-const catRepo = new CategoryRepository();
-const instCategories = await catRepo.findBySections(userId, ["installments"]);
-const pmRepo = new PaymentMethodRepository();
-const paymentMethods = await pmRepo.findAll(userId);
 const instFilter: Record<string, unknown> = { active_only: activeOnly };
 if (filterMonth) instFilter.month = filterMonth;
 if (filterQ) instFilter.q = filterQ;
@@ -42,43 +41,44 @@ if (!filterMonth) {
   instFilter.date_from = `${from}-01`;
   instFilter.date_to = lastDayOfMonth(to);
 }
-const initialData = await new InstallmentRepository().findAll(
-  userId,
-  instFilter,
-);
-const allCards = await new CardRepository().findAll(userId);
+const [instCategories, paymentMethods, initialData, allCards] = await Promise.all([
+  new CategoryRepository().findBySections(userId, ["installments"]),
+  new PaymentMethodRepository().findAll(userId),
+  new InstallmentRepository().findAll(userId, instFilter),
+  new CardRepository().findAll(userId),
+]);
 const fields = [
-  dateField("start_date"),
+  dateField(t, "start_date"),
   {
     name: "description",
-    label: labels.field.description,
+    label: t.field.description,
     type: "text" as const,
     required: true,
   },
   {
     name: "total_amount",
-    label: labels.field.totalAmount,
+    label: t.field.totalAmount,
     type: "number" as const,
     required: true,
     step: "0.01",
   },
   {
     name: "monthly_amount",
-    label: labels.field.monthlyFee,
+    label: t.field.monthlyFee,
     type: "number" as const,
     required: true,
     step: "0.01",
   },
   {
     name: "total_months",
-    label: labels.field.totalMonths,
+    label: t.field.totalMonths,
     type: "number" as const,
     required: true,
     min: 1,
   },
-  FIELD_TYPE_CURRENCY,
-  paymentMethodField(paymentMethods),
-  categoryField(instCategories),
+  fieldTypeCurrency(t),
+  paymentMethodField(t, paymentMethods),
+  categoryField(t, instCategories),
 ];
 const defaultForm = {
   start_date: "",
@@ -92,11 +92,11 @@ const defaultForm = {
 };
 ---
 
-<AppLayout title={`${labels.page.installments}`}>
+<AppLayout title={`${t.page.installments}`}>
   <div data-module="installments" class="space-y-4">
     <PageHeader
-      title={labels.page.installments}
-      createLabel={labels.cta.newInstallment}
+      title={t.page.installments}
+      createLabel={t.cta.newInstallment}
       createModule="installments"
       mobileOnlyCTA={true}
     />
@@ -104,12 +104,13 @@ const defaultForm = {
       <TabBar
         client:load
         tabs={[
-          { key: "summary", label: labels.tabs.summary },
-          { key: "admin", label: labels.tabs.adminInstallments },
+          { key: "summary", label: t.tabs.summary },
+          { key: "admin", label: t.tabs.adminInstallments },
         ]}
         initialTab={initialTab}
         defaultTab="summary"
-        ariaLabel={labels.tabs.ariaInstallments}
+        ariaLabel={t.tabs.ariaInstallments}
+        locale={locale}
       />
       <div
         data-tab-content="summary"
@@ -124,6 +125,7 @@ const defaultForm = {
           initialData={JSON.stringify(initialData)}
           initialCards={JSON.stringify(allCards)}
           initialPaymentMethods={JSON.stringify(paymentMethods)}
+          locale={locale}
         />
       </div>
       <div
@@ -142,14 +144,15 @@ const defaultForm = {
           paymentMethods={paymentMethods.map((pm) => ({
             id: pm.id,
             icon: pm.icon,
-            name: pm.name,
+            name: displayPaymentMethodName(pm, t),
           }))}
           categories={instCategories.map((c) => ({
             id: c.id,
             icon: c.icon,
-            name: displayCategoryName(c),
+            name: displayCategoryName(c, t),
           }))}
           initialData={JSON.stringify(initialData)}
+          locale={locale}
         />
       </div>
     </div>
@@ -159,7 +162,8 @@ const defaultForm = {
     module="installments"
     fields={JSON.stringify(fields)}
     defaultForm={JSON.stringify(defaultForm)}
-    titleSingular={labels.singular.installment}
+    titleSingular={t.singular.installment}
+    locale={locale}
   />
-  <DeleteHandler module="installments" label={labels.singular.installment} />
+  <DeleteHandler module="installments" label={t.singular.installment} />
 </AppLayout>

@@ -1,6 +1,11 @@
 ---
+import { getRelativeLocaleUrl } from "astro:i18n";
 import ArrowRightIcon from "@/assets/arrow-right.svg";
-import { labels } from "@/lib/labels.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+
+const locale = Astro.currentLocale ?? "es";
+const t = getLocaleDict(locale);
+const appHref = getRelativeLocaleUrl(locale, "/app");
 ---
 
 <section
@@ -18,21 +23,21 @@ import { labels } from "@/lib/labels.ts";
     <h1
       class="text-5xl font-bold tracking-tight text-string sm:text-6xl lg:text-7xl"
     >
-      {labels.landing.heroTitle} <span
+      {t.landing.heroTitle} <span
         class="bg-linear-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent"
       >
-        {labels.landing.heroTitleAccent}</span
+        {t.landing.heroTitleAccent}</span
       >
     </h1>
     <p class="mt-6 text-lg text-string-muted sm:text-xl">
-      {labels.landing.heroDescription}
+      {t.landing.heroDescription}
     </p>
     <div class="mt-10 flex items-center justify-center gap-4">
       <a
-        href="/app"
+        href={appHref}
         class="group relative inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-indigo-600 to-purple-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-105 active:scale-100"
       >
-        {labels.landing.ctaStart}
+        {t.landing.ctaStart}
         <ArrowRightIcon
           aria-hidden="true"
           class="h-5 w-5 transition-transform group-hover:translate-x-1"
@@ -42,7 +47,7 @@ import { labels } from "@/lib/labels.ts";
         href="#features"
         class="rounded-xl border border-border bg-panel px-8 py-4 text-lg font-medium text-string transition-colors hover:bg-nav-hover"
       >
-        {labels.landing.ctaMore}
+        {t.landing.ctaMore}
       </a>
     </div>
   </div>

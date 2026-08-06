@@ -1,0 +1,8 @@
+---
+import { getRelativeLocaleUrl } from "astro:i18n";
+
+const { userId } = Astro.locals.auth();
+const locale = Astro.currentLocale ?? "es";
+if (userId) return Astro.redirect(getRelativeLocaleUrl(locale, "/app/dashboard"));
+return Astro.redirect(getRelativeLocaleUrl(locale, "/app/login"));
+---

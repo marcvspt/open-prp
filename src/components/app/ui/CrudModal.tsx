@@ -3,8 +3,10 @@ import { apiFetch } from "@/lib/api-client.ts";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
 import Select from "@/components/ui/Select.tsx";
 import MultiSelect from "@/components/ui/MultiSelect.tsx";
-import { INPUT_CLASS, COLOR_CLASS, BTN_CANCEL, BTN_SAVE, BTN_CREATE, BTN_SAVING } from "@/lib/general-fields.ts";
-import { labels } from "@/lib/labels.ts";
+import { INPUT_CLASS, COLOR_CLASS, BTN_CANCEL, BTN_SAVE, BTN_CREATE, BTN_SAVING } from "@/lib/i18n/general-fields.ts";
+import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
 export interface Field {
   name: string;
@@ -23,9 +25,11 @@ interface CrudModalProps {
   fields: string;
   defaultForm: string;
   titleSingular: string;
+  locale?: LocaleCode;
 }
 
-export default function CrudModal({ module, fields: fieldsJson, defaultForm: defaultJson, titleSingular }: CrudModalProps) {
+export default function CrudModal({ module, fields: fieldsJson, defaultForm: defaultJson, titleSingular, locale = "es" }: CrudModalProps) {
+  const t = getLocaleDict(locale);
   const id = useId();
   const fields: Field[] = JSON.parse(fieldsJson);
   const defaultForm: Record<string, unknown> = JSON.parse(defaultJson);
@@ -113,7 +117,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
       setOpen(false);
       window.location.href = window.location.href;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : labels.common.errorUnknown);
+      setError(err instanceof Error ? err.message : t.common.errorUnknown);
     } finally {
       setSaving(false);
     }
@@ -124,9 +128,9 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
   }
 
   return (
-    <>
-      {saving && editingId && <div className="fixed inset-0 z-40 flex items-center justify-center bg-overlay"><div className="bg-panel p-4 rounded-lg text-sm">{labels.common.loading}</div></div>}
-      <FormModal open={open} onClose={() => setOpen(false)} title={editingId ? labels.common.editSingular(titleSingular) : labels.common.newSingular(titleSingular)}>
+    <LocaleProvider locale={locale}>
+      {saving && editingId && <div className="fixed inset-0 z-40 flex items-center justify-center bg-overlay"><div className="bg-panel p-4 rounded-lg text-sm">{t.common.loading}</div></div>}
+      <FormModal open={open} onClose={() => setOpen(false)} title={editingId ? t.common.editSingular(titleSingular) : t.common.newSingular(titleSingular)}>
         <form onSubmit={handleSubmit} className="space-y-4">
           {fields.filter(f => !f.showIf || String(form[f.showIf.field]) === f.showIf.value).map(f => (
             <div key={f.name}>
@@ -152,11 +156,11 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
             </p>
           )}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-string hover:bg-surface-alt cursor-pointer">{BTN_CANCEL}</button>
-            <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 cursor-pointer">{saving ? BTN_SAVING : editingId ? BTN_SAVE : BTN_CREATE}</button>
+            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-string hover:bg-surface-alt cursor-pointer">{BTN_CANCEL(t)}</button>
+            <button type="submit" disabled={saving} className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover disabled:opacity-50 cursor-pointer">{saving ? BTN_SAVING(t) : editingId ? BTN_SAVE(t) : BTN_CREATE(t)}</button>
           </div>
         </form>
       </FormModal>
-    </>
+    </LocaleProvider>
   );
 }

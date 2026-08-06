@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { labels } from "@/lib/labels.ts";
+import { useLocaleDict } from "@/lib/i18n/LocaleProvider.tsx";
 
 interface FilterState {
   [key: string]: string;
@@ -19,6 +19,7 @@ function filtersFromUrl(initial: FilterState): FilterState {
 }
 
 export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, initialData?: T) {
+  const t = useLocaleDict();
   const [filters, setFilters] = useState<FilterState>(() => filtersFromUrl(initial));
   const [data, setData] = useState<T | null>(initialData ?? null);
   const [loading, setLoading] = useState(false);
@@ -70,7 +71,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
       .then(r => r.json())
       .then(d => setData((d?.data ?? d) as T))
       .catch(() => {
-        setError(labels.error.message(labels.common.errorUnknown));
+        setError(t.error.message(t.common.errorUnknown));
       })
       .finally(() => setLoading(false));
 

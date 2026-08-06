@@ -1,5 +1,6 @@
 ---
 import FilterSelect from "@/components/app/ui/FilterSelect.tsx";
+import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
 export interface FilterLink {
   value: string;
@@ -11,9 +12,10 @@ export interface Props {
   filters: FilterLink[];
   active: string;
   class?: string;
+  locale?: LocaleCode;
 }
 
-const { filters, active, class: className } = Astro.props;
+const { filters, active, class: className, locale } = Astro.props;
 ---
 
-<FilterSelect filters={filters} active={active} className={className} client:load />
+<FilterSelect filters={filters} active={active} className={className} locale={locale} client:load />

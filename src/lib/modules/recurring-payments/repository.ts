@@ -6,7 +6,7 @@ export class RecurringPaymentRepository {
   async findAll(userId: string): Promise<RecurringPayment[]> {
     const db = getDb();
     const result = await db.execute({
-      sql: `SELECT rp.*, c.name AS category_name, pm.name AS payment_method_name, pm.icon AS payment_method_icon
+      sql: `SELECT rp.*, c.name AS category_name, pm.name AS payment_method_name, pm.icon AS payment_method_icon, pm.type AS payment_method_type
             FROM recurring_payments rp
             LEFT JOIN categories c ON c.id = rp.category_id
             LEFT JOIN payment_methods pm ON pm.id = rp.payment_method_id

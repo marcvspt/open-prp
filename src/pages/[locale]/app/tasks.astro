@@ -1,6 +1,7 @@
 ---
-import { BTN_EDIT, BTN_DELETE } from "@/lib/general-fields.ts";
-import { FILTER_WRAP_CLASS, FILTER_ALL_STATUS_TASKS } from "@/lib/filter-fields.ts";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
+import { FILTER_WRAP_CLASS, FILTER_ALL_STATUS_TASKS } from "@/lib/i18n/filter-fields.ts";
 import { formatDate } from "@/lib/date.ts";
 import AppLayout from "@/layouts/AppLayout.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
@@ -10,29 +11,32 @@ import FilterLinks from "@/components/app/ui/FilterLinks.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { TaskRepository } from "@/lib/modules/tasks/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
-import { displayCategoryName } from "@/lib/category-labels.ts";
-import { labels } from "@/lib/labels.ts";
+import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+const locale = Astro.currentLocale ?? "es";
+const t = getLocaleDict(locale);
+const tasksUrl = getRelativeLocaleUrl(locale, "/app/tasks");
 const userId = Astro.locals.userId;
 const filter = Astro.url.searchParams.get("filter") || "all";
 const q: Record<string, unknown> = {};
 if (filter === "pending") q.is_completed = false;
 if (filter === "done") q.is_completed = true;
-const items = await new TaskRepository().findAll(userId, q);
-const categories = await new CategoryRepository().findBySections(userId, [
-  "tasks",
+const [items, categories] = await Promise.all([
+  new TaskRepository().findAll(userId, q),
+  new CategoryRepository().findBySections(userId, ["tasks"]),
 ]);
 const catMap = Object.fromEntries(categories.map((c) => [c.id, c]));
 const catOptions = [
-  { value: "", label: labels.field.noCategory },
+  { value: "", label: t.field.noCategory },
   ...categories.map((c) => ({
     value: c.id,
-    label: `${c.icon || "📋"} ${displayCategoryName(c)}`,
+    label: `${c.icon || "📋"} ${displayCategoryName(c, t)}`,
   })),
 ];
 const priorityLabels: Record<number, string> = {
-  1: labels.badge.low,
-  2: labels.badge.medium,
-  3: labels.badge.high,
+  1: t.badge.low,
+  2: t.badge.medium,
+  3: t.badge.high,
 };
 const priorityColor: Record<number, string> = {
   1: "bg-success-bg text-success-text",
@@ -42,24 +46,24 @@ const priorityColor: Record<number, string> = {
 const fields = [
   {
     name: "description",
-    label: labels.field.description,
+    label: t.field.description,
     type: "textarea" as const,
     required: true,
   },
-  { name: "due_date", label: labels.field.dueDate, type: "date" as const },
+  { name: "due_date", label: t.field.dueDate, type: "date" as const },
   {
     name: "priority",
-    label: labels.field.priority,
+    label: t.field.priority,
     type: "select" as const,
     options: [
-      { value: "1", label: labels.badge.lowOption },
-      { value: "2", label: labels.badge.mediumOption },
-      { value: "3", label: labels.badge.highOption },
+      { value: "1", label: t.badge.lowOption },
+      { value: "2", label: t.badge.mediumOption },
+      { value: "3", label: t.badge.highOption },
     ],
   },
   {
     name: "category",
-    label: labels.field.category,
+    label: t.field.category,
     type: "select" as const,
     options: catOptions,
   },
@@ -71,25 +75,25 @@ const defaultForm = {
   category: "",
 };
 const taskFilters = [
-  { value: "all", label: FILTER_ALL_STATUS_TASKS, href: "/app/tasks" },
+  { value: "all", label: FILTER_ALL_STATUS_TASKS(t), href: tasksUrl },
   {
     value: "pending",
-    label: labels.filter.pendingTasks,
-    href: "/app/tasks?filter=pending",
+    label: t.filter.pendingTasks,
+    href: `${tasksUrl}?filter=pending`,
   },
   {
     value: "done",
-    label: labels.filter.doneTasks,
-    href: "/app/tasks?filter=done",
+    label: t.filter.doneTasks,
+    href: `${tasksUrl}?filter=done`,
   },
 ];
 ---
 
-<AppLayout title={`${labels.page.tasks}`}>
+<AppLayout title={`${t.page.tasks}`}>
   <div data-module="tasks" class="space-y-4">
     <PageHeader
-      title={labels.page.tasks}
-      createLabel={labels.cta.newTask}
+      title={t.page.tasks}
+      createLabel={t.cta.newTask}
       createModule="tasks"
       mobileOnlyCTA={true}
     />
@@ -100,24 +104,25 @@ const taskFilters = [
         filters={taskFilters}
         active={filter}
         class={FILTER_WRAP_CLASS}
+        locale={locale}
       />
       <button
         data-create="tasks"
         class="hidden sm:block sm:shrink-0 px-3 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer"
-        >{labels.cta.newTask}</button
+        >{t.cta.newTask}</button
       >
     </div>
     {
       items.length === 0 ? (
-        <div class="text-string-muted text-sm">{labels.empty.tasks}</div>
+        <div class="text-string-muted text-sm">{t.empty.tasks}</div>
       ) : (
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {items.map((t) => {
-            const cat = t.category && catMap[t.category];
+          {items.map((task) => {
+            const cat = task.category && catMap[task.category];
             return (
               <div
                 class={`relative rounded-xl border p-4 transition-all hover:shadow-sm ${
-                  t.is_completed
+                  task.is_completed
                     ? "border-success-border bg-success-border/10 opacity-60"
                     : "border-border bg-panel"
                 }`}
@@ -125,47 +130,47 @@ const taskFilters = [
                 <div class="flex items-start gap-3 mb-2">
                   <input
                     type="checkbox"
-                    checked={t.is_completed}
-                    data-toggle-tasks={t.id}
+                    checked={task.is_completed}
+                    data-toggle-tasks={task.id}
                     class="mt-0.5 w-4 h-4 accent-primary cursor-pointer shrink-0"
                   />
                   <div class="flex-1 min-w-0">
                     <div
-                      class={`text-sm leading-snug ${t.is_completed ? "line-through text-string-muted" : "font-medium text-string"}`}
+                      class={`text-sm leading-snug ${task.is_completed ? "line-through text-string-muted" : "font-medium text-string"}`}
                     >
-                      {t.description}
+                      {task.description}
                     </div>
                   </div>
                   <span
-                    class={`shrink-0 text-xs px-2 py-0.5 rounded font-medium ${priorityColor[t.priority] || "bg-surface-alt text-string-muted"}`}
+                    class={`shrink-0 text-xs px-2 py-0.5 rounded font-medium ${priorityColor[task.priority] || "bg-surface-alt text-string-muted"}`}
                   >
-                    {priorityLabels[t.priority] || "⚪"}
+                    {priorityLabels[task.priority] || "⚪"}
                   </span>
                 </div>
                 <div class="flex items-center gap-3 text-xs text-string-muted ml-7">
                   {cat && (
                     <span>
-                      {cat.icon || "📋"} {displayCategoryName(cat)}
+                      {cat.icon || "📋"} {displayCategoryName(cat, t)}
                     </span>
                   )}
-                  {t.due_date && (
+                  {task.due_date && (
                     <span class="font-semibold">
-                      📅 {formatDate(t.due_date)}
+                      📅 {formatDate(task.due_date, locale)}
                     </span>
                   )}
                 </div>
                 <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-border ml-7">
                   <button
-                    data-edit-tasks={t.id}
+                    data-edit-tasks={task.id}
                     class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer"
                   >
-                    {BTN_EDIT}
+                    {BTN_EDIT(t)}
                   </button>
                   <button
-                    data-delete-tasks={t.id}
+                    data-delete-tasks={task.id}
                     class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer"
                   >
-                    {BTN_DELETE}
+                    {BTN_DELETE(t)}
                   </button>
                 </div>
               </div>
@@ -180,8 +185,9 @@ const taskFilters = [
     module="tasks"
     fields={JSON.stringify(fields)}
     defaultForm={JSON.stringify(defaultForm)}
-    titleSingular={labels.singular.task}
+    titleSingular={t.singular.task}
+    locale={locale}
   />
-  <DeleteHandler module="tasks" label={labels.singular.task} />
+  <DeleteHandler module="tasks" label={t.singular.task} />
   <ToggleHandler module="tasks" key="is_completed" />
 </AppLayout>

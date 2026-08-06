@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useRef, useCallback } from "react";
 import type { Card } from "@/lib/types/card.ts";
 import type { CardMonthly, CalculatedDebt } from "@/lib/types/card-monthly.ts";
 import type { PaymentMethod } from "@/lib/types/payment-method.ts";
@@ -7,8 +7,10 @@ import { daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
 import { safeFetch, fetchList } from "@/lib/safeFetch.ts";
 import { payCardDebtFull, payCardDebtPartial } from "@/lib/dashboard/api.ts";
-import { BTN_CANCEL } from "@/lib/general-fields.ts";
-import { labels } from "@/lib/labels.ts";
+import { BTN_CANCEL } from "@/lib/i18n/general-fields.ts";
+import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
 function dueDaysBorder(days: number): string {
   if (days <= 3) return "border-danger";
@@ -29,6 +31,7 @@ interface CreditCardSummaryProps {
   initialPaymentMethods: string;
   initialCategories: string;
   initialMonth: string;
+  locale?: LocaleCode;
 }
 
 export default function CreditCardSummary({
@@ -38,7 +41,9 @@ export default function CreditCardSummary({
   initialPaymentMethods,
   initialCategories,
   initialMonth,
+  locale = "es",
 }: CreditCardSummaryProps) {
+  const t = getLocaleDict(locale);
   const [cards] = useState<Card[]>(() => JSON.parse(initialCards));
   const [cardDebts, setCardDebts] = useState<CardMonthly[]>(() => JSON.parse(initialDebts));
   const [calculatedDebts, setCalculatedDebts] = useState<Record<string, CalculatedDebt>>(() => JSON.parse(initialCalculated));
@@ -128,9 +133,10 @@ export default function CreditCardSummary({
   const visibleCards = cards.filter(c => c.type === "credit");
 
   return (
+    <LocaleProvider locale={locale}>
     <div className="space-y-4">
       {visibleCards.length === 0 ? (
-        <p className="text-string-muted text-sm">{labels.empty.creditCards}</p>
+        <p className="text-string-muted text-sm">{t.empty.creditCards}</p>
       ) : (
         visibleCards.map(card => {
           const debt = getCardDebt(card.id);
@@ -146,41 +152,41 @@ export default function CreditCardSummary({
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="font-semibold text-string">{card.name}</h3>
-                  <span className="text-xs text-string-muted uppercase">{labels.badge.credit}</span>
+                  <span className="text-xs text-string-muted uppercase">{t.badge.credit}</span>
                 </div>
                 {debt && !debt.is_paid && (
                   <button
                     onClick={() => { setPayDialog({ debt, card }); setPayAmount(""); setPayDate(new Date().toLocaleDateString("sv")); }}
                     className="px-3 py-1 text-xs font-medium rounded-lg bg-success text-white hover:bg-success-hover transition-colors"
                   >
-                    {labels.cta.payCard}
+                    {t.cta.payCard}
                   </button>
                 )}
                 {debt?.is_paid && (
                   <span className={`px-3 py-1 text-xs font-medium rounded-lg ${paidLate ? "bg-danger-bg text-danger-text" : "bg-success-bg text-success-text"}`}>
-                    {paidLate ? labels.badge.paidLate : labels.badge.paidF}
+                    {paidLate ? t.badge.paidLate : t.badge.paidF}
                   </span>
                 )}
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-string-muted">{labels.stat.limit}</p>
+                  <p className="text-xs text-string-muted">{t.stat.limit}</p>
                   <p className="font-mono font-medium text-success">{card.max_limit != null ? formatCurrency(card.max_limit) : "—"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-string-muted">{labels.stat.calculatedDebt}</p>
+                  <p className="text-xs text-string-muted">{t.stat.calculatedDebt}</p>
                   {calc ? (
                     <div className="group relative">
                       <p className="font-mono font-medium text-danger cursor-help">{formatCurrency(calc.statement_balance)}</p>
                       <div className="absolute left-0 right-0 top-full mt-1 max-w-xs bg-panel border border-border rounded-lg shadow-lg p-3 text-xs z-10 hidden group-hover:block">
                         <div className="space-y-1">
-                          <div className="flex justify-between"><span>{labels.stat.purchases}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_purchases)}</span></div>
-                          <div className="flex justify-between"><span>{labels.stat.installmentsThisMonth}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_installments)}</span></div>
-                          <div className="flex justify-between"><span>{labels.stat.recurringPayments}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_recurring)}</span></div>
-                          <div className="flex justify-between"><span>{labels.stat.cashback}</span><span className="font-mono text-success">+{formatCurrency(calc.total_cashback)}</span></div>
-                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{labels.stat.monthDebt}</span><span className="font-mono">{formatCurrency(calc.statement_balance)}</span></div>
-                          <div className="flex justify-between text-string-muted"><span>{labels.stat.futureInstallments}</span><span className="font-mono">-{formatCurrency(calc.committed_installments)}</span></div>
-                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{labels.stat.totalCommitted}</span><span className="font-mono">{formatCurrency(calc.total_committed)}</span></div>
+                          <div className="flex justify-between"><span>{t.stat.purchases}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_purchases)}</span></div>
+                          <div className="flex justify-between"><span>{t.stat.installmentsThisMonth}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_installments)}</span></div>
+                          <div className="flex justify-between"><span>{t.stat.recurringPayments}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_recurring)}</span></div>
+                          <div className="flex justify-between"><span>{t.stat.cashback}</span><span className="font-mono text-success">+{formatCurrency(calc.total_cashback)}</span></div>
+                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.monthDebt}</span><span className="font-mono">{formatCurrency(calc.statement_balance)}</span></div>
+                          <div className="flex justify-between text-string-muted"><span>{t.stat.futureInstallments}</span><span className="font-mono">-{formatCurrency(calc.committed_installments)}</span></div>
+                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.totalCommitted}</span><span className="font-mono">{formatCurrency(calc.total_committed)}</span></div>
                         </div>
                       </div>
                     </div>
@@ -191,19 +197,19 @@ export default function CreditCardSummary({
                   )}
                 </div>
                 <div>
-                  <p className="text-xs text-string-muted">{labels.stat.available}</p>
+                  <p className="text-xs text-string-muted">{t.stat.available}</p>
                   <p className={`font-mono font-medium ${available < 0 ? "text-danger" : "text-success"}`}>{formatCurrency(Math.max(0, available))}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-string-muted">{labels.stat.cutoffPayment}</p>
+                  <p className="text-xs text-string-muted">{t.stat.cutoffPayment}</p>
                   <p className="font-mono font-medium">{card.cutoff_day != null && card.payment_due_day != null ? `${card.cutoff_day} / ${card.payment_due_day}` : "—"}</p>
                 </div>
               </div>
               {debt && !debt.is_paid && (
                 <div className="mt-3 flex items-center gap-2 text-xs">
-                  <span className="text-string-muted">{labels.stat.paymentDue}</span>
+                  <span className="text-string-muted">{t.stat.paymentDue}</span>
                   <span className={`font-medium ${dueDaysBadge(dueIn)} px-2 py-0.5 rounded`}>
-                    {dueIn <= 0 ? labels.badge.overdue : labels.cards.dueIn(dueIn, card.payment_due_day!)}
+                    {dueIn <= 0 ? t.badge.overdue : t.cards.dueIn(dueIn, card.payment_due_day!)}
                   </span>
                 </div>
               )}
@@ -215,11 +221,11 @@ export default function CreditCardSummary({
       {payDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay" role="dialog" aria-modal="true" aria-labelledby="pay-card-title" onClick={() => setPayDialog(null)}>
           <div className="bg-panel rounded-xl border border-border shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-            <h3 id="pay-card-title" className="text-base font-semibold text-string mb-1">{labels.cards.payCardTitle}</h3>
+            <h3 id="pay-card-title" className="text-base font-semibold text-string mb-1">{t.cards.payCardTitle}</h3>
             <p className="text-sm text-string-muted mb-4">{payDialog.card.name} — {formatCurrency(payDialog.debt.statement_balance)}</p>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-string mb-1">{labels.field.paymentDate}</label>
+                <label className="block text-sm font-medium text-string mb-1">{t.field.paymentDate}</label>
                 <input
                   type="date"
                   value={payDate}
@@ -228,15 +234,15 @@ export default function CreditCardSummary({
                 />
               </div>
               <button onClick={() => handlePayFull(payDialog.debt.id)} className="w-full py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors">
-                {labels.cta.payAll} ({formatCurrency(payDialog.debt.statement_balance)})
+                {t.cta.payAll} ({formatCurrency(payDialog.debt.statement_balance)})
               </button>
               <div className="flex items-center gap-2">
                 <div className="flex-1 border-t border-border" />
-                <span className="text-xs text-string-muted">{labels.cards.or}</span>
+                <span className="text-xs text-string-muted">{t.cards.or}</span>
                 <div className="flex-1 border-t border-border" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-string mb-1">{labels.field.partialPayment}</label>
+                <label className="block text-sm font-medium text-string mb-1">{t.field.partialPayment}</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -245,7 +251,7 @@ export default function CreditCardSummary({
                     max={payDialog.debt.statement_balance}
                     value={payAmount}
                     onChange={e => setPayAmount(e.target.value)}
-                    placeholder={labels.cards.zeroPlaceholder}
+                    placeholder={t.cards.zeroPlaceholder}
                     className="flex-1 block rounded-lg border border-border px-3 py-2 text-sm"
                   />
                   <button
@@ -253,22 +259,23 @@ export default function CreditCardSummary({
                     disabled={!payAmount || parseFloat(payAmount) <= 0}
                     className="px-4 py-2 text-sm font-medium rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 transition-colors"
                   >
-                    {labels.cta.payCard}
+                    {t.cta.payCard}
                   </button>
                 </div>
                 {payAmount && parseFloat(payAmount) > 0 && (
                   <p className="text-xs text-string-muted mt-1">
-                    {labels.cards.remainingNote(formatCurrency(payDialog.debt.statement_balance - parseFloat(payAmount)))}
+                    {t.cards.remainingNote(formatCurrency(payDialog.debt.statement_balance - parseFloat(payAmount)))}
                   </p>
                 )}
               </div>
               <button onClick={() => setPayDialog(null)} className="w-full py-2 text-sm text-nav hover:text-string transition-colors">
-                {BTN_CANCEL}
+                {BTN_CANCEL(t)}
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+    </LocaleProvider>
   );
 }

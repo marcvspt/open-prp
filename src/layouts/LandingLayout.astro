@@ -2,11 +2,14 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/landing/Header.astro";
 import Footer from "@/components/landing/Footer.astro";
+import ClerkLocaleBridge from "@/components/ui/ClerkLocaleBridge.tsx";
 
 const { title } = Astro.props;
+const locale = Astro.currentLocale ?? "es";
 ---
 
 <BaseLayout title={title}>
+  <ClerkLocaleBridge client:load locale={locale} />
   <Header />
   <slot />
   <Footer />

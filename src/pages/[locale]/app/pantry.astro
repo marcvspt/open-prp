@@ -6,47 +6,49 @@ import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import PantryFilterable from "@/components/app/pantry/PantryFilterable.tsx";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
-import { displayCategoryName } from "@/lib/category-labels.ts";
-import { labels } from "@/lib/labels.ts";
+import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+const locale = Astro.currentLocale ?? "es";
+const t = getLocaleDict(locale);
 const userId = Astro.locals.userId;
 const params = Astro.url.searchParams;
 const filterQ = params.get("q") || "";
 const filterCat = params.get("category_id") || "";
-const categories = await new CategoryRepository().findBySections(userId, [
-  "pantry",
-]);
-const catOptions = [
-  { value: "", label: labels.field.noCategory },
-  ...categories.map((c) => ({
-    value: c.id,
-    label: `${c.icon || "📦"} ${displayCategoryName(c)}`,
-  })),
-];
 const pantryFilter: Record<string, unknown> = {};
 if (filterQ) pantryFilter.q = filterQ;
 if (filterCat) pantryFilter.category_id = filterCat;
-const initialData = await new PantryRepository().findAll(userId, pantryFilter);
+const [categories, initialData] = await Promise.all([
+  new CategoryRepository().findBySections(userId, ["pantry"]),
+  new PantryRepository().findAll(userId, pantryFilter),
+]);
+const catOptions = [
+  { value: "", label: t.field.noCategory },
+  ...categories.map((c) => ({
+    value: c.id,
+    label: `${c.icon || "📦"} ${displayCategoryName(c, t)}`,
+  })),
+];
 const fields = [
   {
     name: "description",
-    label: labels.field.item,
+    label: t.field.item,
     type: "text" as const,
     required: true,
   },
   {
     name: "category_id",
-    label: labels.field.category,
+    label: t.field.category,
     type: "select" as const,
     options: catOptions,
   },
   {
     name: "quantity",
-    label: labels.field.quantity,
+    label: t.field.quantity,
     type: "number" as const,
     min: 0,
     step: "0.01",
   },
-  { name: "notes", label: labels.field.notes, type: "textarea" as const },
+  { name: "notes", label: t.field.notes, type: "textarea" as const },
 ];
 const defaultForm = {
   description: "",
@@ -56,11 +58,11 @@ const defaultForm = {
 };
 ---
 
-<AppLayout title={`${labels.page.pantry}`}>
+<AppLayout title={`${t.page.pantry}`}>
   <div data-module="pantry" class="space-y-4">
     <PageHeader
-      title={labels.page.pantry}
-      createLabel={labels.cta.newProduct}
+      title={t.page.pantry}
+      createLabel={t.cta.newProduct}
       createModule="pantry"
       mobileOnlyCTA={true}
     />
@@ -69,9 +71,10 @@ const defaultForm = {
       categories={categories.map((c) => ({
         id: c.id,
         icon: c.icon,
-        name: displayCategoryName(c),
+        name: displayCategoryName(c, t),
       }))}
       initialData={JSON.stringify(initialData)}
+      locale={locale}
     />
   </div>
   <CrudModal
@@ -79,7 +82,8 @@ const defaultForm = {
     module="pantry"
     fields={JSON.stringify(fields)}
     defaultForm={JSON.stringify(defaultForm)}
-    titleSingular={labels.singular.product}
+    titleSingular={t.singular.product}
+    locale={locale}
   />
-  <DeleteHandler module="pantry" label={labels.singular.product} />
+  <DeleteHandler module="pantry" label={t.singular.product} />
 </AppLayout>

@@ -1,9 +1,10 @@
 ---
 import { Show, UserButton } from "@clerk/astro/components";
+import { getRelativeLocaleUrl } from "astro:i18n";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
+import LocaleSwitcher from "@/components/ui/LocaleSwitcher.tsx";
 import CurrencySelect from "@/components/app/ui/CurrencySelect.tsx";
-import { UserRepository } from "@/lib/modules/users/repository.ts";
-import { labels } from "@/lib/labels.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import HomeIcon from "@/assets/home.svg";
 import DollarIcon from "@/assets/dollar.svg";
 import CardIcon from "@/assets/card.svg";
@@ -22,7 +23,9 @@ export interface Props {
 }
 
 const { currentPath } = Astro.props;
-const preferredCurrency = await new UserRepository().getPreferredCurrency(Astro.locals.userId);
+const locale = Astro.currentLocale ?? "es";
+const t = getLocaleDict(locale);
+const preferredCurrency = Astro.locals.user?.preferred_currency ?? "MXN";
 
 interface AppLink {
   url: string;
@@ -30,42 +33,44 @@ interface AppLink {
   icon: typeof HomeIcon;
 }
 
+const appUrl = (path: string) => getRelativeLocaleUrl(locale, path);
+
 const APP_LINKS: { title?: string; links: AppLink[] }[] = [
   {
-    links: [{ url: "/app/dashboard", label: labels.nav.dashboard, icon: HomeIcon }],
+    links: [{ url: appUrl("/app/dashboard"), label: t.nav.dashboard, icon: HomeIcon }],
   },
   {
-    title: labels.nav.groupFinance,
+    title: t.nav.groupFinance,
     links: [
-      { url: "/app/transactions", label: labels.nav.transactions, icon: DollarIcon },
-      { url: "/app/cards", label: labels.nav.cards, icon: CardIcon },
-      { url: "/app/installments", label: labels.nav.installments, icon: ClipboardIcon },
+      { url: appUrl("/app/transactions"), label: t.nav.transactions, icon: DollarIcon },
+      { url: appUrl("/app/cards"), label: t.nav.cards, icon: CardIcon },
+      { url: appUrl("/app/installments"), label: t.nav.installments, icon: ClipboardIcon },
       {
-        url: "/app/recurring-payments",
-        label: labels.nav.recurringPayments,
+        url: appUrl("/app/recurring-payments"),
+        label: t.nav.recurringPayments,
         icon: RecurringIcon,
       },
-      { url: "/app/cashback", label: labels.nav.cashback, icon: DollarIcon },
+      { url: appUrl("/app/cashback"), label: t.nav.cashback, icon: DollarIcon },
       {
-        url: "/app/payment-methods",
-        label: labels.nav.paymentMethods,
+        url: appUrl("/app/payment-methods"),
+        label: t.nav.paymentMethods,
         icon: WalletIcon,
       },
     ],
   },
   {
-    title: labels.nav.groupOrganization,
+    title: t.nav.groupOrganization,
     links: [
-      { url: "/app/shopping", label: labels.nav.shopping, icon: CartIcon },
-      { url: "/app/tasks", label: labels.nav.tasks, icon: ClipboardIcon },
-      { url: "/app/notes", label: labels.nav.notes, icon: PenIcon },
-      { url: "/app/events", label: labels.nav.events, icon: CalendarIcon },
-      { url: "/app/pantry", label: labels.nav.pantry, icon: PackageIcon },
+      { url: appUrl("/app/shopping"), label: t.nav.shopping, icon: CartIcon },
+      { url: appUrl("/app/tasks"), label: t.nav.tasks, icon: ClipboardIcon },
+      { url: appUrl("/app/notes"), label: t.nav.notes, icon: PenIcon },
+      { url: appUrl("/app/events"), label: t.nav.events, icon: CalendarIcon },
+      { url: appUrl("/app/pantry"), label: t.nav.pantry, icon: PackageIcon },
     ],
   },
   {
-    title: labels.nav.groupGeneral,
-    links: [{ url: "/app/categories", label: labels.nav.categories, icon: TagIcon }],
+    title: t.nav.groupGeneral,
+    links: [{ url: appUrl("/app/categories"), label: t.nav.categories, icon: TagIcon }],
   },
 ];
 ---
@@ -83,13 +88,13 @@ const APP_LINKS: { title?: string; links: AppLink[] }[] = [
       target="_blank"
       rel="noopener"
       class="text-string-muted hover:text-primary transition-colors"
-      aria-label={labels.nav.ariaGithub}
+      aria-label={t.nav.ariaGithub}
     >
       <GithubIcon class="w-4 h-4" />
     </a>
   </div>
 
-  <nav aria-label={labels.nav.ariaMain} class="flex-1 space-y-1 overflow-y-auto p-2 text-sm">
+  <nav aria-label={t.nav.ariaMain} class="flex-1 space-y-1 overflow-y-auto p-2 text-sm">
     {
       APP_LINKS.map((group) => (
         <>
@@ -114,10 +119,13 @@ const APP_LINKS: { title?: string; links: AppLink[] }[] = [
 
   <div class="border-t border-border p-3 space-y-2 shrink-0">
     <div class="px-3">
-      <ThemeToggle client:load />
+      <LocaleSwitcher client:load locale={locale} />
     </div>
     <div class="px-3">
-      <CurrencySelect client:load initialCurrency={preferredCurrency} />
+      <ThemeToggle client:load locale={locale} />
+    </div>
+    <div class="px-3">
+      <CurrencySelect client:load initialCurrency={preferredCurrency} locale={locale} />
     </div>
     <Show when="signed-in">
       <div
@@ -125,7 +133,10 @@ const APP_LINKS: { title?: string; links: AppLink[] }[] = [
         data-user-area
       >
         {/* Caja fija: reserva el espacio del avatar (ClerkJS lo monta asíncrono) para evitar layout shift en el footer */}
-        <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-alt">
+        <div
+          class="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-alt"
+          transition:persist="user-button"
+        >
           <UserButton
             appearance={{
               elements: {
@@ -134,7 +145,7 @@ const APP_LINKS: { title?: string; links: AppLink[] }[] = [
             }}
           />
         </div>
-        <span class="text-xs text-string-muted">{labels.nav.myAccount}</span>
+        <span class="text-xs text-string-muted">{t.nav.myAccount}</span>
       </div>
     </Show>
   </div>

@@ -11,7 +11,7 @@ Guía de arquitectura, desarrollo y contribución. Para el uso de la app como pr
 5. [API REST](#api-rest)
 6. [Tipos](#tipos)
 7. [Módulos](#módulos)
-8. [Textos UI centralizados](#textos-ui-centralizados)
+8. [Textos UI centralizados (i18n)](#textos-ui-centralizados-i18n)
 9. [Formularios](#formularios)
 10. [Filtros y estado en URL](#filtros-y-estado-en-url)
 11. [Componentes](#componentes)
@@ -40,10 +40,10 @@ cliente (navegador) → Astro SSR → API Routes → Repositorios → Turso (lib
 
 ```
 src/
-  pages/                  → Rutas
-    index.astro           → Landing pública (prerenderizada)
-    app/*.astro           → Páginas de la app (SSR, protegidas)
-    api/**/               → API Routes (CRUD por módulo)
+  pages/
+    [locale]/index.astro  → Landing pública (prerenderizada)
+    [locale]/app/*.astro  → Páginas de la app (SSR, protegidas)
+    api/**/               → API Routes (CRUD por módulo, sin prefijo de locale)
   components/
     ui/                   → UI compartida landing + app
     app/ui/               → UI propia de la app
@@ -58,31 +58,56 @@ src/
     types/                → Tipos (un archivo por dominio)
     api-routes.ts         → Factories CRUD de la API
     api-helpers.ts        → Helpers de rutas API
-    labels.ts             → Todos los textos UI
-    form-fields.ts        → Helpers de campos de formulario
-    filter-fields.ts      → Constantes de filtros
-    general-fields.ts     → Constantes de botones/CTAs
+    i18n/
+      es.ts               → Diccionario de textos UI (español) + tipo `Locale`
+      en.ts               → Diccionario de textos UI (inglés)
+      locale.ts           → `LOCALES`, `LocaleCode`, `getLocaleDict(code)`
+      LocaleProvider.tsx  → `LocaleContext` + `useLocaleDict()` para islas React
+      clerk-localizations.ts → `getClerkLocalization` (mapeo locale → `@clerk/localizations`)
+      category-labels.ts  → displayCategoryName (nombres de sistema → display)
+      payment-method-labels.ts → displayPaymentMethodName (globales → display)
+      form-fields.ts      → Helpers de campos de formulario (parametrizados con `t`)
+      filter-fields.ts    → Constantes de filtros (textos parametrizados con `t`)
+      general-fields.ts   → Constantes de botones/CTAs (textos parametrizados con `t`)
     dashboard/            → load.ts (SSR) + api.ts (cliente)
     ui/                   → Lógica browser (theme, currency, sidebar, hooks)
-  middleware.ts           → Clerk
+  middleware.ts           → Clerk + locale por ruta
 ```
 
 ## Enrutamiento
 
+Enrutamiento i18n por directorio `[locale]` (config `i18n` en `astro.config.mjs`):
+`prefixDefaultLocale: true` (todos los locales con prefijo, incluido el por defecto),
+`redirectToDefaultLocale: true` (`/` redirige a `/es`) y `fallbackType: "redirect"`.
+`Astro.currentLocale` resuelve el locale de la URL; el patrón estándar en páginas es:
+
+```ts
+const locale = Astro.currentLocale ?? "es";
+const t = getLocaleDict(locale);
 ```
-/                          → Landing pública (prerender)
-/app                       → Redirige a /app/dashboard (logueado) o /app/login
-/app/login                 → Pública
-/app/dashboard             → Resumen mensual (SSR completo)
-/app/{transactions, cards, installments, recurring-payments, cashback,
+
+```
+/                          → Redirige a /es (landing por defecto)
+/es                        → Landing pública (prerender, español)
+/en                        → Landing pública (inglés)
+/es/app                    → Redirige a /es/app/dashboard (logueado) o /es/app/login
+/en/app                    → Ídem localizado
+/es/app/login              → Pública
+/es/app/dashboard          → Resumen mensual (SSR completo)
+/es/app/{transactions, cards, installments, recurring-payments, cashback,
      shopping, pantry, tasks, notes, events, payment-methods, categories}
+/en/app/...                → Mismas rutas en inglés
 /api/{modulo}/             → CRUD list (GET/POST)
 /api/{modulo}/[id]         → CRUD single (GET/PATCH/PUT/DELETE)
 /api/{modulo}/[id]/monthly → Sub-ruta anidada (recurring-payments)
 /api/card-monthly/…        → Cálculo de deuda y historial
 ```
 
-Reglas de prerender: solo la landing `/` está prerenderizada (`export const prerender = true`). Todo `/app/*` es SSR porque depende de auth y base de datos.
+- Los enlaces internos se generan con `getRelativeLocaleUrl(locale, "/app/...")` (import de `astro:i18n`) para conservar el prefijo de idioma.
+- Las rutas `/api/*` no llevan prefijo de locale.
+- **Redirecciones entre idiomas**: `LocaleSwitcher` (`src/components/ui/LocaleSwitcher.tsx`, isla `client:load`) usa el `Select` custom y navega a `/{locale}{basePath}` conservando el query string.
+
+Reglas de prerender: solo la landing `[locale]/index.astro` está prerenderizada (`export const prerender = true` + `getStaticPaths`). Todo `/app/*` es SSR porque depende de auth y base de datos.
 
 ## Autenticación / Middleware
 
@@ -92,9 +117,13 @@ Reglas de prerender: solo la landing `/` está prerenderizada (`export const pre
 2. `findOrCreate(clerkId)` crea el usuario local si no existe.
 3. `needsSync` — si falta email o display_name, sincroniza desde la API de Clerk (evita la llamada HTTP en cada request).
 4. Inyecta `context.locals.userId` y `context.locals.createdAt`.
-5. Redirige a `/app/login` si no hay sesión en rutas `/app/*`.
+5. Sin sesión en rutas `/app/*` o `/en/app/*` → redirige a `/app/login` localizado vía `context.currentLocale` + `getRelativeLocaleUrl`.
 
-Rutas públicas: `/` y `/app/login`. Hooks de React desde `@clerk/astro/react` (no `@clerk/clerk-react`).
+Rutas públicas: `/`, `/en`, `/app/login` y `/en/app/login`. Hooks de React desde `@clerk/astro/react` (no `@clerk/clerk-react`).
+
+### Localización de componentes de Clerk
+
+Los componentes de Clerk (UserButton, SignIn/SignUp) se localizan por idioma con `@clerk/localizations`. El mapeo locale → recurso vive en `getClerkLocalization(locale)` (`src/lib/i18n/clerk-localizations.ts`): `es` → `esES`, `en` → `enUS` (default `esES`). La integración `clerk()` en `astro.config.mjs` recibe `localization: getClerkLocalization(DEFAULT_LOCALE)` como valor por defecto (solo afecta a componentes embebidos, no al Account Portal). `ClerkLocaleBridge` (`src/components/ui/ClerkLocaleBridge.tsx`, isla `client:load` en `AppLayout` y `LandingLayout`) ajusta la localización al locale de la página con `updateClerkOptions({ localization })` desde `@clerk/astro/client`.
 
 ## Base de datos
 
@@ -224,29 +253,34 @@ Deuda = SUM(transacciones del mes)
 - `UNIQUE(user_id, name)` — no dos categorías con el mismo nombre.
 - `type: "global"` (precargadas) o `"personal"` (creadas por el usuario).
 - `sections` (JSON) — en qué módulos aparece la categoría.
-- `displayCategoryName()` en `src/lib/category-labels.ts` separa el valor almacenado (inglés, minúsculas, guiones) de la representación visual.
+- `displayCategoryName()` en `src/lib/i18n/category-labels.ts` separa el valor almacenado (inglés, minúsculas, guiones) de la representación visual.
 
-## Textos UI centralizados
+## Textos UI centralizados (i18n)
 
-- **`src/lib/labels.ts`** — diccionario `labels` con `as const` organizado por dominio (`common`, `field`, `table`, `empty`, `badge`, `stat`, `tabs`, `nav`, `theme`, `page`, `cta`, `singular`, `filter`, `currency`, `shopping`, `cards`, `recurring`, `dashboard`, `sections`, `select`, `error`). Estructura preparada para futuro i18n (**no implementar i18n**).
-- **Cadenas compartidas**: diccionario interno `shared` (no exportado) con los valores repetidos entre secciones; cada sección apunta a él con su propia clave (`field.category: shared.category`, `filter.allCategories: shared.allCategories`). Las secciones siguen independientes y pueden divergir creando una clave `shared` distinta. Existen claves separadas para singular/plural/título y para textos canónicos distintos (`allCategories: "Todas las categorías"`).
-- **Nunca hardcodear textos UI**: importar `labels` o las constantes derivadas en `general-fields.ts` / `filter-fields.ts` / `form-fields.ts`. Los datos del usuario (nombres, descripciones) nunca van a labels.
-- Strings dinámicos como funciones: `labels.common.deleteConfirm(label)`, `labels.shopping.toBuy(n)`, `labels.error.message(msg)`.
+- **Un diccionario por idioma** en `src/lib/i18n/`: `es.ts` (define el tipo `Locale = typeof es`) y `en.ts` (tipado como `Locale`). `locale.ts` exporta `LOCALES` (`["es", "en"]`), `LocaleCode` y `getLocaleDict(code)`. **No usar barrels ni `index.ts`**.
+- **Consumir siempre con `t`**: en SSR/páginas se usa `const t = getLocaleDict(Astro.currentLocale ?? "es")`; en islas React se pasa `locale` por prop y se resuelve con `getLocaleDict(locale)`, o se usa el contexto `useLocaleDict()` (el contenedor envuelve su árbol en `<LocaleProvider locale={locale}>`). Nunca importar `es` directamente para leer textos.
+- **Cadenas compartidas**: diccionario interno `shared` (no exportado) con los valores repetidos entre secciones; cada sección apunta a él con su propia clave (`field.category: shared.category`, `filter.allCategories: shared.allCategories`). Las secciones siguen independientes y pueden divergir creando una clave `shared` distinta. Existen claves separadas para singular/plural/título y para textos canónicos distintos.
+- **Nunca hardcodear textos UI**: importar el helper parametrizado con `t` (`general-fields.ts`, `filter-fields.ts`, `form-fields.ts`) o acceder a `t.*`. Los datos del usuario (nombres, descripciones) nunca van al diccionario.
+- Strings dinámicos como funciones: `t.common.deleteConfirm(label)`, `t.shopping.toBuy(n)`, `t.error.message(msg)`.
+- **Homologación de nombres de sistema**: `displayCategoryName(cat, t)` (`category-labels.ts`) y `displayPaymentMethodName(pm, t)` (`payment-method-labels.ts`) leen de `t.categoryLabels.*` / `t.paymentMethodLabels.*`.
+- **Cambio de idioma**: `LocaleSwitcher.tsx` (en `Sidebar` y `Header`) navega entre locales conservando la URL y query params.
 
 ## Formularios
 
-Helpers en `src/lib/form-fields.ts`:
+Helpers en `src/lib/i18n/form-fields.ts` (todos parametrizados con `t`):
 
 ```ts
-FIELD_TYPE            → select tipo (expense/income)
-FIELD_TYPE_CURRENCY   → select de moneda
-paymentMethodField(pms) → select métodos de pago
-categoryField(cats)     → select categorías
-cardField(cards)        → select tarjetas
-dateField(name?)        → input date
+fieldType(t)              → select tipo (expense/income)
+fieldTypeCurrency(t)      → select de moneda
+paymentMethodField(t, pms) → select métodos de pago
+categoryField(t, cats)     → select categorías
+cardField(t, cards)        → select tarjetas
+dateField(t, name?)        → input date
 CURRENCY_OPTIONS / TYPE_OPTIONS → opciones
 INPUT_CLASS / COLOR_CLASS → clases
 ```
+
+- Los textos de botones/CTAs viven en `general-fields.ts` (`BTN_EDIT(t)`, `BTN_SAVE(t)`, …) y los de filtros en `filter-fields.ts` (`FILTER_ALL_MONTHS(t)`, `FILTER_SEARCH_DESC(t)`, `BTN_CLEAR(t)`, …); las constantes puramente CSS (clases) se mantienen estáticas.
 
 - Orden estándar de campos: **Fecha → Tipo → Descripción → Montos → Moneda → Método pago/Tarjeta → Categoría → Específicos**.
 - `required: true` → `NOT NULL` en schema SQL.
@@ -267,7 +301,7 @@ INPUT_CLASS / COLOR_CLASS → clases
 
 - Antigüedad < 12 meses: meses desde el registro hasta el actual + el siguiente.
 - Antigüedad ≥ 12 meses: últimos 12 meses incl. actual + el siguiente.
-- Opción "Últimos 12 meses" (`FILTER_ALL_MONTHS`).
+- Opción "Últimos 12 meses" (`FILTER_ALL_MONTHS(t)`).
 - **Resumen general** → mes actual por defecto. **Historial/registros** → "Últimos 12 meses" por defecto.
 - Sin `month`, las APIs y SSR aplican `lastYearWindow(createdAt)` (`src/lib/date.ts`) en vez de todo el histórico. En SSR de transacciones con ventana por defecto se añade `limit: 200`.
 
@@ -277,10 +311,11 @@ INPUT_CLASS / COLOR_CLASS → clases
 
 | Componente | Descripción |
 |---|---|
-| `ThemeToggle.tsx` | Toggle claro/oscuro/sistema con persistencia localStorage |
-| `Select.tsx` | Combobox accesible, dropdown portaleado `position: fixed`, viewport-aware. Prop `fitWidest` |
+| `ThemeToggle.tsx` | Toggle claro/oscuro/sistema con persistencia localStorage (acepta `locale`) |
+| `Select.tsx` | Combobox accesible, dropdown portaleado `position: fixed`, viewport-aware. Prop `fitWidest`. Textos por contexto `useLocaleDict()` |
 | `MultiSelect.tsx` | Selección múltiple con checkboxes |
-| `ErrorBoundary.tsx` | Error boundary React (`role="alert"` con `labels.error.message`) |
+| `ErrorBoundary.tsx` | Error boundary React (`role="alert"` con `t.error.message`) |
+| `LocaleSwitcher.tsx` | Selector de idioma con el `Select` custom (navega entre locales conservando URL/query) |
 
 ### UI de App (`src/components/app/ui/`)
 
@@ -311,6 +346,10 @@ INPUT_CLASS / COLOR_CLASS → clases
 - **Pagos recurrentes**: `RecurringPaymentsMonthly.tsx` + `RecurringPaymentsHistory.tsx`.
 - **Compras**: `ShoppingList.tsx`.
 
+### Patrón de locale en islas React
+
+Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={locale} />`) y resuelve sus textos con `getLocaleDict(locale)`. Los componentes que usan `useLocaleDict()` (Select, MultiSelect, MonthSelector) deben estar envueltos en `<LocaleProvider locale={locale}>` por su contenedor (`TabBar`, `TabBarWithMonth`, `DashboardHeader`, `*Filterable`, `CrudModal`, `ConfirmDelete`, `ShoppingList`, etc.). Los `*Filterable` reciben además los datos iniciales SSR como props.
+
 ### Reglas de uso Select vs MultiSelect
 
 - Filtro de mes → siempre `Select` custom.
@@ -323,7 +362,7 @@ INPUT_CLASS / COLOR_CLASS → clases
 
 ## Dashboard
 
-- Contenido **100% SSR** en `src/pages/app/dashboard.astro` (sin islas React de contenido).
+- Contenido **100% SSR** en `src/pages/[locale]/app/dashboard.astro` (sin islas React de contenido).
 - `DashboardHeader.tsx` — solo `MonthSelector`, alineado a la derecha del título.
 - Datos desde `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`: mismas queries que la API pero vía repositorios (sin HTTP). No recalcula deudas ni hace `upsert` de `card_monthly` por visita (eso ocurre bajo demanda desde cliente vía `/api/card-monthly/calculate` y desde la página de tarjetas).
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (mutaciones de pago desde cliente).
@@ -340,10 +379,10 @@ INPUT_CLASS / COLOR_CLASS → clases
 
 ## PWA
 
-- Activa solo en `/app/*`.
+- Activa solo en `/es/app/*` y `/en/app/*`.
 - `AppLayout` inyecta vía `slot="head"`: manifest link, theme-color y meta tags.
-- `public/sw.js`: precachea rutas `/app/*`, network-first con fallback a cache.
-- `public/manifest.webmanifest`: `scope: "/app/"`, `start_url: "/app/dashboard"`, `display: standalone`.
+- `public/sw.js`: precachea rutas `/es/app/*`, network-first con fallback a cache. El `fetch` handler intercepta también `/en/app/*` y cachea las respuestas OK para dar soporte offline a ambos idiomas.
+- `public/manifest.webmanifest`: `scope: "/"` (para cubrir `/es/app/*` y `/en/app/*`), `start_url: "/es/app/dashboard"`, `display: standalone`.
 
 ## Accesibilidad
 

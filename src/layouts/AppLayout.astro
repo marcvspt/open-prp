@@ -2,13 +2,16 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { Show, SignInButton, SignUpButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
+import ClerkLocaleBridge from "@/components/ui/ClerkLocaleBridge.tsx";
 import Sidebar from "@/components/app/ui/Sidebar.astro";
 import MenuIcon from "@/assets/menu.svg";
-import { BTN_LOGIN, BTN_SIGNUP } from "@/lib/general-fields.ts";
-import { labels } from "@/lib/labels.ts";
+import { BTN_LOGIN, BTN_SIGNUP } from "@/lib/i18n/general-fields.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
 
 const { title } = Astro.props;
 const currentPath = Astro.url.pathname;
+const locale = Astro.currentLocale ?? "es";
+const t = getLocaleDict(locale);
 ---
 
 <BaseLayout title={title}>
@@ -18,6 +21,7 @@ const currentPath = Astro.url.pathname;
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
   </Fragment>
+  <ClerkLocaleBridge client:load locale={locale} />
   <Show when="signed-in">
     <Sidebar currentPath={currentPath} />
     <div
@@ -28,7 +32,7 @@ const currentPath = Astro.url.pathname;
     <button
       id="sidebar-toggle"
       class="fixed top-3 left-3 z-50 flex lg:hidden items-center justify-center w-10 h-10 rounded-lg bg-panel border border-border text-nav hover:bg-nav-hover transition-colors shadow-sm"
-      aria-label={labels.nav.openMenu}
+      aria-label={t.nav.openMenu}
     >
       <MenuIcon class="w-5 h-5" />
     </button>
@@ -51,18 +55,18 @@ const currentPath = Astro.url.pathname;
             <button
               class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover"
             >
-              {BTN_LOGIN}</button
+              {BTN_LOGIN(t)}</button
             >
           </SignInButton>
           <SignUpButton mode="modal">
             <button
               class="px-4 py-2 border border-border rounded-lg hover:bg-nav-hover text-string"
-              >{BTN_SIGNUP}</button
+              >{BTN_SIGNUP(t)}</button
             >
           </SignUpButton>
         </div>
         <div class="flex justify-center pt-4">
-          <ThemeToggle client:load />
+          <ThemeToggle client:load locale={locale} />
         </div>
       </div>
     </div>

@@ -4,15 +4,12 @@ import SunIcon from "@/assets/sun.svg?react";
 import MoonIcon from "@/assets/moon.svg?react";
 import MonitorIcon from "@/assets/monitor.svg?react";
 import { getSavedTheme, saveTheme, applyTheme, resolveTheme, initThemeSync, type Theme } from "@/lib/ui/theme.ts";
-import { labels } from "@/lib/labels.ts";
+import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
-const options = [
-  { value: "light", label: labels.theme.light, icon: <SunIcon className="w-4 h-4" /> },
-  { value: "dark", label: labels.theme.dark, icon: <MoonIcon className="w-4 h-4" /> },
-  { value: "system", label: labels.theme.system, icon: <MonitorIcon className="w-4 h-4" /> },
-];
-
-export default function ThemeToggle() {
+export default function ThemeToggle({ locale = "es" }: { locale?: LocaleCode }) {
+  const t = getLocaleDict(locale);
   const [preference, setPreference] = useState<Theme>("system");
 
   useEffect(() => {
@@ -27,14 +24,22 @@ export default function ThemeToggle() {
     applyTheme(resolveTheme(pref));
   }
 
+  const options = [
+    { value: "light", label: t.theme.light, icon: <SunIcon className="w-4 h-4" /> },
+    { value: "dark", label: t.theme.dark, icon: <MoonIcon className="w-4 h-4" /> },
+    { value: "system", label: t.theme.system, icon: <MonitorIcon className="w-4 h-4" /> },
+  ];
+
   return (
-    <Select
-      value={preference}
-      onChange={handleChange}
-      options={options}
-      className="w-full"
-      fitWidest
-      ariaLabel={labels.theme.label}
-    />
+    <LocaleProvider locale={locale}>
+      <Select
+        value={preference}
+        onChange={handleChange}
+        options={options}
+        className="w-full"
+        fitWidest
+        ariaLabel={t.theme.label}
+      />
+    </LocaleProvider>
   );
 }

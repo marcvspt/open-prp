@@ -120,9 +120,9 @@ export function formatDateTime(dateStr: string, locale = "es"): string {
   });
 }
 
-export function monthLabel(month: string): string {
+export function monthLabel(month: string, locale = "es"): string {
   const [y, m] = month.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("es", { year: "numeric", month: "long" });
+  return new Date(y, m - 1, 1).toLocaleDateString(locale, { year: "numeric", month: "long" });
 }
 
 export function lastDayOfMonth(month: string): string {
