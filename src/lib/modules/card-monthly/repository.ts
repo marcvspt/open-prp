@@ -15,6 +15,7 @@ export class CardMonthlyRepository {
     return (result.rows as unknown as CardMonthly[]).map(r => ({
       ...r,
       statement_balance: Number(r.statement_balance),
+      paid_amount: Number(r.paid_amount),
       is_paid: Boolean(r.is_paid),
     }));
   }
@@ -26,7 +27,7 @@ export class CardMonthlyRepository {
     });
     const row = result.rows[0] as unknown as CardMonthly | undefined;
     if (!row) return null;
-    return { ...row, statement_balance: Number(row.statement_balance), is_paid: Boolean(row.is_paid) };
+    return { ...row, statement_balance: Number(row.statement_balance), paid_amount: Number(row.paid_amount), is_paid: Boolean(row.is_paid) };
   }
 
   async upsert(data: CardMonthlyInput, userId: string): Promise<CardMonthly> {
@@ -56,18 +57,22 @@ export class CardMonthlyRepository {
       args: [data.card_id, data.month],
     });
     const row = result.rows[0] as unknown as CardMonthly;
-    return { ...row, statement_balance: Number(row.statement_balance), is_paid: Boolean(row.is_paid) };
+    return { ...row, statement_balance: Number(row.statement_balance), paid_amount: Number(row.paid_amount), is_paid: Boolean(row.is_paid) };
   }
 
-  async togglePaid(id: string, userId: string, isPaid: boolean, paidAt?: string): Promise<CardMonthly | null> {
+  async togglePaid(id: string, userId: string, isPaid: boolean, paidAt?: string, paidAmount?: number): Promise<CardMonthly | null> {
     const db = getDb();
     const existing = await this.findById(id, userId);
     if (!existing) return null;
 
     const timestamp = now();
+    const paidAmountClause = paidAmount !== undefined ? ", paid_amount = ?" : "";
+    const args: (string | number | null)[] = [isPaid ? 1 : 0, isPaid ? (paidAt ?? timestamp) : null];
+    if (paidAmount !== undefined) args.push(paidAmount);
+    args.push(timestamp, id, userId);
     await db.execute({
-      sql: `UPDATE card_monthly SET is_paid = ?, paid_at = ?, updated_at = ? WHERE id = ? AND user_id = ?`,
-      args: [isPaid ? 1 : 0, isPaid ? (paidAt ?? timestamp) : null, timestamp, id, userId],
+      sql: `UPDATE card_monthly SET is_paid = ?, paid_at = ?${paidAmountClause}, updated_at = ? WHERE id = ? AND user_id = ?`,
+      args,
     });
 
     return this.findById(id, userId);
@@ -86,6 +91,7 @@ export class CardMonthlyRepository {
     return (result.rows as unknown as CardMonthly[]).map(r => ({
       ...r,
       statement_balance: Number(r.statement_balance),
+      paid_amount: Number(r.paid_amount),
       is_paid: Boolean(r.is_paid),
     }));
   }
