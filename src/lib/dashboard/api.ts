@@ -1,5 +1,6 @@
 import { safeFetch } from "@/lib/safeFetch.ts";
 import type { PayCardDebtPartialArgs } from "@/lib/types/dashboard.ts";
+import { CARRYOVER_DESCRIPTION_PREFIX } from "@/lib/modules/card-monthly/carryover.ts";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
@@ -32,7 +33,7 @@ export async function payCardDebtPartial(args: PayCardDebtPartialArgs): Promise<
       amount: remaining,
       payment_method_id: args.paymentMethodId,
       category_id: args.categoryId,
-      description: `Saldo pendiente ${args.month}`,
+      description: `${CARRYOVER_DESCRIPTION_PREFIX}${args.month}`,
       date,
     }),
   });
