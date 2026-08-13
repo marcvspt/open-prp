@@ -100,13 +100,13 @@ export default function CreditCardSummary({
     return () => window.removeEventListener("monthchange", handler);
   }, [fetchData]);
 
-  function markDebtPaid(id: string, paidAt: string) {
-    setCardDebts(prev => prev.map(d => d.id === id ? { ...d, is_paid: true, paid_at: paidAt } : d));
+  function markDebtPaid(id: string, paidAt: string, paidAmount: number) {
+    setCardDebts(prev => prev.map(d => d.id === id ? { ...d, is_paid: true, paid_at: paidAt, paid_amount: paidAmount } : d));
   }
 
   async function handlePayFull(id: string) {
     const paidAt = payDate || undefined;
-    if (await payCardDebtFull(id, paidAt)) markDebtPaid(id, paidAt ?? new Date().toISOString());
+    if (await payCardDebtFull(id, paidAt, payDialog?.debt.statement_balance)) markDebtPaid(id, paidAt ?? new Date().toISOString(), payDialog?.debt.statement_balance ?? 0);
     setPayDialog(null);
   }
 
@@ -125,7 +125,7 @@ export default function CreditCardSummary({
       categoryId: categories.find(c => c.name === "card-balance")?.id ?? null,
       paidAt,
     });
-    if (ok) markDebtPaid(payDialog.debt.id, paidAt ?? new Date().toISOString());
+    if (ok) markDebtPaid(payDialog.debt.id, paidAt ?? new Date().toISOString(), amt);
     setPayDialog(null);
   }
 
@@ -144,7 +144,9 @@ export default function CreditCardSummary({
           const dueIn = card.payment_due_day != null ? daysUntilPaymentDue(month, card.cutoff_day, card.payment_due_day) : 0;
           const paidLate = debt?.is_paid === true && isPaymentLate(month, card.cutoff_day, card.payment_due_day, debt.paid_at);
           const calc = calculatedDebts[card.id] ?? null;
-          const committed = calc ? calc.total_committed : (debt?.statement_balance ?? 0);
+          const paidAmount = debt?.paid_amount ?? 0;
+          const outstanding = Math.max(0, (calc ? calc.statement_balance : (debt?.statement_balance ?? 0)) - paidAmount);
+          const committed = (calc ? calc.total_committed : (debt?.statement_balance ?? 0)) - paidAmount;
           const available = card.max_limit != null ? card.max_limit - committed : 0;
           const borderClass = debt && !debt.is_paid ? dueDaysBorder(dueIn) : paidLate ? "border-danger" : "border-border";
           return (
@@ -177,21 +179,24 @@ export default function CreditCardSummary({
                   <p className="text-xs text-string-muted">{t.stat.calculatedDebt}</p>
                   {calc ? (
                     <div className="group relative">
-                      <p className="font-mono font-medium text-danger cursor-help">{formatCurrency(calc.statement_balance)}</p>
+                      <p className="font-mono font-medium text-danger cursor-help">{formatCurrency(outstanding)}</p>
                       <div className="absolute left-0 right-0 top-full mt-1 max-w-xs bg-panel border border-border rounded-lg shadow-lg p-3 text-xs z-10 hidden group-hover:block">
                         <div className="space-y-1">
                           <div className="flex justify-between"><span>{t.stat.purchases}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_purchases)}</span></div>
                           <div className="flex justify-between"><span>{t.stat.installmentsThisMonth}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_installments)}</span></div>
                           <div className="flex justify-between"><span>{t.stat.recurringPayments}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_recurring)}</span></div>
                           <div className="flex justify-between"><span>{t.stat.cashback}</span><span className="font-mono text-success">+{formatCurrency(calc.total_cashback)}</span></div>
-                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.monthDebt}</span><span className="font-mono">{formatCurrency(calc.statement_balance)}</span></div>
+                          {paidAmount > 0 && (
+                            <div className="flex justify-between"><span>{t.stat.paidAmount}</span><span className="font-mono text-success">-{formatCurrency(paidAmount)}</span></div>
+                          )}
+                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.monthDebt}</span><span className="font-mono">{formatCurrency(outstanding)}</span></div>
                           <div className="flex justify-between text-string-muted"><span>{t.stat.futureInstallments}</span><span className="font-mono">-{formatCurrency(calc.committed_installments)}</span></div>
-                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.totalCommitted}</span><span className="font-mono">{formatCurrency(calc.total_committed)}</span></div>
+                          <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.totalCommitted}</span><span className="font-mono">{formatCurrency(committed)}</span></div>
                         </div>
                       </div>
                     </div>
                   ) : debt ? (
-                    <p className="font-mono font-medium text-danger">{formatCurrency(debt.statement_balance)}</p>
+                    <p className="font-mono font-medium text-danger">{formatCurrency(outstanding)}</p>
                   ) : (
                     <p className="text-xs text-string-muted">-</p>
                   )}

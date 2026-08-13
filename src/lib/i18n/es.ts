@@ -205,6 +205,7 @@ export const es = {
     recurringPayments: shared.recurringPayments,
     cashback: shared.cashback,
     monthDebt: "Adeudo del mes",
+    paidAmount: "Pagado",
     futureInstallments: "Plazos futuros",
     totalCommitted: "Total comprometido",
     activeInstallments: "Plazos activos",

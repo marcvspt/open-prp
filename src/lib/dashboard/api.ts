@@ -3,19 +3,19 @@ import type { PayCardDebtPartialArgs } from "@/lib/types/dashboard.ts";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
-export async function payCardDebtFull(id: string, paidAt?: string): Promise<boolean> {
+export async function payCardDebtFull(id: string, paidAt?: string, paidAmount?: number): Promise<boolean> {
   return safeFetch("/api/card-monthly", {
     method: "PATCH",
     headers: JSON_HEADERS,
-    body: JSON.stringify({ id, is_paid: true, paid_at: paidAt }),
+    body: JSON.stringify({ id, is_paid: true, paid_at: paidAt, ...(paidAmount !== undefined && { paid_amount: paidAmount }) }),
   });
 }
 
 export async function payCardDebtPartial(args: PayCardDebtPartialArgs): Promise<boolean> {
   const remaining = args.statementBalance - args.paidAmount;
-  if (remaining <= 0) return payCardDebtFull(args.id, args.paidAt);
+  if (remaining <= 0) return payCardDebtFull(args.id, args.paidAt, args.statementBalance);
 
-  const paid = await payCardDebtFull(args.id, args.paidAt);
+  const paid = await payCardDebtFull(args.id, args.paidAt, args.paidAmount);
   if (!paid) return false;
 
   const [year, monthNum] = args.month.split("-").map(Number);

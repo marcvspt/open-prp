@@ -4,6 +4,7 @@ export interface CardMonthly {
   user_id: string;
   month: string;
   statement_balance: number;
+  paid_amount: number;
   is_paid: boolean;
   paid_at: string | null;
   created_at: string;
@@ -19,6 +20,8 @@ export interface CardMonthlyInput {
 export interface CardMonthlyUpdate {
   statement_balance?: number;
   is_paid?: boolean;
+  paid_at?: string;
+  paid_amount?: number;
 }
 
 export interface CalculatedDebt {

@@ -38,7 +38,8 @@ export const PATCH: APIRoute = withErrorHandling(async (context) => {
   if (!body) return errorResponse("Body inválido", 400);
   if (!body.id) return errorResponse("id is required");
 
-  const item = await repo.togglePaid(body.id as string, uid, body.is_paid as boolean, body.paid_at as string | undefined);
+  const paidAmount = body.paid_amount !== undefined ? Number(body.paid_amount) : undefined;
+  const item = await repo.togglePaid(body.id as string, uid, body.is_paid as boolean, body.paid_at as string | undefined, paidAmount);
   if (!item) return errorResponse("Not found", 404);
   return jsonResponse(item);
 });
