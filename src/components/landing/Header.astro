@@ -8,7 +8,7 @@ import { getLocaleDict } from "@/lib/i18n/locale.ts";
 const locale = Astro.currentLocale ?? "es";
 const t = getLocaleDict(locale);
 const homeHref = getRelativeLocaleUrl(locale, "/");
-const appHref = getRelativeLocaleUrl(locale, "/app");
+const loginHref = getRelativeLocaleUrl(locale, "/app/login");
 
 const LANDING_LINKS = [
   { href: "#features", label: t.landing.navFeatures },
@@ -78,7 +78,7 @@ const LANDING_LINKS = [
         <GithubIcon class="h-5 w-5" />
       </a>
       <a
-        href={appHref}
+        href={loginHref}
         class="shrink-0 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
       >
         {t.landing.login}
@@ -117,7 +117,7 @@ const LANDING_LINKS = [
           {t.nav.ariaGithub}
         </a>
         <a
-          href={appHref}
+          href={loginHref}
           class="inline-block rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
         >
           {t.landing.login}
@@ -137,31 +137,7 @@ const LANDING_LINKS = [
 </style>
 
 <script>
-  const btn = document.getElementById("mobile-menu-btn");
-  const dropdown = document.getElementById("mobile-dropdown");
-  const hamburger = document.getElementById("hamburger-icon");
-  const closeIcon = document.getElementById("close-icon");
-  if (btn && dropdown && hamburger && closeIcon) {
-    function open() {
-      btn?.setAttribute("aria-expanded", "true");
-      dropdown?.classList.add("open");
-      hamburger?.classList.add("hidden");
-      closeIcon?.classList.remove("hidden");
-      document.body.style.overflow = "hidden";
-    }
-    function close() {
-      btn?.setAttribute("aria-expanded", "false");
-      dropdown?.classList.remove("open");
-      hamburger?.classList.remove("hidden");
-      closeIcon?.classList.add("hidden");
-      document.body.style.overflow = "";
-    }
-    btn.addEventListener("click", () => {
-      const expanded = btn.getAttribute("aria-expanded") === "true";
-      expanded ? close() : open();
-    });
-    dropdown.querySelectorAll("a").forEach((a) => {
-      a.addEventListener("click", close);
-    });
-  }
+  import { initLandingMenu } from "@/lib/ui/landing-menu.ts";
+
+  document.addEventListener("astro:page-load", () => initLandingMenu());
 </script>
