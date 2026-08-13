@@ -103,7 +103,7 @@ function dueDaysBadge(days: number): string {
                 </div>
                 <div class="flex items-center gap-3">
                   <span class={`font-mono ${d.is_paid ? (paidLate ? "text-danger" : "text-success line-through") : "text-danger"}`}>
-                    {formatCurrency(Math.max(0, d.statement_balance - d.paid_amount))}
+                    {formatCurrency(d.is_paid ? 0 : Math.max(0, d.statement_balance - d.paid_amount))}
                   </span>
                   {!d.is_paid && card && (
                     <span class={`text-xs px-2 py-0.5 rounded font-medium ${dueDaysBadge(dueIn)}`}>

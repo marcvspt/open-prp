@@ -144,9 +144,11 @@ export default function CreditCardSummary({
           const dueIn = card.payment_due_day != null ? daysUntilPaymentDue(month, card.cutoff_day, card.payment_due_day) : 0;
           const paidLate = debt?.is_paid === true && isPaymentLate(month, card.cutoff_day, card.payment_due_day, debt.paid_at);
           const calc = calculatedDebts[card.id] ?? null;
+          const gross = calc ? calc.statement_balance : (debt?.statement_balance ?? 0);
           const paidAmount = debt?.paid_amount ?? 0;
-          const outstanding = Math.max(0, (calc ? calc.statement_balance : (debt?.statement_balance ?? 0)) - paidAmount);
-          const committed = (calc ? calc.total_committed : (debt?.statement_balance ?? 0)) - paidAmount;
+          const settled = debt?.is_paid === true ? gross : paidAmount;
+          const outstanding = Math.max(0, gross - settled);
+          const committed = (calc ? calc.total_committed : gross) - settled;
           const available = card.max_limit != null ? card.max_limit - committed : 0;
           const borderClass = debt && !debt.is_paid ? dueDaysBorder(dueIn) : paidLate ? "border-danger" : "border-border";
           return (
