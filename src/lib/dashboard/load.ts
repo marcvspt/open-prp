@@ -11,7 +11,6 @@ import { ShoppingRepository } from "@/lib/modules/shopping/repository.ts";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
-import { isCarryoverDescription } from "@/lib/modules/card-monthly/carryover.ts";
 import type { DashboardMonthData } from "@/lib/types/dashboard.ts";
 
 /** Server-side equivalent of `fetchDashboardMonth` (api.ts): same queries via repositories, without HTTP round-trips. */
@@ -46,19 +45,23 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
   const incomeSvcs = servicePayments.filter((sp) => sp.type === "income");
   const expenseSvcs = servicePayments.filter((sp) => sp.type === "expense");
 
+  const carriedOut = cardDebtsRaw
+    .filter((d) => d.is_paid)
+    .reduce((sum, d) => sum + Math.max(0, d.statement_balance - d.paid_amount), 0);
+
   const incomes =
-    txDataArr.filter((t) => t.type === "income" && !isCarryoverDescription(t.description)).reduce((sum, t) => sum + Number(t.amount), 0) +
+    txDataArr.filter((t) => t.type === "income").reduce((sum, t) => sum + Number(t.amount), 0) +
     cbData.reduce((sum, cb) => sum + Number(cb.amount), 0) +
     incomeSvcs.reduce((sum, sp) => sum + Number(sp.amount), 0);
   const expenses =
-    txDataArr.filter((t) => t.type === "expense" && !isCarryoverDescription(t.description)).reduce((sum, t) => sum + Number(t.amount), 0) +
+    txDataArr.filter((t) => t.type === "expense").reduce((sum, t) => sum + Number(t.amount), 0) +
     installmentTotal +
-    expenseSvcs.reduce((sum, sp) => sum + Number(sp.amount), 0);
+    expenseSvcs.reduce((sum, sp) => sum + Number(sp.amount), 0) -
+    carriedOut;
 
   const cardTotals: Record<string, { income: number; expense: number }> = {};
   const pmToCard = new Map(paymentMethods.filter(pm => pm.card_id).map(pm => [pm.id, pm.card_id]));
   for (const tx of txDataArr) {
-    if (isCarryoverDescription(tx.description)) continue;
     const cardId = pmToCard.get(tx.payment_method_id ?? "");
     if (!cardId) continue;
     if (!cardTotals[cardId]) cardTotals[cardId] = { income: 0, expense: 0 };
