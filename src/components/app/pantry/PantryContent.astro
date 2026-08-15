@@ -6,11 +6,11 @@ import PantryFilterable from "@/components/app/pantry/PantryFilterable.tsx";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Props {
   userId: string;
-  locale: string;
+  locale: LocaleCode;
 }
 
 const { userId, locale } = Astro.props;

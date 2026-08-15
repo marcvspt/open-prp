@@ -7,11 +7,11 @@ import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { fieldTypeCurrency, cardField, dateField } from "@/lib/i18n/form-fields.ts";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
 import { lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Props {
   userId: string;
-  locale: string;
+  locale: LocaleCode;
 }
 
 const { userId, locale } = Astro.props;

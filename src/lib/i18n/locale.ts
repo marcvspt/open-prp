@@ -12,6 +12,11 @@ export function isLocaleCode(value: string | undefined | null): value is LocaleC
   return value === "es" || value === "en";
 }
 
+/** Normalizes any input (e.g. `Astro.currentLocale`) to a valid `LocaleCode`, falling back to the default locale. */
+export function resolveLocale(locale: string | undefined | null): LocaleCode {
+  return isLocaleCode(locale) ? locale : DEFAULT_LOCALE;
+}
+
 export function getLocaleDict(locale: string | undefined | null): Locale {
   return locale === "en" ? en : es;
 }

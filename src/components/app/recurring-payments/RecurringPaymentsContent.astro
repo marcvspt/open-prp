@@ -17,7 +17,7 @@ import {
   categoryField,
 } from "@/lib/i18n/form-fields.ts";
 import { CURRENCY_SYMBOL, BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 import { FILTER_ALL_MONTHS } from "@/lib/i18n/filter-fields.ts";
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
@@ -25,7 +25,7 @@ import { currentMonthStr, lastYearWindow } from "@/lib/date.ts";
 
 interface Props {
   userId: string;
-  locale: string;
+  locale: LocaleCode;
 }
 
 const { userId, locale } = Astro.props;

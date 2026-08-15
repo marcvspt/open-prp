@@ -5,9 +5,9 @@ import { getRelativeLocaleUrl } from "astro:i18n";
 import { SignInButton, SignUpButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import { BTN_LOGIN, BTN_SIGNUP } from "@/lib/i18n/general-fields.ts";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 
-const locale = Astro.currentLocale ?? "es";
+const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
 const dashboardUrl = getRelativeLocaleUrl(locale, "/app/dashboard");
 const homeUrl = getRelativeLocaleUrl(locale, "/");

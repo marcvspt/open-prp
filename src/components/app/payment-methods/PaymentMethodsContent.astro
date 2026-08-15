@@ -6,11 +6,11 @@ import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Props {
   userId: string;
-  locale: string;
+  locale: LocaleCode;
 }
 
 const { userId, locale } = Astro.props;

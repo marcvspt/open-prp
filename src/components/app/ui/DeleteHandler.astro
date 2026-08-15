@@ -1,6 +1,6 @@
 ---
 import ConfirmDelete from "@/components/app/ui/ConfirmDelete.tsx";
-import type { LocaleCode } from "@/lib/i18n/locale.ts";
+import { resolveLocale, type LocaleCode } from "@/lib/i18n/locale.ts";
 
 export interface Props {
   module: string;
@@ -8,7 +8,7 @@ export interface Props {
   locale?: LocaleCode;
 }
 
-const { module, label, locale = Astro.currentLocale ?? "es" } = Astro.props;
+const { module, label, locale = resolveLocale(Astro.currentLocale) } = Astro.props;
 ---
 
 <ConfirmDelete client:load module={module} label={label} locale={locale} />

@@ -9,7 +9,7 @@ import RecurringIcon from "@/assets/recurring.svg";
 import PackageIcon from "@/assets/package.svg";
 import CartIcon from "@/assets/cart.svg";
 import { LOCALES } from "@/lib/i18n/locale.ts";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 
 export const prerender = true;
 
@@ -17,7 +17,7 @@ export function getStaticPaths() {
   return LOCALES.map((locale) => ({ params: { locale } }));
 }
 
-const locale = Astro.currentLocale ?? "es";
+const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
 
 const FEATURE_ICONS = [DollarIcon, CardIcon, ClipboardIcon, RecurringIcon, PackageIcon, CartIcon];

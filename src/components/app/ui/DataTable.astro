@@ -1,5 +1,5 @@
 ---
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 
 type Column = string | { label: string; align?: "left" | "right" | "center" };
 
@@ -9,7 +9,7 @@ export interface Props {
   ariaLabel?: string;
 }
 
-const locale = Astro.currentLocale ?? "es";
+const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
 const { columns, emptyMessage = t.empty.data, ariaLabel } = Astro.props;
 const colCount = columns.length;

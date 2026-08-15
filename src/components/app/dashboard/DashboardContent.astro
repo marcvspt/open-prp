@@ -1,5 +1,5 @@
 ---
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 import { loadDashboardMonth } from "@/lib/dashboard/load.ts";
 import { daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
@@ -7,7 +7,7 @@ import { formatCurrency } from "@/lib/format.ts";
 interface Props {
   userId: string;
   month: string;
-  locale: string;
+  locale: LocaleCode;
 }
 
 const { userId, month: selectedMonth, locale } = Astro.props;
