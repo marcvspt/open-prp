@@ -1,0 +1,239 @@
+---
+import PageHeader from "@/components/app/ui/PageHeader.astro";
+import DataTable from "@/components/app/ui/DataTable.astro";
+import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
+import CrudModal from "@/components/app/ui/CrudModal.tsx";
+import TabBarWithMonth from "@/components/app/ui/TabBarWithMonth.tsx";
+import RecurringPaymentsMonthly from "@/components/app/recurring-payments/RecurringPaymentsMonthly.tsx";
+import RecurringPaymentsHistory from "@/components/app/recurring-payments/RecurringPaymentsHistory.tsx";
+import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
+import { RecurringPaymentMonthlyRepository } from "@/lib/modules/recurring-payment-monthly/repository.ts";
+import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
+import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
+import {
+  fieldTypeCurrency,
+  fieldType,
+  paymentMethodField,
+  categoryField,
+} from "@/lib/i18n/form-fields.ts";
+import { CURRENCY_SYMBOL, BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { FILTER_ALL_MONTHS } from "@/lib/i18n/filter-fields.ts";
+import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
+import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
+import { currentMonthStr, lastYearWindow } from "@/lib/date.ts";
+
+interface Props {
+  userId: string;
+  locale: string;
+}
+
+const { userId, locale } = Astro.props;
+const t = getLocaleDict(locale);
+const rpRepo = new RecurringPaymentRepository();
+const paramMonth = Astro.url.searchParams.get("month");
+const urlMonth =
+  paramMonth && /^\d{4}-\d{2}$/.test(paramMonth) ? paramMonth : "";
+const selectedMonth = urlMonth || currentMonthStr();
+const { from: fromMonth, to: nextMonth } = lastYearWindow(
+  Astro.locals.createdAt,
+);
+const [items, monthlyItems, fullHistory, svcCategories, paymentMethods] = await Promise.all([
+  rpRepo.findAll(userId),
+  new RecurringPaymentMonthlyRepository().findByMonth(selectedMonth, userId),
+  rpRepo.getHistory(userId, fromMonth, nextMonth),
+  new CategoryRepository().findBySections(userId, ["recurring-payments"]),
+  new PaymentMethodRepository().findAll(userId),
+]);
+const recurringHistory = urlMonth
+  ? fullHistory.filter((h) => h.month === selectedMonth)
+  : fullHistory;
+const paramTab = Astro.url.searchParams.get("tab");
+const initialTab =
+  paramTab === "list" ? "list" : paramTab === "history" ? "history" : "monthly";
+const allRecurringCategories = svcCategories;
+const pmMap = Object.fromEntries(paymentMethods.map((pm) => [pm.id, pm]));
+const catMap = Object.fromEntries(allRecurringCategories.map((c) => [c.id, c]));
+const currencySymbol = CURRENCY_SYMBOL;
+const fields = [
+  fieldType(t),
+  {
+    name: "name",
+    label: t.field.description,
+    type: "text" as const,
+    required: true,
+  },
+  {
+    name: "default_amount",
+    label: t.field.amount,
+    type: "number" as const,
+    required: true,
+    step: "0.01",
+  },
+  fieldTypeCurrency(t),
+  paymentMethodField(t, paymentMethods),
+  categoryField(t, allRecurringCategories),
+];
+const defaultForm = {
+  name: "",
+  default_amount: 0,
+  currency: "MXN",
+  type: "expense",
+  payment_method_id: paymentMethods[0]?.id ?? "",
+  category_id: "",
+};
+---
+
+<div data-module="recurring-payments" class="space-y-4">
+  <PageHeader title={t.page.recurringPayments} />
+  <div class="tabs-container">
+    <TabBarWithMonth
+      client:load
+      tabs={[
+        { key: "monthly", label: t.tabs.summary },
+        { key: "list", label: t.tabs.adminRecurring },
+        { key: "history", label: t.tabs.history },
+      ]}
+      initialTab={initialTab}
+      defaultTab="monthly"
+      ariaLabel={t.recurring.ariaTabs}
+      initialMonth={urlMonth}
+      createdAt={Astro.locals.createdAt}
+      allLabel={FILTER_ALL_MONTHS(t)}
+      locale={locale}
+    />
+    <div
+      data-tab-content="monthly"
+      role="tabpanel"
+      id="panel-monthly"
+      aria-labelledby="tab-monthly"
+      tabindex="0"
+      class:list={["tab-content pt-4", { hidden: initialTab !== "monthly" }]}
+    >
+      <RecurringPaymentsMonthly
+        client:load
+        initialMonth={selectedMonth}
+        initialPayments={JSON.stringify(items)}
+        initialMonthly={JSON.stringify(monthlyItems)}
+        locale={locale}
+      />
+    </div>
+    <div
+      data-tab-content="list"
+      role="tabpanel"
+      id="panel-list"
+      aria-labelledby="tab-list"
+      tabindex="0"
+      class:list={["tab-content pt-4", { hidden: initialTab !== "list" }]}
+    >
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-sm text-string-muted">
+          {t.recurring.allRegistered}
+        </p>
+        <button
+          data-create="recurring-payments"
+          class="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer"
+          >{t.cta.newRecurring}</button
+        >
+      </div>
+      <DataTable
+        columns={[
+          t.table.description,
+          { label: t.table.amount, align: "right" },
+          t.table.type,
+          t.table.currency,
+          t.table.method,
+          t.table.category,
+          { label: t.table.actions, align: "right" },
+        ]}
+        emptyMessage={t.empty.recurring}
+      >
+        {
+          items.map((s) => (
+            <tr class="hover:bg-nav-hover">
+              <td class="px-4 py-3 font-medium">{s.name}</td>
+              <td
+                class={`px-4 py-3 text-right font-mono ${s.type === "income" ? "text-success" : "text-danger"}`}
+              >
+                {s.type === "income" ? "+" : "-"}
+                {currencySymbol[s.currency] || "$"}
+                {Number(s.default_amount).toFixed(2)}
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class={`text-xs px-2 py-0.5 rounded font-medium ${s.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}
+                >
+                  {s.type === "income"
+                    ? t.badge.income
+                    : t.badge.expense}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-xs text-string-muted">
+                {currencySymbol[s.currency] || "$"} {s.currency || "MXN"}
+              </td>
+              <td class="px-4 py-3">
+                <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">
+                  {pmMap[s.payment_method_id]
+                    ? `${pmMap[s.payment_method_id].icon || "💳"} ${displayPaymentMethodName(pmMap[s.payment_method_id], t)}`
+                    : "-"}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                {s.category_id ? (
+                  <span class="text-xs bg-surface-alt px-2 py-0.5 rounded">
+                    {catMap[s.category_id]
+                      ? `${catMap[s.category_id].icon || "📂"} ${displayCategoryName(catMap[s.category_id], t)}`
+                      : "-"}
+                  </span>
+                ) : (
+                  "-"
+                )}
+              </td>
+              <td class="px-4 py-3 text-right space-x-2">
+                <button
+                  data-edit-recurring-payments={s.id}
+                  class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer"
+                >
+                  {BTN_EDIT(t)}
+                </button>
+                <button
+                  data-delete-recurring-payments={s.id}
+                  class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer"
+                >
+                  {BTN_DELETE(t)}
+                </button>
+              </td>
+            </tr>
+          ))
+        }
+      </DataTable>
+    </div>
+    <div
+      data-tab-content="history"
+      role="tabpanel"
+      id="panel-history"
+      aria-labelledby="tab-history"
+      tabindex="0"
+      class:list={["tab-content pt-4", { hidden: initialTab !== "history" }]}
+    >
+      <RecurringPaymentsHistory
+        client:load
+        initialData={JSON.stringify(recurringHistory)}
+        categories={JSON.stringify(catMap)}
+        locale={locale}
+      />
+    </div>
+  </div>
+</div>
+<CrudModal
+  client:load
+  module="recurring-payments"
+  fields={JSON.stringify(fields)}
+  defaultForm={JSON.stringify(defaultForm)}
+  titleSingular={t.singular.recurringPayment}
+  locale={locale}
+/>
+<DeleteHandler
+  module="recurring-payments"
+  label={t.singular.recurringPayment}
+/>

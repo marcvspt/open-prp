@@ -1,0 +1,126 @@
+---
+import { BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
+import PageHeader from "@/components/app/ui/PageHeader.astro";
+import DataTable from "@/components/app/ui/DataTable.astro";
+import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
+import CrudModal from "@/components/app/ui/CrudModal.tsx";
+import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
+import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+
+interface Props {
+  userId: string;
+  locale: string;
+}
+
+const { userId, locale } = Astro.props;
+const t = getLocaleDict(locale);
+const repo = new PaymentMethodRepository();
+const items = await repo.findAll(userId);
+const typeLabels: Record<string, string> = {
+  global: t.badge.global,
+  personal: t.badge.personal,
+  card: t.badge.card,
+};
+const typeColors: Record<string, string> = {
+  global:
+    "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
+  personal:
+    "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+  card: "bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300",
+};
+const fields = [
+  {
+    name: "name",
+    label: t.field.name,
+    type: "text" as const,
+    required: true,
+  },
+  {
+    name: "icon",
+    label: t.field.iconEmoji,
+    type: "text" as const,
+    placeholder: t.field.iconPlaceholder,
+  },
+  { name: "color", label: t.field.color, type: "color" as const },
+];
+const defaultForm = {
+  name: "",
+  type: "personal",
+  icon: "💳",
+  color: "#6366f1",
+};
+---
+
+<div data-module="payment-methods" class="space-y-4">
+  <PageHeader
+    title={t.page.paymentMethods}
+    createLabel={t.cta.newPaymentMethod}
+    createModule="payment-methods"
+  />
+  <DataTable
+    columns={[
+      t.table.name,
+      t.table.type,
+      { label: t.table.icon, align: "center" },
+      t.table.color,
+      { label: t.table.actions, align: "right" },
+    ]}
+    emptyMessage={t.empty.paymentMethods}
+  >
+    {
+      items.map((m) => {
+        const isSystem = m.type === "global" || m.type === "card";
+        return (
+          <tr class="hover:bg-nav-hover">
+            <td class="px-4 py-3 font-medium">{displayPaymentMethodName(m, t)}</td>
+            <td class="px-4 py-3">
+              <span
+                class={`text-xs font-medium px-2 py-0.5 rounded ${typeColors[m.type] || "bg-surface-alt text-string-muted"}`}
+              >
+                {typeLabels[m.type] || m.type}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-center">{m.icon || "-"}</td>
+            <td class="px-4 py-3">
+              <span
+                class="inline-block w-5 h-5 rounded-full border border-border"
+                style={{ backgroundColor: m.color || "#6366f1" }}
+              />
+            </td>
+            <td class="px-4 py-3 text-right space-x-2">
+              {!isSystem && (
+                <>
+                  <button
+                    data-edit-payment-methods={m.id}
+                    class="text-primary hover:text-primary-hover text-xs font-medium cursor-pointer"
+                  >
+                    {BTN_EDIT(t)}
+                  </button>
+                  <button
+                    data-delete-payment-methods={m.id}
+                    class="text-danger hover:text-danger-hover text-xs font-medium cursor-pointer"
+                  >
+                    {BTN_DELETE(t)}
+                  </button>
+                </>
+              )}
+            </td>
+          </tr>
+        );
+      })
+    }
+  </DataTable>
+</div>
+<CrudModal
+  client:load
+  module="payment-methods"
+  fields={JSON.stringify(fields)}
+  defaultForm={JSON.stringify(defaultForm)}
+  titleSingular={t.singular.paymentMethod}
+  locale={locale}
+/>
+<DeleteHandler
+  module="payment-methods"
+  label={t.singular.paymentMethod}
+/>
