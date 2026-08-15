@@ -1,16 +1,17 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { Show, SignInButton, SignUpButton } from "@clerk/astro/components";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { Show } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import ClerkLocaleBridge from "@/components/ui/ClerkLocaleBridge.tsx";
 import Sidebar from "@/components/app/ui/Sidebar.astro";
 import MenuIcon from "@/assets/menu.svg";
-import { BTN_LOGIN, BTN_SIGNUP } from "@/lib/i18n/general-fields.ts";
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 
 const { title } = Astro.props;
 const currentPath = Astro.url.pathname;
 const locale = resolveLocale(Astro.currentLocale);
+const loginPath = getRelativeLocaleUrl(locale, "/app/login");
 const t = getLocaleDict(locale);
 ---
 
@@ -46,26 +47,18 @@ const t = getLocaleDict(locale);
     </main>
   </Show>
   <Show when="signed-out">
-    <div class="flex items-center justify-center min-h-screen bg-surface">
-      <div class="text-center space-y-4">
+    <div class="flex items-center justify-center min-h-screen bg-surface" data-login-redirect>
+      <div class="text-center space-y-4 px-6">
         <h1 class="text-2xl font-bold">Open PRP</h1>
-        <p class="text-string-muted">Personal Resource Planning</p>
-        <div class="flex justify-center gap-2">
-          <SignInButton mode="modal">
-            <button
-              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover"
-            >
-              {BTN_LOGIN(t)}</button
-            >
-          </SignInButton>
-          <SignUpButton mode="modal">
-            <button
-              class="px-4 py-2 border border-border rounded-lg hover:bg-nav-hover text-string"
-              >{BTN_SIGNUP(t)}</button
-            >
-          </SignUpButton>
+        <div>
+          <a
+            href={loginPath}
+            class="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover cursor-pointer"
+          >
+            {t.common.login}
+          </a>
         </div>
-        <div class="flex justify-center pt-4">
+        <div class="flex justify-center">
           <ThemeToggle client:load locale={locale} />
         </div>
       </div>
@@ -77,7 +70,11 @@ const t = getLocaleDict(locale);
   import { initSidebar, initUserAreaForward } from "@/lib/ui/sidebar.ts";
 
   initUserAreaForward();
-  document.addEventListener("astro:page-load", () => initSidebar());
+  document.addEventListener("astro:page-load", () => {
+    initSidebar();
+    const redirectLink = document.querySelector("[data-login-redirect] a");
+    if (redirectLink instanceof HTMLAnchorElement) window.location.replace(redirectLink.href);
+  });
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js");
   }
