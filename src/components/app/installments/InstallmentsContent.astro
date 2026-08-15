@@ -18,11 +18,11 @@ import {
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
 import { currentMonthStr, lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Props {
   userId: string;
-  locale: string;
+  locale: LocaleCode;
 }
 
 const { userId, locale } = Astro.props;

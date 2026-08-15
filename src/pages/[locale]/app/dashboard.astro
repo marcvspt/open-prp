@@ -2,10 +2,10 @@
 import AppLayout from "@/layouts/AppLayout.astro";
 import DashboardHeader from "@/components/app/dashboard/DashboardHeader.tsx";
 import DashboardContent from "@/components/app/dashboard/DashboardContent.astro";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 import { currentMonthStr } from "@/lib/date.ts";
 
-const locale = Astro.currentLocale ?? "es";
+const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
 
 const paramMonth = Astro.url.searchParams.get("month");

@@ -4,7 +4,7 @@ import { getRelativeLocaleUrl } from "astro:i18n";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import LocaleSwitcher from "@/components/ui/LocaleSwitcher.tsx";
 import CurrencySelect from "@/components/app/ui/CurrencySelect.tsx";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 import HomeIcon from "@/assets/home.svg";
 import DollarIcon from "@/assets/dollar.svg";
 import CardIcon from "@/assets/card.svg";
@@ -23,7 +23,7 @@ export interface Props {
 }
 
 const { currentPath } = Astro.props;
-const locale = Astro.currentLocale ?? "es";
+const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
 const preferredCurrency = Astro.locals.user?.preferred_currency ?? "MXN";
 

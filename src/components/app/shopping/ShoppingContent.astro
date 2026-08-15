@@ -7,11 +7,11 @@ import { ShoppingListRepository } from "@/lib/modules/shopping/lists.ts";
 import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Props {
   userId: string;
-  locale: string;
+  locale: LocaleCode;
 }
 
 const { userId, locale } = Astro.props;

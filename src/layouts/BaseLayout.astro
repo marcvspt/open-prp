@@ -2,6 +2,7 @@
 import { ClientRouter } from "astro:transitions";
 
 import "@/styles/global.css";
+import { resolveLocale } from "@/lib/i18n/locale.ts";
 
 export interface Props {
   title?: string;
@@ -9,7 +10,7 @@ export interface Props {
 
 const { title } = Astro.props;
 const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
-const locale = Astro.currentLocale ?? "es";
+const locale = resolveLocale(Astro.currentLocale);
 ---
 
 <html lang={locale}>

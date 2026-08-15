@@ -1,6 +1,6 @@
 ---
 import { BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
@@ -10,7 +10,7 @@ import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 
 interface Props {
   userId: string;
-  locale: string;
+  locale: LocaleCode;
 }
 
 const { userId, locale } = Astro.props;

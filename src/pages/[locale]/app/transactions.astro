@@ -1,9 +1,9 @@
 ---
 import AppLayout from "@/layouts/AppLayout.astro";
 import TransactionsContent from "@/components/app/transactions/TransactionsContent.astro";
-import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 
-const locale = Astro.currentLocale ?? "es";
+const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
 ---
 
