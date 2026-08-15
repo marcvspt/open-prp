@@ -39,6 +39,56 @@ const locale = Astro.currentLocale ?? "es";
     </script>
   </head>
   <body class="bg-surface text-string min-h-screen">
+    <div
+      id="nav-loading"
+      class="fixed top-0 left-0 z-[100] h-1 bg-primary"
+      aria-hidden="true"
+      transition:persist="nav-loading"
+    ></div>
     <slot />
+    <style>
+      #nav-loading {
+        width: 0;
+        opacity: 0;
+        transition:
+          opacity 0.15s ease,
+          width 0.3s ease;
+      }
+      #nav-loading.nav-loading-active {
+        opacity: 1;
+        animation: nav-loading-grow 4s cubic-bezier(0.2, 0.6, 0.3, 1) forwards;
+      }
+      @keyframes nav-loading-grow {
+        0% {
+          width: 0%;
+        }
+        60% {
+          width: 80%;
+        }
+        100% {
+          width: 100%;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #nav-loading.nav-loading-active {
+          animation: none;
+          width: 100%;
+        }
+      }
+    </style>
+    <script>
+      function showNavLoading() {
+        document
+          .getElementById("nav-loading")
+          ?.classList.add("nav-loading-active");
+      }
+      function hideNavLoading() {
+        document
+          .getElementById("nav-loading")
+          ?.classList.remove("nav-loading-active");
+      }
+      document.addEventListener("astro:before-preparation", showNavLoading);
+      document.addEventListener("astro:page-load", hideNavLoading);
+    </script>
   </body>
 </html>
