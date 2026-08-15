@@ -381,7 +381,7 @@ Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={loca
 
 - Activa solo en `/es/app/*` y `/en/app/*`.
 - `AppLayout` inyecta vía `slot="head"`: manifest link, theme-color y meta tags.
-- `public/sw.js`: precachea rutas `/es/app/*`, network-first con fallback a cache. El `fetch` handler intercepta también `/en/app/*` y cachea las respuestas OK para dar soporte offline a ambos idiomas.
+- `public/sw.js` (cache `open-prp-v3`): no precachea HTML. Las navegaciones (`mode: "navigate"` o `Accept: text/html`, incluyendo el fetch del `ClientRouter`) van siempre a red — el HTML SSR + auth nunca se sirve de cache. Cachea solo assets estáticos de la app (`/_astro/` y subrecursos de `/es/app/*` y `/en/app/*`) con stale-while-revalidate y purga caches antiguas en `activate`.
 - `public/manifest.webmanifest`: `scope: "/"` (para cubrir `/es/app/*` y `/en/app/*`), `start_url: "/es/app/dashboard"`, `display: standalone`.
 
 ## Accesibilidad

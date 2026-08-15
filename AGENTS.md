@@ -291,7 +291,7 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
 
 - Activa solo en `/es/app/*` y `/en/app/*`.
 - `AppLayout` inyecta, vía `slot="head"`: manifest link, theme-color y meta tags correspondientes.
-- Service Worker en `public/sw.js`: precachea rutas `/es/app/*`, estrategia network-first con fallback a cache. El `fetch` handler intercepta también `/en/app/*` y cachea las respuestas OK (soporte offline en ambos idiomas). `FetchEvent` usa `new URL(e.request.url)` para examinar el path.
+- Service Worker en `public/sw.js` (cache `open-prp-v3`): **no precachea HTML**. Las navegaciones (request `mode: "navigate"` o `Accept: text/html`, incluido el fetch del `ClientRouter`) van siempre a red — el HTML es SSR + auth y nunca se sirve de cache (evita UI obsoleta o datos de otro usuario). Solo cachea assets estáticos de la app (`/_astro/` y subrecursos de `/es/app/*` y `/en/app/*`) con **stale-while-revalidate** (cache-first + revalidación en segundo plano). En `activate` purga otras versiones de cache. `FetchEvent` usa `new URL(e.request.url)` para examinar el path.
 - Manifest en `public/manifest.webmanifest`: `scope: "/"` (para cubrir `/es/app/*` y `/en/app/*`), `start_url: "/es/app/dashboard"`, `display: standalone`.
 
 ## Despliegue
