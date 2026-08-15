@@ -1,49 +1,12 @@
 ---
 import AppLayout from "@/layouts/AppLayout.astro";
-import ShoppingList, {
-  SHOPPING_TABS,
-} from "@/components/app/shopping/ShoppingList.tsx";
-import { ShoppingRepository } from "@/lib/modules/shopping/repository.ts";
-import { ShoppingListRepository } from "@/lib/modules/shopping/lists.ts";
-import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
-import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
-import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
+import ShoppingContent from "@/components/app/shopping/ShoppingContent.astro";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 
 const locale = Astro.currentLocale ?? "es";
 const t = getLocaleDict(locale);
-const userId = Astro.locals.userId;
-const [allItems, pantryItems, pantryCategories, lists] = await Promise.all([
-  new ShoppingRepository().findAll(userId),
-  new PantryRepository().findAll(userId),
-  new CategoryRepository().findBySections(userId, ["pantry"]),
-  new ShoppingListRepository().findAll(userId),
-]);
-const paramTab = Astro.url.searchParams.get("tab");
-const initialTab =
-  paramTab && SHOPPING_TABS(t).some((tab) => tab.key === paramTab)
-    ? paramTab
-    : "list";
 ---
 
 <AppLayout title={`${t.page.shopping}`}>
-  <div class="space-y-6">
-    <h1 class="text-2xl font-bold text-string">{t.page.shopping}</h1>
-    <ShoppingList
-      client:load
-      initialTab={initialTab}
-      initialItems={JSON.stringify(allItems)}
-      initialLists={JSON.stringify(lists)}
-      initialPantry={JSON.stringify(pantryItems)}
-      initialCategories={JSON.stringify(
-        pantryCategories.map((c) => ({
-          id: c.id,
-          name: displayCategoryName(c, t),
-          icon: c.icon,
-          color: c.color,
-        })),
-      )}
-      locale={locale}
-    />
-  </div>
+  <ShoppingContent userId={Astro.locals.userId} locale={locale} />
 </AppLayout>

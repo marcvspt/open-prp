@@ -1,0 +1,59 @@
+---
+import PageHeader from "@/components/app/ui/PageHeader.astro";
+import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
+import CrudModal from "@/components/app/ui/CrudModal.tsx";
+import CashbackFilterable from "@/components/app/cashback/CashbackFilterable.tsx";
+import { CardRepository } from "@/lib/modules/cards/repository.ts";
+import { fieldTypeCurrency, cardField, dateField } from "@/lib/i18n/form-fields.ts";
+import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
+import { lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+
+interface Props {
+  userId: string;
+  locale: string;
+}
+
+const { userId, locale } = Astro.props;
+const t = getLocaleDict(locale);
+const params = Astro.url.searchParams;
+const filterMonth = params.get("month") || "";
+const filterQ = params.get("q") || "";
+const filterCard = params.get("card_id") || "";
+const cbFilter: Record<string, unknown> = {};
+if (filterMonth) cbFilter.month = filterMonth;
+if (filterQ) cbFilter.q = filterQ;
+if (filterCard) cbFilter.card_id = filterCard;
+if (!filterMonth) {
+  const { from, to } = lastYearWindow(Astro.locals.createdAt);
+  cbFilter.date_from = `${from}-01`;
+  cbFilter.date_to = lastDayOfMonth(to);
+}
+const [allCards, initialData] = await Promise.all([
+  new CardRepository().findAll(userId),
+  new CashbackRepository().findAll(userId, cbFilter),
+]);
+const creditCards = allCards.filter(c => c.type === "credit");
+const fields = [
+  dateField(t),
+  { name: "description", label: t.field.description, type: "text" as const },
+  { name: "amount", label: t.field.amount, type: "number" as const, required: true, step: "0.01" },
+  fieldTypeCurrency(t),
+  cardField(t, creditCards),
+];
+const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", card_id: creditCards[0]?.id ?? "" };
+---
+
+<div data-module="cashback" class="space-y-4">
+  <PageHeader title={t.page.cashback} createLabel={t.cta.newCashback} createModule="cashback" mobileOnlyCTA={true} />
+  <CashbackFilterable
+    client:load
+    initialMonth={filterMonth}
+    createdAt={Astro.locals.createdAt}
+    cards={creditCards.map(c => ({ id: c.id, name: c.name, type: c.type }))}
+    initialData={JSON.stringify(initialData)}
+    locale={locale}
+  />
+</div>
+<CrudModal client:load module="cashback" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={t.singular.cashback} locale={locale} />
+<DeleteHandler module="cashback" label={t.singular.cashback} />
