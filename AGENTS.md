@@ -91,7 +91,7 @@ astro dev stop | status | logs
 ### Layouts
 
 - `BaseLayout.astro` — `<html>`, `<head>`, meta, favicon, `ClientRouter` (View Transitions), dark mode inline script, título `"Open PRP | {title}"`, `<slot name="head" />`. El script de tema aplica el tema antes del primer paint y se re-aplica en `astro:after-swap` (evita el flash blanco al navegar con view transitions).
-- `AppLayout.astro` — extiende `BaseLayout`. Inyecta manifest PWA + theme-color vía `slot="head"`. Sidebar + main + pantalla de login. Registra el service worker.
+- `AppLayout.astro` — extiende `BaseLayout`. Inyecta manifest PWA + theme-color vía `slot="head"`. Sidebar + main + registro del service worker. Sin sesión en una ruta de app, el middleware redirige a `/es/app/login`; el fallback `<Show when="signed-out">` no pinta login embebido (la UI de auth vive en `login.astro`) sino un enlace al login localizado + auto-redirect en cliente (`data-login-redirect`).
 - `LandingLayout.astro` — extiende `BaseLayout`. Header + slot + Footer.
 - Todo layout específico (ej. `BlogLayout.astro`) debe envolverse en `BaseLayout.astro`, reenviando como mínimo la prop `title` (y otras si aplica) para que `BaseLayout` controle el `<head>` y el título de la página.
 
