@@ -123,7 +123,7 @@ Rutas públicas: `/`, `/en`, `/app/login` y `/en/app/login`. Hooks de React desd
 
 ### Localización de componentes de Clerk
 
-Los componentes de Clerk (UserButton, SignIn/SignUp) se localizan por idioma con `@clerk/localizations`. El mapeo locale → recurso vive en `getClerkLocalization(locale)` (`src/lib/i18n/clerk-localizations.ts`): `es` → `esES`, `en` → `enUS` (default `esES`). La integración `clerk()` en `astro.config.mjs` recibe `localization: getClerkLocalization(DEFAULT_LOCALE)` como valor por defecto (solo afecta a componentes embebidos, no al Account Portal). `ClerkLocaleBridge` (`src/components/ui/ClerkLocaleBridge.tsx`, isla `client:load` en `AppLayout` y `LandingLayout`) ajusta la localización al locale de la página con `updateClerkOptions({ localization })` desde `@clerk/astro/client`.
+Los componentes de Clerk (UserButton, SignIn/SignUp) se localizan por idioma con `@clerk/localizations`. El mapeo locale → recurso vive en `getClerkLocalization(locale)` (`src/lib/i18n/clerk-localizations.ts`): `es` → `esES`, `en` → `enUS` (default `esES`). La integración `clerk()` en `astro.config.mjs` recibe `localization: getClerkLocalization(DEFAULT_LOCALE)` como valor por defecto (solo afecta a componentes embebidos, no al Account Portal) y `prefetchUI: false` (la UI de Clerk/ClerkUI se descarga bajo demanda al abrir un componente tipo modal como SignIn/UserButton; el `before-hydration` de la integración solo espera ClerkJS, no ClerkUI). `ClerkLocaleBridge` (`src/components/ui/ClerkLocaleBridge.tsx`, isla `client:load` en `AppLayout` y `LandingLayout`) ajusta la localización al locale de la página con `updateClerkOptions({ localization })` desde `@clerk/astro/client`.
 
 ## Base de datos
 
