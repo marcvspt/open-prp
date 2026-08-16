@@ -62,7 +62,7 @@ astro dev stop | status | logs
 - `UserButton` con `afterSignOutUrl="/es/app/login"` y `client:load`.
 - Redirects de Clerk configurados en `astro.config.mjs`: `afterSignOutUrl`.
 - **Localización de componentes de Clerk**: `@clerk/localizations` (versión alineada con `@clerk/astro`). El mapeo locale → recurso vive en `getClerkLocalization(locale)` (`src/lib/i18n/clerk-localizations.ts`): `es` → `esES`, `en` → `enUS` (default `esES` si falta la clave). Al añadir un idioma, añadir su clave al mapa.
-- La integración `clerk()` en `astro.config.mjs` recibe `localization: getClerkLocalization(DEFAULT_LOCALE)` como valor por defecto (solo afecta a componentes embebidos, no al Account Portal). `ClerkLocaleBridge` (isla `client:load` en `AppLayout` y `LandingLayout`) ajusta la localización al locale de la página con `updateClerkOptions({ localization })` desde `@clerk/astro/client`; se ejecuta tras la inicialización de Clerk (garantizada por el script `before-hydration` de la integración).
+- La integración `clerk()` en `astro.config.mjs` recibe `localization: getClerkLocalization(DEFAULT_LOCALE)` como valor por defecto (solo afecta a componentes embebidos, no al Account Portal) y `prefetchUI: false` (la UI de Clerk/ClerkUI se descarga bajo demanda al abrir un componente tipo modal como SignIn/UserButton; el `before-hydration` de la integración solo espera ClerkJS, no ClerkUI). `ClerkLocaleBridge` (isla `client:load` en `AppLayout` y `LandingLayout`) ajusta la localización al locale de la página con `updateClerkOptions({ localization })` desde `@clerk/astro/client`; se ejecuta tras la inicialización de Clerk (garantizada por el script `before-hydration` de la integración).
 
 ## Estructura del proyecto
 
