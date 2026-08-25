@@ -32,6 +32,7 @@ export default defineConfig({
   integrations: [react(), clerk({
     afterSignOutUrl: "/es/app/login",
     localization: getClerkLocalization(DEFAULT_LOCALE),
+    prefetchUI: true,
   })],
 
   vite: {
