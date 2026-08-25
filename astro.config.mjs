@@ -32,14 +32,13 @@ export default defineConfig({
   integrations: [react(), clerk({
     afterSignOutUrl: "/es/app/login",
     localization: getClerkLocalization(DEFAULT_LOCALE),
-    prefetchUI: false,
   })],
 
   vite: {
     plugins: [tailwindcss(), svgr()],
   },
 
-  site: 'https://ophrp.marcvspt.tech',
+  site: 'https://oprp.marcvspt.tech',
 
   env: {
     schema: {
