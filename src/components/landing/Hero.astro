@@ -5,7 +5,7 @@ import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 
 const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
-const dashboardHref = getRelativeLocaleUrl(locale, "/app/dashboard");
+const appHref = getRelativeLocaleUrl(locale, "/app");
 ---
 
 <section
@@ -34,7 +34,7 @@ const dashboardHref = getRelativeLocaleUrl(locale, "/app/dashboard");
     </p>
     <div class="mt-10 flex items-center justify-center gap-4">
       <a
-        href={dashboardHref}
+        href={appHref}
         class="group relative inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-indigo-600 to-purple-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-105 active:scale-100"
       >
         {t.landing.ctaStart}
