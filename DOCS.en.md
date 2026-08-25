@@ -411,4 +411,4 @@ Declared with Astro's `envField` schema in `astro.config.mjs` (`env.schema`). Va
 - Build: `pnpm build` → `dist/`.
 - Adapter: `@astrojs/netlify` (serverless functions).
 - `@libsql/client/web` compatible with Netlify Functions.
-- Site: `https://ophrp.marcvspt.tech`.
+- Site: `https://oprp.marcvspt.tech`.

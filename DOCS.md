@@ -410,4 +410,4 @@ Declaradas con el schema `envField` de Astro en `astro.config.mjs` (`env.schema`
 - Build: `pnpm build` → `dist/`.
 - Adapter: `@astrojs/netlify` (serverless functions).
 - `@libsql/client/web` compatible con Netlify Functions.
-- Site: `https://ophrp.marcvspt.tech`.
+- Site: `https://oprp.marcvspt.tech`.
