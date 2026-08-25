@@ -2,7 +2,7 @@
 
 **Personal Resource Planning** — tu app de finanzas personales y organización diaria, en un solo lugar.
 
-Gestiona tus ingresos y gastos, tarjetas de crédito, pagos recurrentes, compras a plazos, lista de compras, despensa, tareas, notas y eventos desde cualquier dispositivo. Es una PWA: la instalas en tu teléfono y funciona como una app nativa.
+Gestiona tus ingresos y gastos, tarjetas de crédito, pagos recurrentes, compras a plazos, lista de compras, despensa, tareas, notas y eventos desde cualquier dispositivo.
 
 ## ¿Qué puedes hacer con Open PRP?
 
@@ -26,7 +26,6 @@ Gestiona tus ingresos y gastos, tarjetas de crédito, pagos recurrentes, compras
 
 - **Multi-moneda**: elige tu moneda preferida (EUR, MXN o USD) y la app la recuerda.
 - **Cálculo automático de deuda de tarjetas**: la app suma tus gastos del mes, cuotas a plazos y pagos recurrentes para estimar cuánto debes.
-- **Instalable (PWA)**: agrégala a tu pantalla de inicio y úsala sin abrir el navegador.
 - **Diseño responsive**: funciona en celular y en computadora, con tema claro u oscuro.
 - **Tus datos, privados**: cada usuario ve solo su información.
 
@@ -53,7 +52,6 @@ Todo se guarda bajo tu cuenta: puedes usarlo desde tu celular, computadora o tab
 | Estilos | [Tailwind CSS v4](https://tailwindcss.com) |
 | Base de datos | [Turso](https://turso.tech) (libSQL) |
 | Autenticación | [Clerk](https://clerk.com) |
-| PWA | Service Worker + Web Manifest |
 | Despliegue | Netlify |
 
 ## Créditos

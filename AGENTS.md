@@ -91,7 +91,7 @@ astro dev stop | status | logs
 ### Layouts
 
 - `BaseLayout.astro` — `<html>`, `<head>`, meta, favicon, `ClientRouter` (View Transitions), dark mode inline script, título `"Open PRP | {title}"`, `<slot name="head" />`. El script de tema aplica el tema antes del primer paint y se re-aplica en `astro:after-swap` (evita el flash blanco al navegar con view transitions).
-- `AppLayout.astro` — extiende `BaseLayout`. Inyecta manifest PWA + theme-color vía `slot="head"`. Sidebar + main + registro del service worker. Sin sesión en una ruta de app, el middleware redirige a `/es/app/login`; el fallback `<Show when="signed-out">` no pinta login embebido (la UI de auth vive en `login.astro`) sino un enlace al login localizado + auto-redirect en cliente (`data-login-redirect`).
+- `AppLayout.astro` — extiende `BaseLayout`. Incluye el shell de la app y la gestión del sidebar, y el tema visual general. Sin sesión en una ruta de app, el middleware redirige a `/es/app/login`; el fallback `<Show when="signed-out">` no pinta login embebido (la UI de auth vive en `login.astro`) sino un enlace al login localizado + auto-redirect en cliente (`data-login-redirect`).
 - `LandingLayout.astro` — extiende `BaseLayout`. Header + slot + Footer.
 - Todo layout específico (ej. `BlogLayout.astro`) debe envolverse en `BaseLayout.astro`, reenviando como mínimo la prop `title` (y otras si aplica) para que `BaseLayout` controle el `<head>` y el título de la página.
 
@@ -122,7 +122,7 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
 - Footer: ícono GitHub, `LocaleSwitcher`, `ThemeToggle`, `CurrencySelect` (moneda vía `UserRepository` en SSR), `UserButton` (`@clerk/astro/components`) + "Mi cuenta".
   - `UserButton` envuelto en caja fija `h-8 w-8 rounded-full bg-surface-alt` (placeholder) + `appearance.userButtonAvatarBox` de 2rem: ClerkJS monta el avatar de forma asíncrona (CDN); sin la caja, el footer crece tarde y salta el layout.
   - La caja del avatar lleva `transition:persist="user-button"`: al navegar con view transitions, Astro conserva el elemento montado de Clerk (su React root) en lugar de recrearlo, evitando que el `UserButton` desaparezca y reaparezca en cada navegación (la integración de Clerk delega el swap en `swapBodyElement` de Astro, que respeta `data-astro-transition-persist`). El label "Mi cuenta" queda fuera de la caja persistida para que se traduzca al cambiar de idioma.
-- **View transitions**: los scripts module bundled de Astro se ejecutan **solo una vez** y se ignoran en navegaciones posteriores del ClientRouter (se marcan `data-astro-exec`). Por eso `initSidebar()` (binding a elementos del DOM, que se reemplazan en cada swap) se registra dentro de `document.addEventListener("astro:page-load", ...)` en el script de `AppLayout.astro` (`astro:page-load` se dispara en la carga inicial y en cada navegación). El menú móvil de la landing (`initLandingMenu()` en `src/lib/ui/landing-menu.ts`) sigue el mismo patrón dentro de `astro:page-load` en el script de `Header.astro`. En cambio `initUserAreaForward()` (listener a nivel `document`, que persiste) y el registro del service worker corren una sola vez fuera del listener. No usar `data-astro-rerun`: fuerza `is:inline` (rompe imports) y acumula listeners.
+- **View transitions**: los scripts module bundled de Astro se ejecutan **solo una vez** y se ignoran en navegaciones posteriores del ClientRouter (se marcan `data-astro-exec`). Por eso `initSidebar()` (binding a elementos del DOM, que se reemplazan en cada swap) se registra dentro de `document.addEventListener("astro:page-load", ...)` en el script de `AppLayout.astro` (`astro:page-load` se dispara en la carga inicial y en cada navegación). El menú móvil de la landing (`initLandingMenu()` en `src/lib/ui/landing-menu.ts`) sigue el mismo patrón dentro de `astro:page-load` en el script de `Header.astro`. En cambio `initUserAreaForward()` (listener a nivel `document`, que persiste) corre una sola vez fuera del listener. No usar `data-astro-rerun`: fuerza `is:inline` (rompe imports) y acumula listeners.
 
 ## TypeScript
 
@@ -286,13 +286,6 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
 - Login buttons: `SignInButton`/`SignUpButton` con `asChild` + estilos Tailwind.
 - `FeatureCard.astro` alimentado desde el array `FEATURES_INFO`.
 - Footer: GitHub + marcvspt.tech.
-
-## PWA
-
-- Activa solo en `/es/app/*` y `/en/app/*`.
-- `AppLayout` inyecta, vía `slot="head"`: manifest link, theme-color y meta tags correspondientes.
-- Service Worker en `public/sw.js` (cache `open-prp-v3`): **no precachea HTML**. Las navegaciones (request `mode: "navigate"` o `Accept: text/html`, incluido el fetch del `ClientRouter`) van siempre a red — el HTML es SSR + auth y nunca se sirve de cache (evita UI obsoleta o datos de otro usuario). Solo cachea assets estáticos de la app (`/_astro/` y subrecursos de `/es/app/*` y `/en/app/*`) con **stale-while-revalidate** (cache-first + revalidación en segundo plano). En `activate` purga otras versiones de cache. `FetchEvent` usa `new URL(e.request.url)` para examinar el path.
-- Manifest en `public/manifest.webmanifest`: `scope: "/"` (para cubrir `/es/app/*` y `/en/app/*`), `start_url: "/es/app/dashboard"`, `display: standalone`.
 
 ## Despliegue
 

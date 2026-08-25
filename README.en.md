@@ -2,7 +2,7 @@
 
 **Personal Resource Planning** — your app for personal finances and daily organization, all in one place.
 
-Manage your income and expenses, credit cards, recurring payments, installment purchases, shopping list, pantry, tasks, notes and events from any device. It's a PWA: install it on your phone and it works like a native app.
+Manage your income and expenses, credit cards, recurring payments, installment purchases, shopping list, pantry, tasks, notes and events from any device.
 
 ## What can you do with Open PRP?
 
@@ -26,7 +26,6 @@ Manage your income and expenses, credit cards, recurring payments, installment p
 
 - **Multi-currency**: choose your preferred currency (EUR, MXN or USD) and the app remembers it.
 - **Automatic credit card debt calculation**: the app adds up your monthly expenses, installment payments and recurring payments to estimate how much you owe.
-- **Installable (PWA)**: add it to your home screen and use it without opening the browser.
 - **Responsive design**: works on mobile and desktop, with light or dark theme.
 - **Your data, private**: each user only sees their own information.
 
@@ -53,7 +52,6 @@ Want to contribute or run your own instance? All the technical documentation (ar
 | Styling | [Tailwind CSS v4](https://tailwindcss.com) |
 | Database | [Turso](https://turso.tech) (libSQL) |
 | Authentication | [Clerk](https://clerk.com) |
-| PWA | Service Worker + Web Manifest |
 | Deployment | Netlify |
 
 ## Credits

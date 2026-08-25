@@ -17,10 +17,7 @@ const t = getLocaleDict(locale);
 
 <BaseLayout title={title}>
   <Fragment slot="head">
-    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#4f46e5" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="mobile-web-app-capable" content="yes" />
   </Fragment>
   <ClerkLocaleBridge client:load locale={locale} />
   <Show when="signed-in">
@@ -47,7 +44,10 @@ const t = getLocaleDict(locale);
     </main>
   </Show>
   <Show when="signed-out">
-    <div class="flex items-center justify-center min-h-screen bg-surface" data-login-redirect>
+    <div
+      class="flex items-center justify-center min-h-screen bg-surface"
+      data-login-redirect
+    >
       <div class="text-center space-y-4 px-6">
         <h1 class="text-2xl font-bold">Open PRP</h1>
         <div>
@@ -73,9 +73,7 @@ const t = getLocaleDict(locale);
   document.addEventListener("astro:page-load", () => {
     initSidebar();
     const redirectLink = document.querySelector("[data-login-redirect] a");
-    if (redirectLink instanceof HTMLAnchorElement) window.location.replace(redirectLink.href);
+    if (redirectLink instanceof HTMLAnchorElement)
+      window.location.replace(redirectLink.href);
   });
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js");
-  }
 </script>
