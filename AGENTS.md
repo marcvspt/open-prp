@@ -91,7 +91,7 @@ astro dev stop | status | logs
 ### Layouts
 
 - `BaseLayout.astro` — `<html>`, `<head>`, meta, favicon, `ClientRouter` (View Transitions), dark mode inline script, título `"Open PRP | {title}"`, `<slot name="head" />`. El script de tema aplica el tema antes del primer paint y se re-aplica en `astro:after-swap` (evita el flash blanco al navegar con view transitions).
-- `AppLayout.astro` — extiende `BaseLayout`. Inyecta manifest PWA + theme-color vía `slot="head"`. Sidebar + main + registro del service worker. Sin sesión en una ruta de app, el middleware redirige a `/es/app/login`; el fallback `<Show when="signed-out">` no pinta login embebido (la UI de auth vive en `login.astro`) sino un enlace al login localizado + auto-redirect en cliente (`data-login-redirect`).
+- `AppLayout.astro` — extiende `BaseLayout`. Incluye el shell de la app y la gestión del sidebar, y el tema visual general. Sin sesión en una ruta de app, el middleware redirige a `/es/app/login`; el fallback `<Show when="signed-out">` no pinta login embebido (la UI de auth vive en `login.astro`) sino un enlace al login localizado + auto-redirect en cliente (`data-login-redirect`).
 - `LandingLayout.astro` — extiende `BaseLayout`. Header + slot + Footer.
 - Todo layout específico (ej. `BlogLayout.astro`) debe envolverse en `BaseLayout.astro`, reenviando como mínimo la prop `title` (y otras si aplica) para que `BaseLayout` controle el `<head>` y el título de la página.
 
@@ -286,13 +286,6 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
 - Login buttons: `SignInButton`/`SignUpButton` con `asChild` + estilos Tailwind.
 - `FeatureCard.astro` alimentado desde el array `FEATURES_INFO`.
 - Footer: GitHub + marcvspt.tech.
-
-## PWA
-
-- Activa solo en `/es/app/*` y `/en/app/*`.
-- `AppLayout` inyecta, vía `slot="head"`: manifest link, theme-color y meta tags correspondientes.
-- Service Worker en `public/sw.js` (cache `open-prp-v3`): **no precachea HTML**. Las navegaciones (request `mode: "navigate"` o `Accept: text/html`, incluido el fetch del `ClientRouter`) van siempre a red — el HTML es SSR + auth y nunca se sirve de cache (evita UI obsoleta o datos de otro usuario). Solo cachea assets estáticos de la app (`/_astro/` y subrecursos de `/es/app/*` y `/en/app/*`) con **stale-while-revalidate** (cache-first + revalidación en segundo plano). En `activate` purga otras versiones de cache. `FetchEvent` usa `new URL(e.request.url)` para examinar el path.
-- Manifest en `public/manifest.webmanifest`: `scope: "/"` (para cubrir `/es/app/*` y `/en/app/*`), `start_url: "/es/app/dashboard"`, `display: standalone`.
 
 ## Despliegue
 
