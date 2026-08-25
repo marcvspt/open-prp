@@ -45,7 +45,9 @@ if (userId) return Astro.redirect(dashboardUrl);
           >{t.common.backHome}</a
         >
         <div class="w-36"><ThemeToggle client:load locale={locale} /></div>
-        <div class="w-36"><LocaleSwitcher client:load locale={locale} className="w-36" /></div>
+        <div class="w-36">
+          <LocaleSwitcher client:load locale={locale} className="w-36" />
+        </div>
       </div>
     </div>
   </div>
