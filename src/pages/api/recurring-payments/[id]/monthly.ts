@@ -19,6 +19,17 @@ export const POST: APIRoute = withErrorHandling(async (context) => {
   const existing = await repo.findById(id, uid);
   if (!existing) return errorResponse("No encontrado", 404);
 
-  const result = await repo.upsertMonthly(id, body.month as string, { amount: body.amount as number }, uid);
+  const result = await repo.upsertMonthly(
+    id,
+    body.month as string,
+    {
+      amount: body.amount as number,
+      category_id: body.category_id as string | undefined,
+      payment_method_id: body.payment_method_id as string | undefined,
+      is_active: body.is_active as boolean | undefined,
+      is_paid: body.is_paid as boolean | undefined,
+    },
+    uid,
+  );
   return jsonResponse(result);
 });

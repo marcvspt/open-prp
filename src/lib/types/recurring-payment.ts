@@ -42,6 +42,9 @@ export interface RecurringPaymentMonthly {
   name?: string;
   default_amount?: number;
   currency?: string;
+  payment_method_name?: string;
+  payment_method_icon?: string | null;
+  payment_method_type?: string;
 }
 
 export interface RecurringPaymentMonthlyUpdate {

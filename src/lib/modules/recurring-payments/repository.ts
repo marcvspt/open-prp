@@ -68,6 +68,8 @@ export class RecurringPaymentRepository {
       const sets: string[] = [];
       const args: (string | number | boolean | null)[] = [];
       if (data.amount !== undefined) { sets.push("amount = ?"); args.push(data.amount); }
+      if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id || null); }
+      if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id || null); }
       if (data.is_active !== undefined) { sets.push("is_active = ?"); args.push(data.is_active ? 1 : 0); }
       if (data.is_paid !== undefined) { sets.push("is_paid = ?"); args.push(data.is_paid ? 1 : 0); }
       if (sets.length > 0) {
@@ -92,8 +94,8 @@ export class RecurringPaymentRepository {
       type?: string | null;
     } | undefined;
     const defaultAmount = Number(row?.default_amount ?? data.amount ?? 0);
-    const categoryId: string | null = row?.category_id ?? null;
-    const paymentMethodId: string | null = row?.payment_method_id ?? null;
+    const categoryId: string | null = data.category_id ?? row?.category_id ?? null;
+    const paymentMethodId: string | null = data.payment_method_id ?? row?.payment_method_id ?? null;
     const paymentType: string = row?.type ?? "expense";
     const seq = await nextSeq("recurring_payment_monthly");
     const timestamp = now();
