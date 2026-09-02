@@ -115,17 +115,19 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
     const isPaid = entry?.is_paid ?? false;
     const isIncome = payment.type === "income";
     const amount = entry?.amount ?? payment.default_amount;
+    const methodName = entry?.payment_method_name ?? payment.payment_method_name ?? "";
+    const methodIcon = entry?.payment_method_icon ?? payment.payment_method_icon ?? "💳";
+    const methodType = entry?.payment_method_type ?? payment.payment_method_type ?? "";
     const textColor = isIncome ? "text-success" : "text-danger";
 
     return (
       <div
-        className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all ${
-          isPaid
+        className={`relative flex flex-col justify-between p-4 rounded-xl border transition-all ${isPaid
             ? "border-success/30 bg-success/5"
             : isAdded
               ? "border-primary/40 bg-primary/5"
               : "border-border bg-panel hover:border-primary/40 hover:shadow-sm"
-        }`}
+          }`}
       >
         {isAdded && (
           <button
@@ -143,9 +145,9 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
           <div className={`text-lg font-semibold ${isPaid ? "text-string-muted" : textColor}`}>
             {isIncome ? "+" : "-"}${Number(amount).toLocaleString()}
           </div>
-          {payment.payment_method_name && (
+          {methodName && (
             <div className="text-xs text-string-muted">
-              {payment.payment_method_icon || "💳"} {displayPaymentMethodName({ name: payment.payment_method_name, type: payment.payment_method_type ?? "" }, t)}
+              {methodIcon || "💳"} {displayPaymentMethodName({ name: methodName, type: methodType }, t)}
             </div>
           )}
         </div>
