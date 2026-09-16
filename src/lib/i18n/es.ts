@@ -60,6 +60,11 @@ export const es = {
     errorUnknown: "Error desconocido",
     errorDelete: "No se pudo eliminar. Inténtalo de nuevo.",
     dismiss: "Cerrar",
+    pagination: {
+      previous: "Anterior",
+      next: "Siguiente",
+      page: (current: number, total: number) => `Página ${current} de ${total}`,
+    },
     deleteTitle: (label: string) => `Eliminar ${label}`,
     deleteConfirm: (label: string) => `¿Eliminar ${label}? Esta acción no se puede deshacer.`,
     editSingular: (s: string) => `Editar ${s}`,

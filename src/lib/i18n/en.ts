@@ -62,6 +62,11 @@ export const en: Locale = {
     errorUnknown: "Unknown error",
     errorDelete: "Could not delete. Please try again.",
     dismiss: "Close",
+    pagination: {
+      previous: "Previous",
+      next: "Next",
+      page: (current: number, total: number) => `Page ${current} of ${total}`,
+    },
     deleteTitle: (label: string) => `Delete ${label}`,
     deleteConfirm: (label: string) => `Delete ${label}? This action cannot be undone.`,
     editSingular: (s: string) => `Edit ${s}`,

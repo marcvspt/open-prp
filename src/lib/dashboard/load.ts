@@ -22,13 +22,13 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
 
   const cardMonthlyRepo = new CardMonthlyRepository();
 
-  const [cards, services, cardDebtsRaw, servicePayments, txDataArr, installments, eventsResult, tasksData, shoppingData, cbData, paymentMethods, categories] =
+  const [cards, services, cardDebtsRaw, servicePayments, txDataResult, installments, eventsResult, tasksData, shoppingData, cbData, paymentMethods, categories] =
     await Promise.all([
       new CardRepository().findAll(userId),
       new RecurringPaymentRepository().findAll(userId),
       cardMonthlyRepo.findByMonth(month, userId),
       new RecurringPaymentMonthlyRepository().findByMonth(month, userId),
-      new TransactionRepository().findAll(userId, { date_from: monthStart, date_to: monthEnd }),
+      new TransactionRepository().findAll(userId, { date_from: monthStart, date_to: monthEnd, pageSize: null }),
       new InstallmentRepository().findAll(userId, { active_only: true }),
       new EventRepository().findAll(userId, { status: "pending,confirmed", date_from: today, date_to: thirtyLater, page: 1, pageSize: 20 }),
       new TaskRepository().findAll(userId, { is_completed: false }),
@@ -38,6 +38,7 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
       new CategoryRepository().findAll(userId),
     ]);
 
+  const txDataArr = txDataResult.data;
   const installmentTotal = installments
     .filter((i) => isInstallmentInMonth(month, i.start_date, i.total_months))
     .reduce((sum, i) => sum + Number(i.monthly_amount), 0);
