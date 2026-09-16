@@ -4,10 +4,11 @@ import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Transaction } from "@/lib/types/transaction.ts";
 import { formatDate } from "@/lib/date.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_TYPES, FILTER_ALL_CATEGORIES, FILTER_ALL_PAYMENT_METHODS, FILTER_ALL_MONTHS, FILTER_SEARCH_DESC, FILTER_LABEL_TYPE, FILTER_LABEL_CATEGORY, FILTER_LABEL_PAYMENT_METHOD } from "@/lib/i18n/filter-fields.ts";
-import { BTN_EDIT, BTN_DELETE, CURRENCY_SYMBOL } from "@/lib/i18n/general-fields.ts";
+import { BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { LocaleCode } from "@/lib/i18n/locale.ts";
+import { formatCurrency } from "@/lib/format.ts";
 
 interface Props {
   initialMonth: string;
@@ -114,9 +115,9 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
                       <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatDate(tx.date, locale)}</td>
                       <td className="px-4 py-3">{tx.description || "-"}</td>
                       <td className={`px-4 py-3 text-right font-mono whitespace-nowrap ${tx.type === "income" ? "text-success" : "text-danger"}`}>
-                        {CURRENCY_SYMBOL[tx.currency] ?? "$"}{Number(tx.amount).toFixed(2)}
+                        {formatCurrency(tx.type === "income" ? Number(tx.amount) : -Number(tx.amount), { showPlus: true })}
                       </td>
-                      <td className="px-4 py-3 text-xs text-string-muted">{CURRENCY_SYMBOL[tx.currency] ?? "$"} {tx.currency || "MXN"}</td>
+                      <td className="px-4 py-3 text-xs text-string-muted">{tx.currency || "MXN"}</td>
                       <td className="px-4 py-3">{pm ? <span className="text-xs bg-surface-alt px-2 py-0.5 rounded">{pm.icon || "💳"} {pm.name}</span> : "-"}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded ${tx.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>

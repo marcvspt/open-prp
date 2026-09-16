@@ -6,6 +6,7 @@ import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { LocaleCode } from "@/lib/i18n/locale.ts";
 import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment.ts";
+import { formatCurrency } from "@/lib/format.ts";
 
 type PaymentType = "income" | "expense";
 
@@ -143,7 +144,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
             {payment.name}
           </div>
           <div className={`text-lg font-semibold ${isPaid ? "text-string-muted" : textColor}`}>
-            {isIncome ? "+" : "-"}${Number(amount).toLocaleString()}
+            {formatCurrency(isIncome ? Number(amount) : -Number(amount), { showPlus: true })}
           </div>
           {methodName && (
             <div className="text-xs text-string-muted">
@@ -190,7 +191,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
             <div className="text-xs text-string-muted mb-1">{t.stat.total}</div>
             <div className={`text-lg font-semibold ${colorClass}`}>
-              ${Number(typeTotal).toLocaleString()}
+              {formatCurrency(type === "income" ? typeTotal : -typeTotal, { showPlus: true })}
             </div>
           </div>
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
@@ -200,7 +201,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
           <div className="col-span-2 lg:col-span-1 p-3 rounded-lg bg-panel border border-border text-center">
             <div className="text-xs text-string-muted mb-1">{t.stat.pending}</div>
             <div className="text-lg font-semibold text-warning">
-              ${Number(typePending.reduce((s, sm) => s + Number(sm.amount), 0)).toLocaleString()}
+              {formatCurrency(-typePending.reduce((s, sm) => s + Number(sm.amount), 0), { showPlus: true })}
             </div>
           </div>
         </div>
@@ -263,16 +264,16 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
             <div className="text-xs text-string-muted mb-1">{t.stat.incomes}</div>
-            <div className="text-lg font-semibold text-success">${Number(incomeTotal).toLocaleString()}</div>
+            <div className="text-lg font-semibold text-success">{formatCurrency(incomeTotal, { showPlus: true })}</div>
           </div>
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
             <div className="text-xs text-string-muted mb-1">{t.stat.expenses}</div>
-            <div className="text-lg font-semibold text-danger">${Number(expenseTotal).toLocaleString()}</div>
+            <div className="text-lg font-semibold text-danger">{formatCurrency(-expenseTotal, { showPlus: true })}</div>
           </div>
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
             <div className="text-xs text-string-muted mb-1">{t.stat.balance}</div>
             <div className={`text-lg font-semibold ${netTotal >= 0 ? "text-success" : "text-danger"}`}>
-              ${Number(netTotal).toLocaleString()}
+              {formatCurrency(netTotal, { showPlus: true })}
             </div>
           </div>
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
