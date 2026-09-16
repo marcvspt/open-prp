@@ -184,28 +184,28 @@ export default function CreditCardSummary({
                       <p className="font-mono font-medium text-danger cursor-help">{formatCurrency(outstanding)}</p>
                       <div className="absolute left-0 right-0 top-full mt-1 max-w-xs bg-panel border border-border rounded-lg shadow-lg p-3 text-xs z-10 hidden group-hover:block">
                         <div className="space-y-1">
-                          <div className="flex justify-between"><span>{t.stat.purchases}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_purchases)}</span></div>
-                          <div className="flex justify-between"><span>{t.stat.installmentsThisMonth}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_installments)}</span></div>
-                          <div className="flex justify-between"><span>{t.stat.recurringPayments}</span><span className="font-mono text-danger">-{formatCurrency(calc.total_recurring)}</span></div>
-                          <div className="flex justify-between"><span>{t.stat.cashback}</span><span className="font-mono text-success">+{formatCurrency(calc.total_cashback)}</span></div>
+                          <div className="flex justify-between"><span>{t.stat.purchases}</span><span className="font-mono text-danger">{formatCurrency(-calc.total_purchases, { showPlus: true })}</span></div>
+                          <div className="flex justify-between"><span>{t.stat.installmentsThisMonth}</span><span className="font-mono text-danger">{formatCurrency(-calc.total_installments, { showPlus: true })}</span></div>
+                          <div className="flex justify-between"><span>{t.stat.recurringPayments}</span><span className="font-mono text-danger">{formatCurrency(-calc.total_recurring, { showPlus: true })}</span></div>
+                          <div className="flex justify-between"><span>{t.stat.cashback}</span><span className="font-mono text-success">{formatCurrency(calc.total_cashback, { showPlus: true })}</span></div>
                           {paidAmount > 0 && (
-                            <div className="flex justify-between"><span>{t.stat.paidAmount}</span><span className="font-mono text-success">-{formatCurrency(paidAmount)}</span></div>
+                            <div className="flex justify-between"><span>{t.stat.paidAmount}</span><span className="font-mono text-success">{formatCurrency(-paidAmount, { showPlus: true })}</span></div>
                           )}
                           <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.monthDebt}</span><span className="font-mono">{formatCurrency(outstanding)}</span></div>
-                          <div className="flex justify-between text-string-muted"><span>{t.stat.futureInstallments}</span><span className="font-mono">-{formatCurrency(calc.committed_installments)}</span></div>
+                          <div className="flex justify-between text-string-muted"><span>{t.stat.futureInstallments}</span><span className="font-mono">{formatCurrency(-calc.committed_installments, { showPlus: true })}</span></div>
                           <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.totalCommitted}</span><span className="font-mono">{formatCurrency(committed)}</span></div>
                         </div>
                       </div>
                     </div>
                   ) : debt ? (
-                    <p className="font-mono font-medium text-danger">{formatCurrency(outstanding)}</p>
+                    <p className="font-mono font-medium text-danger">{formatCurrency(outstanding, { showPlus: true })}</p>
                   ) : (
                     <p className="text-xs text-string-muted">-</p>
                   )}
                 </div>
                 <div>
                   <p className="text-xs text-string-muted">{t.stat.available}</p>
-                  <p className={`font-mono font-medium ${available < 0 ? "text-danger" : "text-success"}`}>{formatCurrency(Math.max(0, available))}</p>
+                  <p className={`font-mono font-medium ${available < 0 ? "text-danger" : "text-success"}`}>{formatCurrency(Math.max(0, available), { showPlus: true })}</p>
                 </div>
                 <div>
                   <p className="text-xs text-string-muted">{t.stat.cutoffPayment}</p>
@@ -229,7 +229,7 @@ export default function CreditCardSummary({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay" role="dialog" aria-modal="true" aria-labelledby="pay-card-title" onClick={() => setPayDialog(null)}>
           <div className="bg-panel rounded-xl border border-border shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
             <h3 id="pay-card-title" className="text-base font-semibold text-string mb-1">{t.cards.payCardTitle}</h3>
-            <p className="text-sm text-string-muted mb-4">{payDialog.card.name} — {formatCurrency(payDialog.debt.statement_balance)}</p>
+            <p className="text-sm text-string-muted mb-4">{payDialog.card.name} — {formatCurrency(payDialog.debt.statement_balance, { showPlus: true })}</p>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-string mb-1">{t.field.paymentDate}</label>
@@ -241,7 +241,7 @@ export default function CreditCardSummary({
                 />
               </div>
               <button onClick={() => handlePayFull(payDialog.debt.id)} className="w-full py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors">
-                {t.cta.payAll} ({formatCurrency(payDialog.debt.statement_balance)})
+                {t.cta.payAll} ({formatCurrency(payDialog.debt.statement_balance, { showPlus: true })})
               </button>
               <div className="flex items-center gap-2">
                 <div className="flex-1 border-t border-border" />
@@ -271,7 +271,7 @@ export default function CreditCardSummary({
                 </div>
                 {payAmount && parseFloat(payAmount) > 0 && (
                   <p className="text-xs text-string-muted mt-1">
-                    {t.cards.remainingNote(formatCurrency(payDialog.debt.statement_balance - parseFloat(payAmount)))}
+                    {t.cards.remainingNote(formatCurrency(payDialog.debt.statement_balance - parseFloat(payAmount), { showPlus: true }))}
                   </p>
                 )}
               </div>

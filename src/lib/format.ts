@@ -1,3 +1,4 @@
-export function formatCurrency(n: number): string {
-  return (n < 0 ? "-$" : "$") + Math.abs(n).toFixed(2);
+export function formatCurrency(n: number, opts?: { showPlus?: boolean }): string {
+  const sign = n < 0 ? "-" : opts?.showPlus ? "+" : "";
+  return `${sign}$${Math.abs(n).toFixed(2)}`;
 }

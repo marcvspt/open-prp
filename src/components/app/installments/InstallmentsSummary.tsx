@@ -33,7 +33,7 @@ export default function InstallmentsSummary({ initialData, initialCards, initial
           </div>
           <div className="p-4 rounded-xl bg-panel border border-border shadow-sm text-center">
             <p className="text-xs text-string-muted mb-1">{t.stat.remainingToPay}</p>
-            <p className="text-2xl font-bold text-danger">{formatCurrency(remainingToPay)}</p>
+            <p className="text-2xl font-bold text-danger">{formatCurrency(-remainingToPay, { showPlus: true })}</p>
           </div>
           <div className="col-span-2 lg:col-span-1 p-4 rounded-xl bg-panel border border-border shadow-sm text-center">
             <p className="text-xs text-string-muted mb-1">{t.stat.totalFees}</p>
@@ -61,15 +61,15 @@ export default function InstallmentsSummary({ initialData, initialCards, initial
                   <div className="space-y-1.5 text-sm">
                     <div className="flex justify-between">
                       <span className="text-string-muted">{t.stat.total}</span>
-                      <span className="font-mono font-medium text-string">{formatCurrency(totalAmount)}</span>
+                      <span className="font-mono font-medium text-string">{formatCurrency(-totalAmount, { showPlus: true })}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-string-muted">{t.stat.fee}</span>
-                      <span className="font-mono font-medium text-danger">{formatCurrency(Number(i.monthly_amount))}</span>
+                      <span className="font-mono font-medium text-danger">{formatCurrency(-Number(i.monthly_amount), { showPlus: true })}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-string-muted">{t.stat.remaining}</span>
-                      <span className="font-mono font-medium text-warning">{formatCurrency(remainingAmount)}</span>
+                      <span className="font-mono font-medium text-warning">{formatCurrency(-remainingAmount, { showPlus: true })}</span>
                     </div>
                   </div>
                 </div>

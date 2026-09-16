@@ -37,15 +37,15 @@ function dueDaysBadge(days: number): string {
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
   <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
     <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statIncomes}</p>
-    <p class="text-xl font-bold mt-1 text-success">{formatCurrency(incomes)}</p>
+    <p class="text-xl font-bold mt-1 text-success">{formatCurrency(incomes, { showPlus: true })}</p>
   </div>
   <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
     <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statExpenses}</p>
-    <p class="text-xl font-bold mt-1 text-danger">{formatCurrency(expenses)}</p>
+    <p class="text-xl font-bold mt-1 text-danger">{formatCurrency(-expenses, { showPlus: true })}</p>
   </div>
   <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
     <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statBalance}</p>
-    <p class={`text-xl font-bold mt-1 ${incomes - expenses >= 0 ? "text-success" : "text-danger"}`}>{formatCurrency(incomes - expenses)}</p>
+    <p class={`text-xl font-bold mt-1 ${incomes - expenses >= 0 ? "text-success" : "text-danger"}`}>{formatCurrency(incomes - expenses, { showPlus: true })}</p>
   </div>
   <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
     <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statCreditCards}</p>
@@ -53,11 +53,11 @@ function dueDaysBadge(days: number): string {
   </div>
   <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
     <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statInstallments}</p>
-    <p class="text-xl font-bold mt-1 text-warning">{formatCurrency(installmentTotal)}</p>
+    <p class="text-xl font-bold mt-1 text-warning">{formatCurrency(-installmentTotal, { showPlus: true })}</p>
   </div>
   <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
     <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statRecurringExpenses}</p>
-    <p class="text-xl font-bold mt-1 text-danger">{formatCurrency(recurringExpensesTotal)}</p>
+    <p class="text-xl font-bold mt-1 text-danger">{formatCurrency(-recurringExpensesTotal, { showPlus: true })}</p>
   </div>
 </div>
 
@@ -97,7 +97,7 @@ function dueDaysBadge(days: number): string {
             </div>
             <div class="flex items-center gap-3">
               <span class={`font-mono ${d.is_paid ? (paidLate ? "text-danger" : "text-success line-through") : "text-danger"}`}>
-                {formatCurrency(d.is_paid ? 0 : Math.max(0, d.statement_balance - d.paid_amount))}
+                {formatCurrency(d.is_paid ? 0 : -Math.max(0, d.statement_balance - d.paid_amount), { showPlus: true })}
               </span>
               {!d.is_paid && card && (
                 <span class={`text-xs px-2 py-0.5 rounded font-medium ${dueDaysBadge(dueIn)}`}>
@@ -124,7 +124,7 @@ function dueDaysBadge(days: number): string {
               <span class={`w-2 h-2 rounded-full ${sp.is_paid ? "bg-success" : "bg-warning"}`} />
               <span>{svc?.name ?? "?"}</span>
             </div>
-            <span class="font-mono text-success">+{formatCurrency(sp.amount)}</span>
+            <span class="font-mono text-success">{formatCurrency(sp.amount, { showPlus: true })}</span>
           </div>
         );
       })}
@@ -144,7 +144,7 @@ function dueDaysBadge(days: number): string {
               <span class={`w-2 h-2 rounded-full ${sp.is_paid ? "bg-success" : "bg-warning"}`} />
               <span>{svc?.name ?? "?"}</span>
             </div>
-            <span class="font-mono text-danger">-{formatCurrency(sp.amount)}</span>
+            <span class="font-mono text-danger">{formatCurrency(-sp.amount, { showPlus: true })}</span>
           </div>
         );
       })}
@@ -165,7 +165,7 @@ function dueDaysBadge(days: number): string {
             <span>{tx.description || t.dashboard.noDescription}</span>
           </div>
           <span class={`font-medium ${tx.type === "income" ? "text-success" : "text-danger"}`}>
-            {tx.type === "income" ? "+" : "-"}{formatCurrency(Number(tx.amount))}
+            {formatCurrency(tx.type === "income" ? Number(tx.amount) : -Number(tx.amount), { showPlus: true })}
           </span>
         </div>
       ))}

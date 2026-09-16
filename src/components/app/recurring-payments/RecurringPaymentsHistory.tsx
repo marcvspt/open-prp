@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { fetchList } from "@/lib/safeFetch.ts";
 import { monthLabel } from "@/lib/date.ts";
-import { CURRENCY_SYMBOL } from "@/lib/i18n/general-fields.ts";
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { LocaleCode } from "@/lib/i18n/locale.ts";
 import type { RecurringPaymentMonthly } from "@/lib/types/recurring-payment.ts";
+import { formatCurrency } from "@/lib/format.ts";
 
 interface Props {
   initialData: string;
@@ -75,14 +75,14 @@ export default function RecurringPaymentsHistory({ initialData, categories, loca
                       <td className="px-3 py-2 text-string-muted">{monthLabel(sp.month, locale)}</td>
                       <td className="px-3 py-2 font-medium text-string">{sp.name ?? "?"}</td>
                       <td className={`px-3 py-2 text-right font-mono ${sp.type === "income" ? "text-success" : "text-danger"}`}>
-                        {sp.type === "income" ? "+" : "-"}{CURRENCY_SYMBOL[sp.currency || "MXN"] || "$"}{Number(sp.amount).toFixed(2)}
+                        {formatCurrency(sp.type === "income" ? Number(sp.amount) : -Number(sp.amount), { showPlus: true })}
                       </td>
                       <td className="px-3 py-2 text-center">
                         <span className={`text-xs px-2 py-0.5 rounded font-medium ${sp.type === "income" ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text"}`}>
                           {sp.type === "income" ? t.badge.income : t.badge.expense}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-center text-xs text-string-muted">{CURRENCY_SYMBOL[sp.currency || "MXN"] || "$"} {sp.currency || "MXN"}</td>
+                      <td className="px-3 py-2 text-center text-xs text-string-muted">{sp.currency || "MXN"}</td>
                       <td className="px-3 py-2 text-center">
                         {cat ? <span className="text-xs bg-surface-alt px-2 py-0.5 rounded">{cat.icon || "📂"} {displayCategoryName(cat, t)}</span> : <span className="text-xs text-string-muted">—</span>}
                       </td>

@@ -81,7 +81,7 @@ async function seed() {
     { name: "furniture", sections: ["installments", "transactions", "recurring-payments"], icon: "🪑", color: "#f97316" },
     { name: "card-balance", sections: ["installments", "transactions"], icon: "💳", color: "#ef4444" },
     // Recurring payments
-    { name: "subscriptions", sections: ["recurring-payments", "transactions", "installments"], icon: "📺", color: "#ec4899" },
+    { name: "subscriptions", sections: ["recurring-payments", "transactions", "installments"], icon: "📬", color: "#ec4899" },
     {
       name: "bills", sections: ["recurring-payments", "transactions",
         "installments"], icon: "📄", color: "#ef4444"
@@ -90,7 +90,7 @@ async function seed() {
     // Events
     { name: "social", sections: ["events"], icon: "🎉", color: "#ec4899" },
     { name: "family", sections: ["events"], icon: "👨‍👩‍👧‍👦", color: "#22c55e" },
-    { name: "entertainment", sections: ["events", "transactions", "installments", "recurring-payments"], icon: "🎮", color: "#8b5cf6" },
+    { name: "entertainment", sections: ["events", "transactions", "installments", "recurring-payments"], icon: "📺", color: "#8b5cf6" },
     { name: "other", sections: ["events", "transactions", "installments", "recurring-payments"], icon: "📌", color: "#6b7280" },
   ];
   for (const cat of categories) {
