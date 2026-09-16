@@ -34,6 +34,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
       debounceRef.current = setTimeout(() => {
         setFilters(prev => {
           const next = { ...prev };
+          delete next.page;
           if (value) next.q = value;
           else delete next.q;
           return next;
@@ -42,6 +43,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
     } else {
       setFilters(prev => {
         const next = { ...prev };
+        if (key !== "page") delete next.page;
         if (value) next[key] = value;
         else delete next[key];
         return next;

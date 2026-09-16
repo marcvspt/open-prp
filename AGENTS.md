@@ -50,6 +50,7 @@ astro dev stop | status | logs
 
 - Las páginas de **tarjetas** y **pagos recurrentes** usan `TabBarWithMonth` que dispatchea un evento `monthchange` en `window` al cambiar el mes. Los componentes (`RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary`, `CardsHistory`) escuchan ese evento y refetchean datos desde los endpoints API sin recargar la página. La URL se actualiza vía `history.replaceState`.
 - Los componentes `*Filterable` (transacciones, plazos, cashback, despensa) usan el hook `useFilteredData` que maneja filtros, fetch y URL de forma autónoma. El estado inicial de filtros se restaura desde los query params de la URL (la URL es la fuente de verdad; excluye `tab`, gestionado por `TabBar`), y al cambiar filtros la URL se actualiza preservando los params no gestionados por el hook. Así la UI y los filtros aplicados (SSR) siempre coinciden tras un reload (p. ej. el de `CrudModal`). El hook devuelve también `error` (string, vacío si OK) que los `*Filterable` muestran como banner `role="alert"`; nunca silenciar los errores de fetch.
+- `TransactionsFilterable` pagina a 50 registros. `page` se conserva en la URL junto con los filtros; cambiar o limpiar un filtro elimina la página actual y vuelve a la primera. La API de transacciones devuelve `{ data, total, page, pageSize }`.
 - `CrudModal` y `ConfirmDelete` actualmente **recargan la página** tras guardar o eliminar (`window.location.href = window.location.href` / `window.location.reload()`). Pendiente de migrar a refetch sin recarga.
 
 ## Autenticación / Middleware
@@ -236,7 +237,7 @@ const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
 - **Valor por defecto según tipo de vista**:
   - **Vistas de resumen general**: por defecto el **mes actual**.
   - **Vistas de historial/registros** (con creación, edición o eliminación): por defecto **"Últimos 12 meses"**.
-- **Ventana "Último año" en APIs y SSR**: sin param `month`, los endpoints (`/api/transactions`, `/api/installments`, `/api/cashback`, `/api/card-monthly/history`, `/api/recurring-payment-monthly/history`) y las páginas SSR aplican la ventana `lastYearWindow(createdAt)` de `src/lib/date.ts` (12 meses atrás o mes de registro, hasta el mes siguiente) en vez de devolver todo el histórico. Con `month` presente, filtran solo ese mes. En el SSR de `transactions.astro`, cuando aplica la ventana por defecto se añade `limit: 200` para acotar el payload inicial (el refetch del cliente vía API no está limitado).
+- **Ventana "Último año" en APIs y SSR**: sin param `month`, los endpoints (`/api/transactions`, `/api/installments`, `/api/cashback`, `/api/card-monthly/history`, `/api/recurring-payment-monthly/history`) y las páginas SSR aplican la ventana `lastYearWindow(createdAt)` de `src/lib/date.ts` (12 meses atrás o mes de registro, hasta el mes siguiente) en vez de devolver todo el histórico. Con `month` presente, filtran solo ese mes. Transacciones limita el payload inicial y los refetches a páginas de 50 mediante `page`/`pageSize`; el dashboard solicita sus transacciones sin paginar para calcular totales.
 
 ### Evento `monthchange`
 

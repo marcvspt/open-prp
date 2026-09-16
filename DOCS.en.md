@@ -295,6 +295,7 @@ INPUT_CLASS / COLOR_CLASS → classes
 - Filters at their default value don't add params; picking a specific one does. Active tab is always in `?tab=` (never `#hash`; old hashes are adopted in the client).
 - Filters are interoperable (AND).
 - `*Filterable` components use `useFilteredData` (`src/lib/ui/useFilteredData.ts`): it handles filters, fetch, URL and error state (`error`, shown as a `role="alert"` banner). The initial filter state is restored from the URL; it excludes `tab` (managed by `TabBar`).
+- **Transactions** use pagination with 50 records per page. The page is stored in `?page=` alongside filters; changing or clearing a filter returns to the first page. The API returns `{ data, total, page, pageSize }`.
 - `TabBarWithMonth` dispatches `window.dispatchEvent(new CustomEvent("monthchange", { detail: { month } }))`. `RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary` and `CardsHistory` listen to it to refetch.
 
 ### Month filter
@@ -303,7 +304,7 @@ INPUT_CLASS / COLOR_CLASS → classes
 - Account age ≥ 12 months: last 12 months incl. the current one + the next one.
 - "Last 12 months" option (`FILTER_ALL_MONTHS(t)`).
 - **General summary** → current month by default. **History/records** → "Last 12 months" by default.
-- Without `month`, APIs and SSR apply `lastYearWindow(createdAt)` (`src/lib/date.ts`) instead of the whole history. In SSR transactions with the default window, `limit: 200` is added.
+- Without `month`, APIs and SSR apply `lastYearWindow(createdAt)` (`src/lib/date.ts`) instead of the whole history. The transactions list also applies pagination with 50 records per page.
 
 ## Components
 

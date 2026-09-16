@@ -2,6 +2,7 @@ import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
 import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Transaction } from "@/lib/types/transaction.ts";
+import type { PaginatedResponse } from "@/lib/types/general.ts";
 import { formatDate } from "@/lib/date.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_TYPES, FILTER_ALL_CATEGORIES, FILTER_ALL_PAYMENT_METHODS, FILTER_ALL_MONTHS, FILTER_SEARCH_DESC, FILTER_LABEL_TYPE, FILTER_LABEL_CATEGORY, FILTER_LABEL_PAYMENT_METHOD } from "@/lib/i18n/filter-fields.ts";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
@@ -22,13 +23,15 @@ interface Props {
 
 export default function TransactionsFilterable({ initialMonth, filterType: initialType, paymentMethods, categories, initialData, createdAt, locale = "es" }: Props) {
   const t = getLocaleDict(locale);
-  const parsedInitial = initialData ? JSON.parse(initialData) as Transaction[] : undefined;
-  const { filters, setFilter, clearFilters, data, loading, error } = useFilteredData<Transaction[]>("/api/transactions", {
+  const parsedInitial = initialData ? JSON.parse(initialData) as PaginatedResponse<Transaction> : undefined;
+  const { filters, setFilter, clearFilters, data, loading, error } = useFilteredData<PaginatedResponse<Transaction>>("/api/transactions", {
     ...(initialType !== "all" ? { type: initialType } : {}),
     ...(initialMonth ? { month: initialMonth } : {}),
   }, parsedInitial);
 
-  const items = data ?? [];
+  const pageData = data ?? { data: [], total: 0, page: 1, pageSize: 50 };
+  const items = pageData.data;
+  const totalPages = Math.ceil(pageData.total / pageData.pageSize);
 
   return (
     <LocaleProvider locale={locale}>
@@ -136,6 +139,29 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
             </table>
           )}
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <button
+              type="button"
+              onClick={() => setFilter("page", String(pageData.page - 1))}
+              disabled={pageData.page <= 1 || loading}
+              className="rounded border border-border px-3 py-2 text-string-muted hover:bg-nav-hover disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {t.common.pagination.previous}
+            </button>
+            <span className="text-string-muted" aria-live="polite">
+              {t.common.pagination.page(pageData.page, totalPages)}
+            </span>
+            <button
+              type="button"
+              onClick={() => setFilter("page", String(pageData.page + 1))}
+              disabled={pageData.page >= totalPages || loading}
+              className="rounded border border-border px-3 py-2 text-string-muted hover:bg-nav-hover disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {t.common.pagination.next}
+            </button>
+          </div>
+        )}
       </div>
     </LocaleProvider>
   );

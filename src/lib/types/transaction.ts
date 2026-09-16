@@ -40,5 +40,6 @@ export interface TransactionFilter {
   month?: string;
   date_from?: string;
   date_to?: string;
-  limit?: number;
+  page?: number;
+  pageSize?: number | null;
 }

@@ -295,6 +295,7 @@ INPUT_CLASS / COLOR_CLASS → clases
 - Filtros en valor predeterminado no agregan params; al elegir uno específico, sí. Tab activa siempre en `?tab=` (nunca `#hash`; hashes viejos se adoptan en cliente).
 - Filtros interoperables (AND).
 - Los `*Filterable` usan `useFilteredData` (`src/lib/ui/useFilteredData.ts`): maneja filtros, fetch, URL y estado de error (`error`, mostrado como banner `role="alert"`). El estado inicial de filtros se restaura desde la URL; excluye `tab` (lo gestiona `TabBar`).
+- **Transacciones** usa paginación de 50 registros por página. La página se guarda en `?page=` junto con los filtros; al cambiar o limpiar un filtro se vuelve a la primera página. La API devuelve `{ data, total, page, pageSize }`.
 - `TabBarWithMonth` dispatchea `window.dispatchEvent(new CustomEvent("monthchange", { detail: { month } }))`. Lo escuchan `RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary`, `CardsHistory` para refetchear.
 
 ### Filtro de mes
@@ -303,7 +304,7 @@ INPUT_CLASS / COLOR_CLASS → clases
 - Antigüedad ≥ 12 meses: últimos 12 meses incl. actual + el siguiente.
 - Opción "Últimos 12 meses" (`FILTER_ALL_MONTHS(t)`).
 - **Resumen general** → mes actual por defecto. **Historial/registros** → "Últimos 12 meses" por defecto.
-- Sin `month`, las APIs y SSR aplican `lastYearWindow(createdAt)` (`src/lib/date.ts`) en vez de todo el histórico. En SSR de transacciones con ventana por defecto se añade `limit: 200`.
+- Sin `month`, las APIs y SSR aplican `lastYearWindow(createdAt)` (`src/lib/date.ts`) en vez de todo el histórico. La lista de transacciones aplica además su paginación de 50 registros por página.
 
 ## Componentes
 

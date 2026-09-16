@@ -17,6 +17,7 @@ import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
 import { lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
+import { parsePageParams } from "@/lib/api-helpers.ts";
 
 interface Props {
   userId: string;
@@ -31,6 +32,7 @@ const filterMonth = params.get("month") || "";
 const filterQ = params.get("q") || "";
 const filterPm = params.get("payment_method_id") || "";
 const filterCat = params.get("category_id") || "";
+const { page, pageSize } = parsePageParams(Astro.url);
 const pmRepo = new PaymentMethodRepository();
 const catRepo = new CategoryRepository();
 const repo = new TransactionRepository();
@@ -40,11 +42,12 @@ if (filterMonth) txFilter.month = filterMonth;
 if (filterQ) txFilter.q = filterQ;
 if (filterPm) txFilter.payment_method_id = filterPm;
 if (filterCat) txFilter.category_id = filterCat;
+txFilter.page = page;
+txFilter.pageSize = pageSize;
 if (!filterMonth) {
   const { from, to } = lastYearWindow(Astro.locals.createdAt);
   txFilter.date_from = `${from}-01`;
   txFilter.date_to = lastDayOfMonth(to);
-  txFilter.limit = 200;
 }
 const [paymentMethods, txCategories, initialData] = await Promise.all([
   pmRepo.findAll(userId),

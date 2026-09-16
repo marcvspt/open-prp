@@ -2,9 +2,10 @@ import { getDb } from "@/lib/db/client.ts";
 import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
 import { lastDayOfMonth } from "@/lib/date.ts";
 import type { Transaction, CreateTransactionInput, UpdateTransactionInput, TransactionFilter } from "@/lib/types/transaction.ts";
+import type { PaginatedResponse } from "@/lib/types/general.ts";
 
 export class TransactionRepository {
-  async findAll(userId: string, filter?: TransactionFilter): Promise<Transaction[]> {
+  async findAll(userId: string, filter?: TransactionFilter): Promise<PaginatedResponse<Transaction>> {
     const db = getDb();
     const conditions: string[] = ["user_id = ?"];
     const args: (string | number | boolean | null)[] = [userId];
@@ -20,11 +21,20 @@ export class TransactionRepository {
     if (filter?.date_from) { conditions.push("date >= ?"); args.push(filter.date_from); }
     if (filter?.date_to) { conditions.push("date <= ?"); args.push(filter.date_to); }
 
-    const result = await db.execute({
-      sql: `SELECT * FROM transactions WHERE ${conditions.join(" AND ")} ORDER BY date DESC, created_at DESC${filter?.limit ? " LIMIT ?" : ""}`,
-      args: filter?.limit ? [...args, filter.limit] : args,
+    const page = filter?.page ?? 1;
+    const where = conditions.join(" AND ");
+    const countResult = await db.execute({
+      sql: `SELECT COUNT(*) AS total FROM transactions WHERE ${where}`,
+      args,
     });
-    return result.rows as unknown as Transaction[];
+    const total = Number(countResult.rows[0]?.total ?? 0);
+    const pageSize = filter?.pageSize === null ? total : (filter?.pageSize ?? 50);
+    const offset = (page - 1) * pageSize;
+    const result = await db.execute({
+      sql: `SELECT * FROM transactions WHERE ${where} ORDER BY date DESC, created_at DESC${filter?.pageSize === null ? "" : " LIMIT ? OFFSET ?"}`,
+      args: filter?.pageSize === null ? args : [...args, pageSize, offset],
+    });
+    return { data: result.rows as unknown as Transaction[], total, page, pageSize };
   }
 
   async findById(id: string, userId: string): Promise<Transaction | null> {
