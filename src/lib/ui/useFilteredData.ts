@@ -50,10 +50,19 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
   }, []);
 
   const clearFilters = useCallback(() => {
+    clearTimeout(debounceRef.current);
     setFilters({});
+
+    const params = new URLSearchParams(location.search);
+    for (const key of Object.keys(filters)) {
+      params.delete(key);
+    }
+    const nextQs = params.toString();
+    history.replaceState(null, "", nextQs ? `${location.pathname}?${nextQs}` : location.pathname);
+
     const el = document.querySelector<HTMLInputElement>("[data-search-input]");
     if (el) el.value = "";
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
     if (isFirstRender.current) {
