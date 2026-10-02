@@ -50,7 +50,7 @@ export class CashbackRepository {
     if (data.description !== undefined) { sets.push("description = ?"); args.push(data.description ?? null); }
     if (data.date !== undefined) { sets.push("date = ?"); args.push(data.date); }
 
-    return applyUpdate<Cashback>("cashback", id, userId, sets, args, { existing });
+    return applyUpdate<Cashback>("cashback", id, userId, sets, args, { existing, withUpdatedAt: false });
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
