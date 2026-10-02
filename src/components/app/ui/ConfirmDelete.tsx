@@ -1,3 +1,4 @@
+import { apiFetch, apiErrorMessage } from "@/lib/api-client.ts";
 import { useState, useEffect, useRef } from "react";
 import { notifyDataChange } from "@/lib/ui/data-refresh.ts";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
@@ -41,12 +42,12 @@ export default function ConfirmDelete({ module, label, locale = "es" }: Props) {
     setDeleting(true);
     setError("");
     try {
-      const res = await fetch(`/api/${module}/${deleteId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      await apiFetch(`/api/${module}/${deleteId}`, { method: "DELETE" });
+
       setDeleteId(null);
       notifyDataChange(module);
-    } catch {
-      setError(t.common.errorDelete);
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, t));
     } finally {
       deletingRef.current = false;
       setDeleting(false);

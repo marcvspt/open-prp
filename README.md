@@ -456,8 +456,9 @@ Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={loca
 ## Manejo de errores
 
 - **API**: todos los handlers (factory y custom) envueltos en `withErrorHandling`; bodies parseados con `readJsonBody` (400 "Body inválido"). Errores → JSON con `console.error`, nunca HTML.
-- **Fetch en cliente**: `src/lib/safeFetch.ts` — `safeFetch<T>` (GET → data, mutación → boolean) y `fetchList<T>`. Loguea errores con `console.error` en vez de tragarlos silenciosamente.
-- **`api-client.ts`** — `apiFetch<T>` lanza `Error` con el mensaje del servidor si `!res.ok`.
+- **API en cliente**: `src/lib/api-client.ts` centraliza todas las peticiones JSON. `apiFetch<T>` valida HTTP y el envelope `{ success, data, error }`; `apiData<T>` devuelve su `data` y `fetchList<T>` acepta listas simples o paginadas. Los fallos lanzan `ApiError` con tipo, estado HTTP y mensaje del servidor; `apiErrorMessage(error, t)` traduce los mensajes de respaldo. No valida los campos de cada dominio en tiempo de ejecución.
+- **Cancelación y errores**: las consultas aceptan `AbortSignal`, conservan los datos anteriores ante fallos y descartan respuestas canceladas. Historiales, pagos recurrentes, tarjetas, compras y modales muestran errores con `role="alert"`; la moneda solo cambia tras guardar en la API. No convertir fallos en listas vacías ni reintentar mutaciones automáticamente. Si un pago parcial se registra pero falla el cargo del saldo restante, se informa de ambos resultados sin repetir el pago.
+- **Refresco SSR**: el `fetch` de `src/lib/ui/data-refresh.ts` sigue separado porque recibe fragmentos HTML, no el envelope JSON de la API.
 - **Hooks**: `useFilteredData` devuelve `error` (string) que los `*Filterable` muestran como banner `role="alert"`. Nunca silenciar errores de fetch.
 - **React**: `ErrorBoundary` en `src/components/ui/`.
 - **Confirmación de borrado**: `ConfirmDelete` (sin `confirm()` nativo). Errores de formulario inline con `role="alert"`.

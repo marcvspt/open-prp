@@ -1,12 +1,12 @@
-﻿import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Card } from "@/lib/types/card.ts";
 import type { CardMonthly, CalculatedDebt } from "@/lib/types/card-monthly.ts";
 import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import type { Category } from "@/lib/types/category.ts";
 import { daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
-import { safeFetch, fetchList } from "@/lib/safeFetch.ts";
-import { payCardDebtFull, payCardDebtPartial } from "@/lib/dashboard/api.ts";
+import { apiData, fetchList, apiErrorMessage, isAbortError } from "@/lib/api-client.ts";
+import { payCardDebtFull, payCardDebtPartial, CarryoverError } from "@/lib/dashboard/api.ts";
 import { BTN_CANCEL } from "@/lib/i18n/general-fields.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
@@ -55,86 +55,96 @@ export default function CreditCardSummary({
   const [payAmount, setPayAmount] = useState("");
   const [payDate, setPayDate] = useState("");
 
-  const fetchCalculated = useCallback(async (month: string) => {
-    if (!month) return;
-    const creditCards = cards.filter(c => c.type === "credit");
-    const calcs: Record<string, CalculatedDebt> = {};
-    await Promise.all(creditCards.map(async (card) => {
-      const calc = await safeFetch<CalculatedDebt>(`/api/card-monthly/calculate?cardId=${card.id}&month=${month}`);
-      if (calc) calcs[card.id] = calc;
-    }));
-    setCalculatedDebts(calcs);
-  }, [cards]);
-
+  const [error, setError] = useState("");
+  const paying = useRef(false);
+  const [isPaying, setIsPaying] = useState(false);
+  const requestController = useRef<AbortController | null>(null);
   const fetchData = useCallback(async (month: string) => {
     if (!month) return;
-    loadedMonthRef.current = month;
-
-    const [debts] = await Promise.all([
-      fetchList<CardMonthly>(`/api/card-monthly?month=${month}`),
-    ]);
-    setCardDebts(debts);
-
-    await fetchCalculated(month);
-  }, [fetchCalculated]);
-
-  useEffect(() => {
-    fetchCalculated(loadedMonthRef.current);
-  }, [fetchCalculated]);
-
-  useEffect(() => {
-    const urlMonth = new URLSearchParams(location.search).get("month") || "";
-    if (urlMonth && urlMonth !== loadedMonthRef.current) {
-      fetchData(urlMonth);
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
+    setError("");
+    try {
+      const options = { signal: controller.signal };
+      const calculated = await Promise.all(cards.filter(c => c.type === "credit").map(async card => {
+        const calc = await apiData<CalculatedDebt>(`/api/card-monthly/calculate?cardId=${card.id}&month=${month}`, options);
+        return [card.id, calc] as const;
+      }));
+      // Calculations persist snapshots; read them after all writes finish.
+      const debts = await fetchList<CardMonthly>(`/api/card-monthly?month=${month}`, options);
+      if (controller.signal.aborted) return;
+      setCardDebts(debts);
+      setCalculatedDebts(Object.fromEntries(calculated));
+      loadedMonthRef.current = month;
+    } catch (err: unknown) {
+      if (!controller.signal.aborted && !isAbortError(err)) setError(apiErrorMessage(err, t));
     }
-  }, [fetchData]);
+  }, [cards, t]);
 
   useEffect(() => {
+    // Calculation persists monthly snapshots, so the client still requests it on entry.
+    void fetchData(new URLSearchParams(location.search).get("month") || loadedMonthRef.current);
     function handler(e: Event) {
-      const detail = (e as CustomEvent).detail as { month: string };
-      if (detail.month && detail.month !== loadedMonthRef.current) {
-        fetchData(detail.month);
-      }
+      const detail = (e as CustomEvent<{ month: string }>).detail;
+      if (detail.month) void fetchData(detail.month);
     }
     window.addEventListener("monthchange", handler);
-    return () => window.removeEventListener("monthchange", handler);
+    return () => { requestController.current?.abort(); window.removeEventListener("monthchange", handler); };
   }, [fetchData]);
-
   function markDebtPaid(id: string, paidAt: string, paidAmount: number) {
     setCardDebts(prev => prev.map(d => d.id === id ? { ...d, is_paid: true, paid_at: paidAt, paid_amount: paidAmount } : d));
   }
 
   async function handlePayFull(id: string) {
+    if (paying.current || !payDialog) return;
+    requestController.current?.abort();
+    paying.current = true;
+    setIsPaying(true);
+    setError("");
     const paidAt = payDate || undefined;
-    if (await payCardDebtFull(id, paidAt, payDialog?.debt.statement_balance)) markDebtPaid(id, paidAt ?? new Date().toISOString(), payDialog?.debt.statement_balance ?? 0);
-    setPayDialog(null);
+    try {
+      await payCardDebtFull(id, paidAt, payDialog.debt.statement_balance);
+      markDebtPaid(id, paidAt ?? new Date().toISOString(), payDialog.debt.statement_balance);
+      setPayDialog(null);
+    } catch (err: unknown) { setError(apiErrorMessage(err, t)); }
+    finally { paying.current = false; setIsPaying(false); }
   }
 
   async function handlePayPartial() {
-    if (!payDialog) return;
+    if (paying.current || !payDialog) return;
     const amt = parseFloat(payAmount);
     if (!(amt > 0 && amt <= payDialog.debt.statement_balance)) return;
+    requestController.current?.abort();
+    paying.current = true;
+    setIsPaying(true);
+    setError("");
     const paidAt = payDate || undefined;
-    const ok = await payCardDebtPartial({
-      id: payDialog.debt.id,
-      month: payDialog.debt.month,
-      statementBalance: payDialog.debt.statement_balance,
-      paidAmount: amt,
-      cutoffDay: payDialog.card.cutoff_day,
-      paymentMethodId: paymentMethods.find(p => p.card_id === payDialog.card.id)?.id ?? null,
-      categoryId: categories.find(c => c.name === "card-balance")?.id ?? null,
-      paidAt,
-    });
-    if (ok) markDebtPaid(payDialog.debt.id, paidAt ?? new Date().toISOString(), amt);
-    setPayDialog(null);
+    try {
+      await payCardDebtPartial({
+        id: payDialog.debt.id, month: payDialog.debt.month,
+        statementBalance: payDialog.debt.statement_balance, paidAmount: amt,
+        cutoffDay: payDialog.card.cutoff_day,
+        paymentMethodId: paymentMethods.find(p => p.card_id === payDialog.card.id)?.id ?? null,
+        categoryId: categories.find(c => c.name === "card-balance")?.id ?? null, paidAt,
+      });
+      markDebtPaid(payDialog.debt.id, paidAt ?? new Date().toISOString(), amt);
+      setPayDialog(null);
+    } catch (err: unknown) {
+      if (err instanceof CarryoverError) {
+        markDebtPaid(payDialog.debt.id, paidAt ?? new Date().toISOString(), amt);
+        setPayDialog(null);
+        setError(t.error.paymentCarryover(apiErrorMessage(err.cause, t)));
+      } else { setError(apiErrorMessage(err, t)); }
+    } finally { paying.current = false; setIsPaying(false); }
   }
-
   const getCardDebt = (cardId: string) => cardDebts.find(d => d.card_id === cardId);
   const visibleCards = cards.filter(c => c.type === "credit");
 
   return (
     <LocaleProvider locale={locale}>
       <div className="space-y-4">
+        {error && !payDialog && <p role="alert" className="text-sm text-danger-text">{error}</p>}
         {visibleCards.length === 0 ? (
           <p className="text-string-muted text-sm">{t.empty.creditCards}</p>
         ) : (
@@ -160,7 +170,7 @@ export default function CreditCardSummary({
                   </div>
                   {debt && !debt.is_paid && (
                     <button
-                      onClick={() => { setPayDialog({ debt, card }); setPayAmount(""); setPayDate(new Date().toLocaleDateString("sv")); }}
+                      onClick={() => { setError(""); setPayDialog({ debt, card }); setPayAmount(""); setPayDate(new Date().toLocaleDateString("sv")); }}
                       className="px-3 py-1 text-xs font-medium rounded-lg bg-success text-white hover:bg-success-hover transition-colors"
                     >
                       {t.cta.payCard}
@@ -226,10 +236,11 @@ export default function CreditCardSummary({
         )}
 
         {payDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay" role="dialog" aria-modal="true" aria-labelledby="pay-card-title" onClick={() => setPayDialog(null)}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay" role="dialog" aria-modal="true" aria-labelledby="pay-card-title" onClick={() => { if (!paying.current) setPayDialog(null); }}>
             <div className="bg-panel rounded-xl border border-border shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
               <h3 id="pay-card-title" className="text-base font-semibold text-string mb-1">{t.cards.payCardTitle}</h3>
               <p className="text-sm text-string-muted mb-4">{payDialog.card.name} — {formatCurrency(payDialog.debt.statement_balance, { showPlus: true })}</p>
+              {error && <p role="alert" className="text-sm text-danger-text mb-3">{error}</p>}
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-string mb-1">{t.field.paymentDate}</label>
@@ -240,7 +251,7 @@ export default function CreditCardSummary({
                     className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                   />
                 </div>
-                <button onClick={() => handlePayFull(payDialog.debt.id)} className="w-full py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors">
+                <button disabled={isPaying} onClick={() => handlePayFull(payDialog.debt.id)} className="w-full py-2.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors">
                   {t.cta.payAll} ({formatCurrency(payDialog.debt.statement_balance, { showPlus: true })})
                 </button>
                 <div className="flex items-center gap-2">
@@ -263,7 +274,7 @@ export default function CreditCardSummary({
                     />
                     <button
                       onClick={handlePayPartial}
-                      disabled={!payAmount || parseFloat(payAmount) <= 0}
+                      disabled={isPaying || !payAmount || !(parseFloat(payAmount) > 0 && parseFloat(payAmount) <= payDialog.debt.statement_balance)}
                       className="px-4 py-2 text-sm font-medium rounded-lg bg-success text-white hover:bg-success-hover disabled:opacity-50 transition-colors"
                     >
                       {t.cta.payCard}
@@ -275,7 +286,7 @@ export default function CreditCardSummary({
                     </p>
                   )}
                 </div>
-                <button onClick={() => setPayDialog(null)} className="w-full py-2 text-sm text-nav hover:text-string transition-colors">
+                <button disabled={isPaying} onClick={() => setPayDialog(null)} className="w-full py-2 text-sm text-nav hover:text-string transition-colors">
                   {BTN_CANCEL(t)}
                 </button>
               </div>

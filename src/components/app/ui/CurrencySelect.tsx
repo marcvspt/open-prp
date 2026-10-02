@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { apiFetch, apiErrorMessage } from "@/lib/api-client.ts";
+import { useState, useRef } from "react";
 import Select from "@/components/ui/Select.tsx";
 import { saveCurrency, type Currency } from "@/lib/ui/currency.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
@@ -18,26 +19,34 @@ export default function CurrencySelect({ initialCurrency, locale = "es" }: Props
     initialCurrency && VALID.includes(initialCurrency) ? (initialCurrency as Currency) : "MXN"
   );
 
-  function handleChange(value: string) {
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [error, setError] = useState("");
+  async function handleChange(value: string) {
+    if (savingRef.current || !VALID.includes(value)) return;
+    savingRef.current = true;
     const next = value as Currency;
-    fetch("/api/users/currency", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currency: next }),
-    }).catch(() => {});
-    saveCurrency(next);
-    setCurrency(next);
+    setSaving(true);
+    setError("");
+    try {
+      await apiFetch("/api/users/currency", { method: "PUT", body: JSON.stringify({ currency: next }) });
+      setCurrency(next);
+      saveCurrency(next);
+    } catch (err: unknown) { setError(apiErrorMessage(err, t)); }
+    finally { savingRef.current = false; setSaving(false); }
   }
 
   return (
     <LocaleProvider locale={locale}>
       <Select
+        disabled={saving}
         value={currency}
         onChange={handleChange}
         options={t.currency.options}
         className="w-full"
         ariaLabel={t.select.ariaCurrency}
       />
+      {error && <p role="alert" className="text-xs text-danger-text">{error}</p>}
     </LocaleProvider>
   );
 }

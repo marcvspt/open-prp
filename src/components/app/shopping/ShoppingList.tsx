@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { apiFetch, fetchList, apiErrorMessage, isAbortError } from "@/lib/api-client.ts";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Select from "@/components/ui/Select.tsx";
 import type { PantryItem } from "@/lib/types/pantry.ts";
 import type { ShoppingItem, ShoppingList } from "@/lib/types/shopping.ts";
@@ -66,166 +67,90 @@ export default function ShoppingList({ initialTab, initialItems, initialLists, i
   const [confirmDeleteListId, setConfirmDeleteListId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
+  const requestController = useRef<AbortController | null>(null);
+  useEffect(() => () => requestController.current?.abort(), []);
   const fetchData = useCallback(async () => {
-    try {
-      const [listsRes, itemsRes, pantryRes, catRes] = await Promise.all([
-        fetch("/api/shopping/lists"),
-        fetch("/api/shopping"),
-        fetch("/api/pantry"),
-        fetch("/api/pantry/categories"),
-      ]);
-      const listsJson = await listsRes.json();
-      const itemsJson = await itemsRes.json();
-      const pantryJson = await pantryRes.json();
-      const catJson = await catRes.json();
-      setLists(listsJson.data ?? listsJson ?? []);
-      setItems(itemsJson.data ?? itemsJson ?? []);
-      setPantryItems(pantryJson.data ?? pantryJson ?? []);
-      setCategories(catJson.data ?? catJson ?? []);
-    } catch {
-      setError(t.error.message(t.common.errorUnknown));
-    }
-  }, [t]);
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
+    const options = { signal: controller.signal };
+    const [nextLists, nextItems, nextPantry, nextCategories] = await Promise.all([
+      fetchList<ShoppingList>("/api/shopping/lists", options),
+      fetchList<ShoppingItem>("/api/shopping", options),
+      fetchList<PantryItem>("/api/pantry", options),
+      fetchList<PantryCategory>("/api/pantry/categories", options),
+    ]);
+    if (controller.signal.aborted) return;
+    setLists(nextLists);
+    setItems(nextItems);
+    setPantryItems(nextPantry);
+    setCategories(nextCategories);
+  }, []);
 
   const activeLists = lists.filter(l => !l.is_completed);
   const completedLists = lists.filter(l => l.is_completed);
-  const effectiveTarget =
-    activeLists.some(l => l.id === targetListId) ? targetListId : (activeLists[0]?.id ?? "");
+  const effectiveTarget = activeLists.some(l => l.id === targetListId) ? targetListId : (activeLists[0]?.id ?? "");
+
+  async function mutate(url: string, options: RequestInit, onSaved?: () => void) {
+    let saved = false;
+    setError("");
+    try {
+      await apiFetch(url, options);
+      saved = true;
+      onSaved?.();
+      await fetchData();
+    } catch (err: unknown) {
+      if (!isAbortError(err)) setError(saved ? t.error.refreshData : apiErrorMessage(err, t));
+    }
+  }
 
   async function handleNewList() {
     const name = new Date().toLocaleString(locale, { dateStyle: "short", timeStyle: "short" });
-    try {
-      const res = await fetch("/api/shopping/lists", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      if (res.ok) {
-        setOtroInputs({});
-        setConfirmDeleteListId(null);
-        fetchData();
-      } else {
-        setError(t.error.message(t.common.errorUnknown));
-      }
-    } catch {
-      setError(t.error.message(t.common.errorUnknown));
-    }
+    await mutate("/api/shopping/lists", { method: "POST", body: JSON.stringify({ name }) }, () => {
+      setOtroInputs({});
+      setConfirmDeleteListId(null);
+    });
   }
 
-  function commitRename(listId: string) {
-    const draft = (nameDrafts[listId] ?? "").trim();
+  async function commitRename(listId: string) {
     if (nameDrafts[listId] === undefined) return;
+    const draft = nameDrafts[listId].trim();
     const current = lists.find(l => l.id === listId)?.name ?? "";
-    setNameDrafts(d => {
-      const next = { ...d };
-      delete next[listId];
-      return next;
-    });
-    if (draft !== current) {
-      fetch(`/api/shopping/lists/${listId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: draft }),
-      })
-        .then(r => {
-          if (r.ok) fetchData();
-          else setError(t.error.message(t.common.errorUnknown));
-        })
-        .catch(() => {
-          setError(t.error.message(t.common.errorUnknown));
-        });
-    }
+    const clearDraft = () => setNameDrafts(d => { const next = { ...d }; delete next[listId]; return next; });
+    if (draft === current) { clearDraft(); return; }
+    await mutate(`/api/shopping/lists/${listId}`, { method: "PATCH", body: JSON.stringify({ name: draft }) }, clearDraft);
   }
 
   async function handleDeleteList(listId: string) {
-    try {
-      const res = await fetch(`/api/shopping/lists/${listId}`, { method: "DELETE" });
-      if (res.ok) {
-        setConfirmDeleteListId(null);
-        fetchData();
-      } else {
-        setError(t.error.message(t.common.errorUnknown));
-      }
-    } catch {
-      setError(t.error.message(t.common.errorUnknown));
-    }
+    await mutate(`/api/shopping/lists/${listId}`, { method: "DELETE" }, () => setConfirmDeleteListId(null));
   }
 
   async function handleCompleteList(listId: string) {
-    try {
-      const res = await fetch(`/api/shopping/lists/${listId}/complete`, { method: "POST" });
-      if (res.ok) fetchData();
-      else setError(t.error.message(t.common.errorUnknown));
-    } catch {
-      setError(t.error.message(t.common.errorUnknown));
-    }
+    await mutate(`/api/shopping/lists/${listId}/complete`, { method: "POST" });
   }
 
   async function handleToggleCheck(id: string) {
-    try {
-      const res = await fetch("/api/shopping/toggle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (res.ok) fetchData();
-      else setError(t.error.message(t.common.errorUnknown));
-    } catch {
-      setError(t.error.message(t.common.errorUnknown));
-    }
+    await mutate("/api/shopping/toggle", { method: "POST", body: JSON.stringify({ id }) });
   }
 
   async function handleAddFromDespensa(d: PantryItem) {
     if (!effectiveTarget) return;
-    try {
-      const res = await fetch("/api/shopping", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: d.description,
-          quantity: d.quantity,
-          category: d.category_id || undefined,
-          despensa_item_id: d.id,
-          list_id: effectiveTarget,
-        }),
-      });
-      if (res.ok) fetchData();
-      else setError(t.error.message(t.common.errorUnknown));
-    } catch {
-      setError(t.error.message(t.common.errorUnknown));
-    }
+    await mutate("/api/shopping", { method: "POST", body: JSON.stringify({
+      name: d.description, quantity: d.quantity, category: d.category_id || undefined,
+      despensa_item_id: d.id, list_id: effectiveTarget,
+    }) });
   }
 
   async function handleAddOtro(listId: string) {
     const name = (otroInputs[listId] ?? "").trim();
     if (!name) return;
-    try {
-      const res = await fetch("/api/shopping", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, quantity: 1, list_id: listId }),
-      });
-      if (res.ok) {
-        setOtroInputs(d => ({ ...d, [listId]: "" }));
-        fetchData();
-      } else {
-        setError(t.error.message(t.common.errorUnknown));
-      }
-    } catch {
-      setError(t.error.message(t.common.errorUnknown));
-    }
+    await mutate("/api/shopping", { method: "POST", body: JSON.stringify({ name, quantity: 1, list_id: listId }) },
+      () => setOtroInputs(d => ({ ...d, [listId]: "" })));
   }
 
   async function handleDeleteItem(id: string) {
-    try {
-      const res = await fetch(`/api/shopping/${id}`, { method: "DELETE" });
-      if (res.ok) fetchData();
-      else setError(t.error.message(t.common.errorUnknown));
-    } catch {
-      setError(t.error.message(t.common.errorUnknown));
-    }
+    await mutate(`/api/shopping/${id}`, { method: "DELETE" });
   }
-
   const groupedPantry: Record<string, PantryItem[]> = {};
   for (const d of pantryItems) {
     const catName = categories.find(c => c.id === d.category_id)?.name ?? t.shopping.others;

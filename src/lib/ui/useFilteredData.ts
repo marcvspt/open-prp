@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { FilterState, FilterOptions } from "@/lib/types/filters.ts";
 import { registerDataRefresh } from "@/lib/ui/data-refresh.ts";
-import type { ApiResponse, PaginatedResponse } from "@/lib/types/general.ts";
+import { apiData, apiErrorMessage } from "@/lib/api-client.ts";
+import type { PaginatedResponse } from "@/lib/types/general.ts";
 
 function isPaginated(value: unknown): value is PaginatedResponse<unknown> {
   return typeof value === "object" && value !== null
@@ -100,14 +101,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
     let nextRequestKey = requestKey;
     let correctedPage: number | undefined;
     try {
-      async function readData(url: string): Promise<T> {
-        const response = await fetch(url, { signal: controller.signal, cache: "no-store" });
-        const body: ApiResponse<T> = await response.json();
-        if (!response.ok || !body.success || body.data === undefined) {
-          throw new Error(body.error || t.common.errorUnknown);
-        }
-        return body.data;
-      }
+      const readData = (url: string) => apiData<T>(url, { signal: controller.signal });
       let result = await readData(nextRequestKey);
       // Deleting the final row on a page may move the last available page backwards.
       if (isPaginated(result)) {
@@ -136,7 +130,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
       setError("");
     } catch (err: unknown) {
       if (!controller.signal.aborted) {
-        setError(externalSignal ? t.error.refreshData : t.error.message(err instanceof Error ? err.message : t.common.errorUnknown));
+        setError(externalSignal ? t.error.refreshData : t.error.message(apiErrorMessage(err, t)));
       }
       throw err;
     } finally {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { fetchList } from "@/lib/safeFetch.ts";
+import { fetchList, apiErrorMessage, isAbortError } from "@/lib/api-client.ts";
 import { monthLabel } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
@@ -19,21 +19,27 @@ export default function CardsHistory({ initialData, initialCards, locale = "es" 
   const cards: Card[] = JSON.parse(initialCards);
   const [items, setItems] = useState<CardMonthly[]>(() => JSON.parse(initialData));
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const loadedQsRef = useRef("");
 
   useEffect(() => {
+    let controller: AbortController | undefined;
     function fetchHistory() {
       const month = new URLSearchParams(location.search).get("month");
       const url = month && /^\d{4}-\d{2}$/.test(month)
         ? `/api/card-monthly/history?month=${month}`
         : "/api/card-monthly/history";
       const qs = new URLSearchParams(location.search).toString();
-      if (qs === loadedQsRef.current) return;
-      loadedQsRef.current = qs;
+      controller?.abort();
+      if (qs === loadedQsRef.current) { setLoading(false); setError(""); return; }
+      const request = new AbortController();
+      controller = request;
+      setError("");
       setLoading(true);
-      fetchList<CardMonthly>(url)
-        .then(setItems)
-        .finally(() => setLoading(false));
+      fetchList<CardMonthly>(url, { signal: request.signal })
+        .then(data => { if (!request.signal.aborted) { setItems(data); loadedQsRef.current = qs; } })
+        .catch((err: unknown) => { if (!request.signal.aborted && !isAbortError(err)) setError(apiErrorMessage(err, t)); })
+        .finally(() => { if (!request.signal.aborted) setLoading(false); });
     }
 
     loadedQsRef.current = new URLSearchParams(location.search).toString();
@@ -43,13 +49,14 @@ export default function CardsHistory({ initialData, initialCards, locale = "es" 
       fetchHistory();
     }
     window.addEventListener("monthchange", handler);
-    return () => window.removeEventListener("monthchange", handler);
-  }, []);
+    return () => { controller?.abort(); window.removeEventListener("monthchange", handler); };
+  }, [t]);
 
   return (
     <LocaleProvider locale={locale}>
       <div className="bg-panel rounded-xl border border-border p-4 shadow-sm">
         <h2 className="text-base font-semibold text-string mb-3">{t.cards.historyTitle}</h2>
+        {error && <p role="alert" className="text-sm text-danger-text mb-3">{error}</p>}
         {loading ? (
           <p className="text-sm text-string-muted">{t.common.loading}</p>
         ) : items.length === 0 ? (
