@@ -118,7 +118,12 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 - `useFilteredData` para componentes `*Filterable`; mostrar su `error` en banner `role="alert"`. Transacciones paginan a 50; cambiar/limpiar filtros vuelve a página 1. API devuelve `{ data, total, page, pageSize }`.
 - `TabBarWithMonth` emite `monthchange` con `detail: { month }`; recurrentes y tarjetas lo escuchan y refetchean. Fuera de history, no permitir la opción de todos los meses.
 - Resúmenes usan mes actual por defecto; registros/historial usan últimos 12 meses. Generar opciones desde el alta, máximo últimos 12 meses, más mes siguiente. Reutilizar `lastYearWindow` y helpers de fecha en SSR/API.
-- **Estado actual**: `CrudModal` recarga tras guardar y `ConfirmDelete` tras borrar; conservar query params y tab. La migración a refetch está pendiente. `FilterSelect` conserva su navegación existente por href.
+- **Actualización tras mutaciones sin recarga**: `useCrudModal`, `ConfirmDelete` y el handler delegado de toggles emiten `datachange` mediante `notifyDataChange(module)` de `src/lib/ui/data-refresh.ts`. El coordinador actualiza solo la sección visible afectada, según su mapa de dependencias. Registrar allí las dependencias al añadir módulos relacionados.
+- Transacciones, cashback y despensa declaran `data-refresh-mode="api"`; `useFilteredData` registra un refetch abortable que conserva filtros y búsqueda. Un cambio en un módulo relacionado usa SSR para renovar también las opciones derivadas. Tras borrar, la paginación se ajusta si la página actual dejó de existir.
+- Las demás secciones conservan Astro SSR: se solicita la URL actual con `X-Open-PRP-Refresh: content`. `AppLayout` devuelve solo el slot (sin consultar/renderizar sidebar ni shell), con `Cache-Control: private, no-store` y `Vary: X-Open-PRP-Refresh`. El cliente sustituye únicamente `[data-module]` mediante `swapFunctions.swapBodyElement`, conserva URL/scroll y emite `astro:after-swap` para limpiar las raíces React retiradas. Las islas nuevas se hidratan; no ejecutar de nuevo scripts de la respuesta ni emitir `astro:page-load` para este refresco parcial.
+- `RefreshStatus.astro` muestra progreso y fallo de actualización con reintento. La mutación ya completada no se repite al reintentar. Cancelar refrescos supersedidos y al navegar. No añadir recargas completas como fallback automático.
+- `ToggleHandler.astro` declara configuración en atributos; `toggle-handler.ts` registra un único listener delegado, restaura el checkbox y muestra error si falla la mutación. Los listeners del contenido SSR deben sobrevivir al reemplazo parcial sin duplicarse.
+- `FilterSelect` conserva su navegación existente por href.
 
 ## Sitemap, robots y RSS
 

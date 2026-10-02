@@ -46,6 +46,8 @@ const shared = {
 
 export const en: Locale = {
   common: {
+    refreshing: "Updating data…",
+    retry: "Retry",
     edit: "Edit",
     delete: "Delete",
     cancel: "Cancel",
@@ -489,6 +491,7 @@ export const en: Locale = {
   },
 
   error: {
+    refreshData: "The change was saved, but this section could not be updated. Retry the refresh.",
     invalidNumber: (label: string) => `Enter a valid number in ${label}.`,
     numberMinimum: (label: string, min: number) => `${label} must be greater than or equal to ${min}.`,
     loadRecord: (message: string) => `Could not load the record: ${message}`,

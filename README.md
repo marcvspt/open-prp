@@ -395,7 +395,7 @@ INPUT_CLASS / COLOR_CLASS → clases
 | `CrudModal.tsx` | Modal CRUD genérico (disparado por `data-create="module"` / `data-edit-{module}="id"`) |
 | `FormModal.tsx` | Modal base: focus trap, Escape, autofocus, ARIA |
 | `ConfirmDelete.tsx` / `DeleteHandler.astro` | Confirmación de borrado sin `confirm()` nativo |
-| `ToggleHandler.astro` | Toggle activo/inactivo (try/catch + reload solo en éxito) |
+| `ToggleHandler.astro` | Toggle delegado: actualiza la sección al guardar y revierte el checkbox si falla |
 | `DataTable.astro` | Tabla con prop `ariaLabel` (`.astro`) |
 | `TabBar.tsx` | Tabs APG; en móvil se convierten en Select custom |
 | `TabBarWithMonth.tsx` | `TabBar` + `MonthSelector` + evento `monthchange` |
@@ -410,7 +410,15 @@ INPUT_CLASS / COLOR_CLASS → clases
 
 `CrudModal.tsx` compone `CrudField.tsx` para renderizar campos, `useCrudModal.ts` para cargar y guardar, y `crud-form.ts` para defaults, visibilidad y payload. Los tipos están centralizados en `src/lib/types/crud.ts`; `Field` es una unión discriminada que exige opciones para selects y limita propiedades numéricas a campos de número. Los arrays de campos se tipan en SSR antes de serializarlos.
 
-La edición muestra carga y errores dentro del modal, cancela cargas al cerrar o cambiar de registro y bloquea guardar hasta recibir datos. Los valores numéricos permanecen como strings hasta submit, se convierten con `Number` y se validan contra valores no finitos y mínimos. Un número opcional vacío se envía como `null`; los obligatorios vacíos o inválidos muestran un error traducido. Guardar sigue recargando la página y conservando la URL.
+La edición muestra carga y errores dentro del modal, cancela cargas al cerrar o cambiar de registro y bloquea guardar hasta recibir datos. Los valores numéricos permanecen como strings hasta submit, se convierten con `Number` y se validan contra valores no finitos y mínimos. Un número opcional vacío se envía como `null`; los obligatorios vacíos o inválidos muestran un error traducido. Guardar y eliminar cierran el modal y actualizan la sección sin recargar la página, conservando la URL.
+
+### Actualización tras guardar o eliminar
+
+El evento compartido `datachange` comunica el módulo modificado. `src/lib/ui/data-refresh.ts` coordina la actualización de la sección visible y las dependencias relacionadas. Transacciones, cashback y despensa refetchean mediante `useFilteredData` sin reemplazar su interfaz ni perder filtros o búsqueda. Si una eliminación deja la página actual fuera del rango disponible, la paginación se ajusta.
+
+Las secciones con tablas o resúmenes SSR conservan Astro: solicitan la URL actual con el header `X-Open-PRP-Refresh: content`. `AppLayout` devuelve solo contenido, evitando volver a renderizar el shell y consultar el sidebar. La respuesta es privada y no se cachea; `Vary` distingue el HTML parcial del documento completo. El cliente reemplaza solo el bloque `[data-module]` con las [utilidades de swap de Astro](https://docs.astro.build/en/guides/view-transitions/#building-a-custom-swap-function), limpia las islas retiradas y permite hidratar las nuevas. Se conservan URL, tab, mes y scroll; el sidebar y la sesión permanecen montados.
+
+`RefreshStatus.astro` muestra progreso y ofrece reintentar si la mutación se completó pero falló la actualización visual. El reintento solo vuelve a consultar datos; no repite el guardado ni el borrado. Los refrescos previos se cancelan al iniciar otro o navegar. Los toggles de tareas usan un único listener delegado y el mismo mecanismo de actualización.
 
 ### Componentes por sección (`src/components/app/{modulo}/`)
 

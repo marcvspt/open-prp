@@ -44,6 +44,8 @@ const shared = {
 
 export const es = {
   common: {
+    refreshing: "Actualizando datos…",
+    retry: "Reintentar",
     edit: "Editar",
     delete: "Eliminar",
     cancel: "Cancelar",
@@ -487,6 +489,7 @@ export const es = {
   },
 
   error: {
+    refreshData: "El cambio se guardó, pero no se pudieron actualizar los datos de esta sección. Reintenta la actualización.",
     invalidNumber: (label: string) => `Introduce un número válido en ${label}.`,
     numberMinimum: (label: string, min: number) => `${label} debe ser mayor o igual que ${min}.`,
     loadRecord: (message: string) => `No se pudo cargar el registro: ${message}`,

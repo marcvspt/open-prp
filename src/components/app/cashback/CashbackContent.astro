@@ -45,7 +45,7 @@ const fields: Field[] = [
 const defaultForm = { date: "", description: "", amount: 0, currency: "MXN", card_id: creditCards[0]?.id ?? "" };
 ---
 
-<div data-module="cashback" class="space-y-4">
+<div data-module="cashback" data-refresh-mode="api" class="space-y-4">
   <PageHeader title={t.page.cashback} createLabel={t.cta.newCashback} createModule="cashback" mobileOnlyCTA={true} />
   <CashbackFilterable
     client:load

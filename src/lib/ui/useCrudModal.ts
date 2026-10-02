@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { FormEvent } from "react";
 import { apiFetch } from "@/lib/api-client.ts";
+import { notifyDataChange } from "@/lib/ui/data-refresh.ts";
 import { createDefaultForm, createCrudPayload } from "@/lib/ui/crud-form.ts";
 import type { Field, CrudForm } from "@/lib/types/crud.ts";
 import type { Locale } from "@/lib/i18n/es.ts";
@@ -88,7 +89,7 @@ export function useCrudModal(module: string, fields: readonly Field[], defaults:
         body: JSON.stringify(payload),
       });
       setOpen(false);
-      window.location.href = window.location.href;
+      notifyDataChange(module);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t.common.errorUnknown);
     } finally {
