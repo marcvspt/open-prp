@@ -426,7 +426,7 @@ Sections with SSR tables or summaries retain Astro: they request the current URL
 - **Dashboard**: `DashboardHeader.tsx` (only `MonthSelector`).
 - **Transactions**: `TransactionsFilterable.tsx`.
 - **Installments**: `InstallmentsFilterable.tsx` + `InstallmentsSummary.tsx`. The summary uses the same monthly selector as cards and recurring payments, alongside the tabs and visible only in Summary. It defaults to the current month; `summary_month` preserves the selection independently of administration filters. Initial data arrives through SSR and updates without reloading through `/api/installments/summary`, with cancellation and visible errors. It shows installments active during the selected month and remaining payments at its end, without modifying the database.
-- **URL months**: `month` and `summary_month` only accept options from `getMonthOptions(12, createdAt)` (available months since registration, limited to the past year, plus next month). Middleware removes out-of-range values from app URLs and returns JSON 400 for direct API requests. The UI applies the same validation; unavailable months fall back to the default.
+- **URL months**: `month` and `summary_month` only accept options from `getMonthOptions(12, createdAt)` (available months since registration, limited to the past year, plus next month). Middleware replaces out-of-range values in app URLs with explicit defaults through a 303 redirect, preserving other filters and avoiding loops from query forwarding on Netlify. Direct API requests receive JSON 400. The UI applies the same validation; unavailable months fall back to the default.
 - **Cashback**: `CashbackFilterable.tsx`.
 - **Pantry**: `PantryFilterable.tsx`.
 - **Cards**: `CreditCardSummary.tsx` + `CardsHistory.tsx`.
