@@ -3,7 +3,7 @@ import type { Field } from "@/lib/types/crud.ts";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
-import TabBar from "@/components/app/ui/TabBar.tsx";
+import TabBarWithMonth from "@/components/app/ui/TabBarWithMonth.tsx";
 import InstallmentsFilterable from "@/components/app/installments/InstallmentsFilterable.tsx";
 import InstallmentsSummary from "@/components/app/installments/InstallmentsSummary.tsx";
 import { InstallmentRepository } from "@/lib/modules/installments/repository.ts";
@@ -18,7 +18,7 @@ import {
 } from "@/lib/i18n/form-fields.ts";
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
-import { currentMonthStr, lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
+import { currentMonthStr, lastYearWindow, lastDayOfMonth, isAvailableMonth } from "@/lib/date.ts";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Props {
@@ -30,6 +30,8 @@ const { userId, locale } = Astro.props;
 const t = getLocaleDict(locale);
 const currentMonth = currentMonthStr();
 const params = Astro.url.searchParams;
+const paramSummaryMonth = params.get("summary_month");
+const summaryMonth = paramSummaryMonth && isAvailableMonth(paramSummaryMonth, Astro.locals.createdAt) ? paramSummaryMonth : currentMonth;
 const activeOnly = params.get("active_only") !== "false";
 const filterMonth = params.get("month") || "";
 const filterQ = params.get("q") || "";
@@ -46,11 +48,12 @@ if (!filterMonth) {
   instFilter.date_from = `${from}-01`;
   instFilter.date_to = lastDayOfMonth(to);
 }
-const [instCategories, paymentMethods, initialData, allCards] = await Promise.all([
+const [instCategories, paymentMethods, initialData, allCards, summaryData] = await Promise.all([
   new CategoryRepository().findBySections(userId, ["installments"]),
   new PaymentMethodRepository().findAll(userId),
   new InstallmentRepository().findAll(userId, instFilter),
   new CardRepository().findAll(userId),
+  new InstallmentRepository().findSummaryByMonth(userId, summaryMonth),
 ]);
 const fields: Field[] = [
   dateField(t, "start_date"),
@@ -105,7 +108,7 @@ const defaultForm = {
     mobileOnlyCTA={true}
   />
   <div class="tabs-container">
-    <TabBar
+    <TabBarWithMonth
       client:load
       tabs={[
         { key: "summary", label: t.tabs.summary },
@@ -113,6 +116,10 @@ const defaultForm = {
       ]}
       initialTab={initialTab}
       defaultTab="summary"
+      initialMonth={summaryMonth}
+      monthParam="summary_month"
+      monthTabs={["summary"]}
+      createdAt={Astro.locals.createdAt}
       ariaLabel={t.tabs.ariaInstallments}
       locale={locale}
     />
@@ -126,7 +133,9 @@ const defaultForm = {
     >
       <InstallmentsSummary
         client:load
-        initialData={JSON.stringify(initialData)}
+        initialData={JSON.stringify(summaryData)}
+        initialMonth={summaryMonth}
+        createdAt={Astro.locals.createdAt}
         initialCards={JSON.stringify(allCards)}
         initialPaymentMethods={JSON.stringify(paymentMethods)}
         locale={locale}

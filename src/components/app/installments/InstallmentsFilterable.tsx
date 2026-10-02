@@ -26,7 +26,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
   const { filters, setFilter, clearFilters, searchValue, data, loading, error } = useFilteredData<Installment[]>("/api/installments", {
     ...(initialActive ? { active_only: "true" } : {}),
     ...(initialMonth ? { month: initialMonth } : {}),
-  }, parsedInitial, { keys: ["month", "active_only", "payment_method_id", "category_id", "q", "date_from", "date_to"], defaults: { active_only: "true" }, locale });
+  }, parsedInitial, { keys: ["month", "active_only", "payment_method_id", "category_id", "q", "date_from", "date_to"], defaults: { active_only: "true" }, locale, createdAt });
 
   const items = data ?? [];
 

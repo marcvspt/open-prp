@@ -105,6 +105,11 @@ export function getMonthOptions(count = 12, created_at?: string): string[] {
   return months;
 }
 
+/** Uses exactly the same bounds as the app's month selectors. */
+export function isAvailableMonth(month: string, createdAt?: string, count = 12): boolean {
+  return getMonthOptions(count, createdAt).includes(month);
+}
+
 /** Safely format a YYYY-MM-DD date string in the given locale, without timezone shift. */
 export function formatDate(dateStr: string, locale = "es", options?: Intl.DateTimeFormatOptions): string {
   const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);

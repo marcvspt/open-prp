@@ -1,6 +1,9 @@
 import { clerkMiddleware, createClerkClient } from "@clerk/astro/server";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { UserRepository } from "@/lib/modules/users/repository.ts";
+import { isAvailableMonth } from "@/lib/date.ts";
+import { errorResponse } from "@/lib/api-helpers.ts";
+import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 
 const clerkApi = createClerkClient({ secretKey: import.meta.env.CLERK_SECRET_KEY });
 
@@ -43,6 +46,22 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
     }
   } catch {
     console.error("Middleware user resolution failed");
+  }
+  if (context.locals.userId && context.request.method === "GET") {
+    const url = new URL(context.url);
+    const invalidKeys = ["month", "summary_month"].filter(key =>
+      url.searchParams.getAll(key).some(month => month !== "" && !isAvailableMonth(month, context.locals.createdAt))
+    );
+    if (invalidKeys.length > 0) {
+      if (url.pathname.startsWith("/api/")) {
+        const t = getLocaleDict(resolveLocale(context.currentLocale));
+        return errorResponse(t.error.monthUnavailable, 400);
+      }
+      if (/^\/(es|en)\/app(?:\/|$)/.test(url.pathname)) {
+        for (const key of invalidKeys) url.searchParams.delete(key);
+        return context.redirect(`${url.pathname}${url.search}`, 302);
+      }
+    }
   }
   return next();
 });

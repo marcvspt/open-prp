@@ -3,8 +3,8 @@ import { scopedFindById, scopedDelete, insertRow, applyUpdate, now, type SqlValu
 import { addMonths, lastDayOfMonth } from "@/lib/date.ts";
 import type { Installment, InstallmentInput, InstallmentFilter } from "@/lib/types/installment.ts";
 
-function computeRemaining(startDate: string, totalMonths: number): number {
-  const today = new Date();
+function computeRemaining(startDate: string, totalMonths: number, referenceDate?: string): number {
+  const today = referenceDate ? new Date(`${referenceDate}T00:00:00`) : new Date();
   today.setHours(23, 59, 59, 999);
   let paid = 0;
   for (let n = 0; n < totalMonths; n++) {
@@ -17,6 +17,18 @@ function computeRemaining(startDate: string, totalMonths: number): number {
 }
 
 export class InstallmentRepository {
+  async findSummaryByMonth(userId: string, month: string): Promise<Installment[]> {
+    const monthEnd = lastDayOfMonth(month);
+    const result = await getDb().execute({
+      sql: "SELECT * FROM installments WHERE user_id = ? AND start_date <= ? ORDER BY start_date DESC",
+      args: [userId, monthEnd],
+    });
+    const rows = result.rows as unknown as Installment[];
+    return rows
+      .filter(row => addMonths(row.start_date, Math.max(0, row.total_months - 1)) >= `${month}-01`)
+      .map(row => ({ ...row, remaining_months: computeRemaining(row.start_date, row.total_months, monthEnd) }));
+  }
+
   async findAll(userId: string, filter?: InstallmentFilter): Promise<Installment[]> {
     const db = getDb();
     const conditions: string[] = ["user_id = ?"];

@@ -6,4 +6,5 @@ export interface FilterOptions {
   keys: readonly string[];
   locale: LocaleCode;
   defaults?: FilterState;
+  createdAt?: string;
 }

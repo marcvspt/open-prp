@@ -489,6 +489,7 @@ export const es = {
   },
 
   error: {
+    monthUnavailable: "El mes seleccionado no está disponible.",
     paymentCarryover: (message: string) => `El pago se registró, pero no se creó el cargo del saldo restante: ${message}`,
     network: "No se pudo conectar con el servidor.",
     invalidResponse: "El servidor devolvió una respuesta inválida.",
