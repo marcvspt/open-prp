@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { FormEvent } from "react";
-import { apiFetch } from "@/lib/api-client.ts";
+import { apiFetch, apiData, apiErrorMessage } from "@/lib/api-client.ts";
 import { notifyDataChange } from "@/lib/ui/data-refresh.ts";
 import { createDefaultForm, createCrudPayload } from "@/lib/ui/crud-form.ts";
 import type { Field, CrudForm } from "@/lib/types/crud.ts";
@@ -57,12 +57,12 @@ export function useCrudModal(module: string, fields: readonly Field[], defaults:
       setOpen(true);
       async function load() {
         try {
-          const result = await apiFetch<{ data: CrudForm }>(`/api/${module}/${id}`, { signal: controller.signal });
+          const result = await apiData<CrudForm>(`/api/${module}/${id}`, { signal: controller.signal });
           if (controller.signal.aborted) return;
-          setForm({ ...result.data });
+          setForm({ ...result });
           setLoaded(true);
         } catch (err: unknown) {
-          if (!controller.signal.aborted) setError(t.error.loadRecord(err instanceof Error ? err.message : t.common.errorUnknown));
+          if (!controller.signal.aborted) setError(t.error.loadRecord(apiErrorMessage(err, t)));
         } finally {
           if (!controller.signal.aborted) setLoading(false);
         }
@@ -91,7 +91,7 @@ export function useCrudModal(module: string, fields: readonly Field[], defaults:
       setOpen(false);
       notifyDataChange(module);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t.common.errorUnknown);
+      setError(apiErrorMessage(err, t));
     } finally {
       savingRef.current = false;
       setSaving(false);

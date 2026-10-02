@@ -491,6 +491,9 @@ export const en: Locale = {
   },
 
   error: {
+    paymentCarryover: (message: string) => `The payment was recorded, but the remaining balance charge could not be created: ${message}`,
+    network: "Could not connect to the server.",
+    invalidResponse: "The server returned an invalid response.",
     refreshData: "The change was saved, but this section could not be updated. Retry the refresh.",
     invalidNumber: (label: string) => `Enter a valid number in ${label}.`,
     numberMinimum: (label: string, min: number) => `${label} must be greater than or equal to ${min}.`,

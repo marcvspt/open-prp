@@ -457,8 +457,9 @@ Every island (`client:load`) receives `locale` from the SSR page (`<X locale={lo
 ## Error handling
 
 - **API**: all handlers (factory and custom) wrapped in `withErrorHandling`; bodies parsed with `readJsonBody` (400 "Body inválido"). Errors → JSON with `console.error`, never HTML.
-- **Client fetch**: `src/lib/safeFetch.ts` — `safeFetch<T>` (GET → data, mutation → boolean) and `fetchList<T>`. Logs errors with `console.error` instead of silently swallowing them.
-- **`api-client.ts`** — `apiFetch<T>` throws an `Error` with the server message if `!res.ok`.
+- **Client API**: `src/lib/api-client.ts` centralizes all JSON requests. `apiFetch<T>` checks HTTP status and the `{ success, data, error }` envelope; `apiData<T>` returns `data`, and `fetchList<T>` accepts plain or paginated lists. Failures throw `ApiError` with a kind, HTTP status and server message; `apiErrorMessage(error, t)` translates fallback messages. Domain fields are not validated at runtime.
+- **Cancellation and errors**: reads accept `AbortSignal`, preserve previous data on failure and discard cancelled responses. Histories, recurring payments, cards, shopping and modals display errors with `role="alert"`; currency changes only after the API saves it. Never turn failures into empty lists or automatically retry mutations. If a partial payment succeeds but creating the remaining balance charge fails, both outcomes are reported without repeating the payment.
+- **SSR refresh**: the `fetch` in `src/lib/ui/data-refresh.ts` remains separate because it receives HTML fragments rather than the JSON API envelope.
 - **Hooks**: `useFilteredData` returns `error` (string) that `*Filterable` components show as a `role="alert"` banner. Never silence fetch errors.
 - **React**: `ErrorBoundary` in `src/components/ui/`.
 - **Delete confirmation**: `ConfirmDelete` (no native `confirm()`). Form errors inline with `role="alert"`.

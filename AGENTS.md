@@ -79,6 +79,14 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 - Variables declaradas con `envField` en Astro: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `CLERK_SECRET_KEY` (servidor/secretas) y `PUBLIC_CLERK_PUBLISHABLE_KEY` (cliente/pública). No exponer secretos al cliente ni incluirlos en logs o documentación.
 - Toda operación de datos debe respetar el scope por `userId`; no confiar en IDs enviados por cliente para autorizar acceso.
 
+## Peticiones API desde cliente
+
+- Usar exclusivamente `src/lib/api-client.ts` para JSON: `apiFetch<T>` devuelve el envelope validado, `apiData<T>` devuelve `data` y `fetchList<T>` normaliza arrays simples/paginados. No usar `safeFetch` ni `fetch` directo a endpoints JSON.
+- El cliente comprueba HTTP, JSON y `success`; los tipos de dominio son estáticos, no validación de sus campos en runtime. Los errores lanzan `ApiError` (`kind`, `status`, `serverMessage`); mostrar mensajes mediante `apiErrorMessage(error, t)` y `role="alert"`. Nunca convertir errores en `[]`, `false` o `undefined`.
+- Pasar `AbortSignal` en consultas reemplazables, cancelarlas al cambiar filtros/desmontar y descartar resultados obsoletos. Mantener los datos anteriores ante fallos y limpiar el error al recuperarse. Las cancelaciones no se muestran como errores.
+- No reintentar mutaciones automáticamente. Distinguir guardado fallido de guardado exitoso cuyo refetch falló (`t.error.refreshData`). La moneda solo se actualiza localmente tras confirmar el guardado.
+- Los pagos parciales registran primero el pago y después el cargo del saldo restante. `CarryoverError` indica que el primer paso sí terminó: informar el fallo del segundo sin ofrecer repetir el pago desde el mismo diálogo. El cálculo de tarjetas persiste snapshots; consultar las deudas después de terminar los cálculos.
+- Excepción: `src/lib/ui/data-refresh.ts` usa `fetch` para fragmentos HTML SSR; no pasa por el cliente JSON.
 ## Base de datos y API
 
 - Esquema modular e idempotente en `db/schemas/*.sql`. Semilla existente en `db/seed.js`.
@@ -93,6 +101,7 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 
 ## UI, formularios y accesibilidad
 
+- **Coherencia de UI entre secciones de la app**: mantener un diseño y comportamiento homogéneos en títulos, botones, filtros, tabs, tablas, tarjetas, formularios, modales y estados de carga, error y vacío. Reutilizar componentes, tokens y patrones existentes para conservar tamaños, espaciados, tipografía, colores, ubicación de acciones y comportamiento responsive. Antes de añadir o modificar una interfaz, revisar las secciones equivalentes y seguir sus convenciones; cualquier diferencia debe responder a una necesidad funcional concreta.
 - `CrudModal` compone `CrudField.tsx` (render de campos), `useCrudModal.ts` (carga y guardado) y `crud-form.ts` (defaults, visibilidad y payload). Los tipos viven en `src/lib/types/crud.ts`: `Field` es una unión discriminada, exige opciones para selects y limita `step`/`min` a números. Tipar los arrays de campos antes de serializarlos en SSR.
 - La carga de edición muestra estado y errores dentro del modal, cancela peticiones al cerrar/cambiar registro y bloquea guardar hasta cargar los datos. Los números se convierten al enviar con `Number`, validan finitud y mínimo; vacío opcional es `null`, vacío obligatorio es error. Nunca convertir una entrada inválida en cero.
 

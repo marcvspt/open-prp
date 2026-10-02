@@ -1,5 +1,5 @@
-﻿import { useState, useCallback, useEffect, useRef } from "react";
-import { safeFetch } from "@/lib/safeFetch.ts";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { apiData, apiFetch, apiErrorMessage, isAbortError } from "@/lib/api-client.ts";
 import { currentMonthStr } from "@/lib/date.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
@@ -31,74 +31,68 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const loadedMonthRef = useRef(initialMonth);
 
+  const [error, setError] = useState("");
+  const requestController = useRef<AbortController | null>(null);
+  const mutating = useRef(false);
   const fetchMonthly = useCallback(async (month: string) => {
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
     setLoading(true);
-    const data = await safeFetch<RecurringPaymentMonthly[]>(
-      `/api/recurring-payment-monthly?month=${month}`
-    );
-    if (data) {
-      setMonthly(data);
-      loadedMonthRef.current = month;
-    }
-    setLoading(false);
-  }, []);
+    setError("");
+    try {
+      const data = await apiData<RecurringPaymentMonthly[]>(`/api/recurring-payment-monthly?month=${month}`, { signal: controller.signal });
+      if (!controller.signal.aborted) { setMonthly(data); loadedMonthRef.current = month; }
+    } catch (err: unknown) {
+      if (!controller.signal.aborted) setError(apiErrorMessage(err, t));
+      throw err;
+    } finally { if (requestController.current === controller) setLoading(false); }
+  }, [t]);
 
   useEffect(() => {
-    const urlMonth = getMonthFromUrl() || currentMonthStr();
-    if (urlMonth !== loadedMonthRef.current) {
-      fetchMonthly(urlMonth);
-    }
-  }, [fetchMonthly]);
-
-  useEffect(() => {
-    function handler(e: Event) {
-      const detail = (e as CustomEvent).detail as { month: string };
-      if (detail.month !== loadedMonthRef.current) {
-        const m = detail.month || currentMonthStr();
-        fetchMonthly(m);
-      }
+    const month = getMonthFromUrl() || currentMonthStr();
+    if (month !== loadedMonthRef.current) void fetchMonthly(month).catch(() => {});
+    function handler() {
+      const next = getMonthFromUrl() || currentMonthStr();
+      void fetchMonthly(next).catch(() => {});
     }
     window.addEventListener("monthchange", handler);
-    return () => window.removeEventListener("monthchange", handler);
+    return () => { requestController.current?.abort(); window.removeEventListener("monthchange", handler); };
   }, [fetchMonthly]);
 
-  async function handleTogglePaid(paymentId: string) {
+  async function mutate(paymentId: string, url: string, options: RequestInit) {
+    if (mutating.current) return;
+    mutating.current = true;
     setTogglingId(paymentId);
-    const m = monthly.find(sm => sm.payment_id === paymentId);
-    if (!m) return;
-    const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ is_paid: !m.is_paid }),
+    setError("");
+    let saved = false;
+    try {
+      await apiFetch(url, options);
+      saved = true;
+      await fetchMonthly(getMonthFromUrl() || currentMonthStr());
+    } catch (err: unknown) {
+      if (!isAbortError(err)) setError(saved ? t.error.refreshData : apiErrorMessage(err, t));
+    } finally { mutating.current = false; setTogglingId(null); }
+  }
+
+  async function handleTogglePaid(paymentId: string) {
+    const entry = monthly.find(m => m.payment_id === paymentId);
+    if (entry) await mutate(paymentId, `/api/recurring-payment-monthly?id=${entry.id}`, {
+      method: "PATCH", body: JSON.stringify({ is_paid: !entry.is_paid }),
     });
-    if (ok) await fetchMonthly(loadedMonthRef.current);
-    setTogglingId(null);
   }
 
   async function handleRemoveFromMonth(paymentId: string) {
-    const m = monthly.find(sm => sm.payment_id === paymentId);
-    if (!m) return;
-    if (m.is_paid) {
-      const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ is_paid: false }),
-      });
-      if (ok) await fetchMonthly(loadedMonthRef.current);
-    } else {
-      const ok = await safeFetch(`/api/recurring-payment-monthly?id=${m.id}`, {
-        method: "DELETE",
-      });
-      if (ok) await fetchMonthly(loadedMonthRef.current);
-    }
+    const entry = monthly.find(m => m.payment_id === paymentId);
+    if (entry) await mutate(paymentId, `/api/recurring-payment-monthly?id=${entry.id}`, entry.is_paid
+      ? { method: "PATCH", body: JSON.stringify({ is_paid: false }) } : { method: "DELETE" });
   }
 
   async function handleAddToMonth(payment: RecurringPayment) {
-    const ok = await safeFetch(`/api/recurring-payments/${payment.id}/monthly`, {
-      method: "POST",
-      body: JSON.stringify({ month: loadedMonthRef.current, amount: payment.default_amount }),
+    await mutate(payment.id, `/api/recurring-payments/${payment.id}/monthly`, {
+      method: "POST", body: JSON.stringify({ month: loadedMonthRef.current, amount: payment.default_amount }),
     });
-    if (ok) await fetchMonthly(loadedMonthRef.current);
   }
-
   function toggleCategory(name: string) {
     setCollapsedCategories(prev => {
       const next = new Set(prev);
@@ -254,6 +248,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
 
   return (
     <LocaleProvider locale={locale}>
+      {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
       <div className="space-y-6 relative">
         {loading && (
           <div className="absolute top-0 right-0">

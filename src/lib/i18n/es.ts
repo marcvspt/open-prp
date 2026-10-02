@@ -489,6 +489,9 @@ export const es = {
   },
 
   error: {
+    paymentCarryover: (message: string) => `El pago se registró, pero no se creó el cargo del saldo restante: ${message}`,
+    network: "No se pudo conectar con el servidor.",
+    invalidResponse: "El servidor devolvió una respuesta inválida.",
     refreshData: "El cambio se guardó, pero no se pudieron actualizar los datos de esta sección. Reintenta la actualización.",
     invalidNumber: (label: string) => `Introduce un número válido en ${label}.`,
     numberMinimum: (label: string, min: number) => `${label} debe ser mayor o igual que ${min}.`,
