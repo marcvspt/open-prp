@@ -1,7 +1,7 @@
 {
   "name": "open-prp",
   "type": "module",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "license": "GPL-3.0-only",
   "scripts": {
     "dev": "astro dev",
@@ -14,6 +14,7 @@
   "dependencies": {
     "@astrojs/netlify": "8.2.6",
     "@astrojs/react": "7.0.0",
+    "@astrojs/sitemap": "3.7.4",
     "@clerk/astro": "4.1.9",
     "@clerk/localizations": "4.21.2",
     "@libsql/client": "0.18.0",

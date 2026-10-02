@@ -5,11 +5,16 @@ import { getClerkLocalization } from '@/lib/i18n/clerk-localizations.ts';
 import { DEFAULT_LOCALE } from '@/lib/i18n/locale.ts';
 
 import react from '@astrojs/react';
+
 import svgr from "vite-plugin-svgr";
+
 import tailwindcss from "@tailwindcss/vite";
+
 import clerk from "@clerk/astro";
 
 import netlify from '@astrojs/netlify';
+
+import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
@@ -18,6 +23,8 @@ export default defineConfig({
   prefetch: false,
 
   adapter: netlify(),
+
+  site: 'https://oprp.marcvspt.tech',
 
   i18n: {
     defaultLocale: "es",
@@ -29,7 +36,7 @@ export default defineConfig({
     },
   },
 
-  integrations: [react(), clerk({
+  integrations: [react(), sitemap(), clerk({
     afterSignOutUrl: "/es/app/login",
     localization: getClerkLocalization(DEFAULT_LOCALE),
     prefetchUI: true,
@@ -38,8 +45,6 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss(), svgr()],
   },
-
-  site: 'https://oprp.marcvspt.tech',
 
   env: {
     schema: {
