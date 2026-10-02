@@ -1,4 +1,5 @@
 ---
+import type { Field } from "@/lib/types/crud.ts";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
 import { FILTER_WRAP_CLASS, FILTER_ALL_STATUS_TASKS } from "@/lib/i18n/filter-fields.ts";
@@ -47,7 +48,7 @@ const priorityColor: Record<number, string> = {
   2: "bg-warning-bg text-warning-text",
   3: "bg-danger-bg text-danger-text",
 };
-const fields = [
+const fields: Field[] = [
   {
     name: "description",
     label: t.field.description,

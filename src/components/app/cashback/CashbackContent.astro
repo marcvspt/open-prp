@@ -1,4 +1,5 @@
 ---
+import type { Field } from "@/lib/types/crud.ts";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
@@ -34,7 +35,7 @@ const [allCards, initialData] = await Promise.all([
   new CashbackRepository().findAll(userId, cbFilter),
 ]);
 const creditCards = allCards.filter(c => c.type === "credit");
-const fields = [
+const fields: Field[] = [
   dateField(t),
   { name: "description", label: t.field.description, type: "text" as const },
   { name: "amount", label: t.field.amount, type: "number" as const, required: true, step: "0.01" },

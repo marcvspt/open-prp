@@ -1,99 +1,116 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useLocaleDict } from "@/lib/i18n/LocaleProvider.tsx";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { getLocaleDict } from "@/lib/i18n/locale.ts";
+import type { FilterState, FilterOptions } from "@/lib/types/filters.ts";
+import type { ApiResponse } from "@/lib/types/general.ts";
 
-interface FilterState {
-  [key: string]: string;
-}
-
-const NON_FILTER_PARAMS = new Set(["tab"]);
-
-function filtersFromUrl(initial: FilterState): FilterState {
-  const filters: FilterState = { ...initial };
-  if (typeof window === "undefined") return filters;
-  const params = new URLSearchParams(window.location.search);
-  for (const [key, value] of params) {
-    if (NON_FILTER_PARAMS.has(key)) continue;
+function filtersFromUrl(initial: FilterState, keys: readonly string[], defaults: FilterState): FilterState {
+  const filters: FilterState = {};
+  const params = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
+  for (const key of keys) {
+    const value = params ? params.get(key) ?? defaults[key] : initial[key] ?? defaults[key];
     if (value) filters[key] = value;
   }
   return filters;
 }
 
-export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, initialData?: T) {
-  const t = useLocaleDict();
-  const [filters, setFilters] = useState<FilterState>(() => filtersFromUrl(initial));
+export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, initialData: T | undefined, options: FilterOptions) {
+  const t = getLocaleDict(options.locale);
+  const keysSignature = options.keys.join(",");
+  const keys = useMemo(() => keysSignature.split(","), [keysSignature]);
+  const defaultsSignature = JSON.stringify(options.defaults ?? {});
+  const defaults = useMemo(() => JSON.parse(defaultsSignature) as FilterState, [defaultsSignature]);
+  const [filters, setFilters] = useState<FilterState>(() => filtersFromUrl(initial, keys, defaults));
+  const [searchValue, setSearchValue] = useState(filters.q ?? "");
   const [data, setData] = useState<T | null>(initialData ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const prevQsRef = useRef<string>("");
-  const isFirstRender = useRef(true);
+  const qs = new URLSearchParams(filters).toString();
+  const requestKey = `${apiEndpoint}?${qs}`;
+  // SSR data already corresponds to the initial URL; completed requests replace this key.
+  const completedKey = useRef<string | null>(initialData !== undefined ? requestKey : null);
 
   const setFilter = useCallback((key: string, value: string) => {
+    if (!keys.includes(key)) return;
+    const update = () => setFilters(prev => {
+      const next = { ...prev };
+      if (key !== "page") delete next.page;
+      if (value) next[key] = value;
+      else delete next[key];
+      return next;
+    });
     if (key === "q") {
+      setSearchValue(value);
       clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        setFilters(prev => {
-          const next = { ...prev };
-          delete next.page;
-          if (value) next.q = value;
-          else delete next.q;
-          return next;
-        });
-      }, 300);
+      debounceRef.current = setTimeout(update, 300);
     } else {
-      setFilters(prev => {
-        const next = { ...prev };
-        if (key !== "page") delete next.page;
-        if (value) next[key] = value;
-        else delete next[key];
-        return next;
-      });
+      update();
     }
-  }, []);
+  }, [keys]);
 
   const clearFilters = useCallback(() => {
     clearTimeout(debounceRef.current);
-    setFilters({});
-
-    const params = new URLSearchParams(location.search);
-    for (const key of Object.keys(filters)) {
-      params.delete(key);
-    }
-    const nextQs = params.toString();
-    history.replaceState(null, "", nextQs ? `${location.pathname}?${nextQs}` : location.pathname);
-
-    const el = document.querySelector<HTMLInputElement>("[data-search-input]");
-    if (el) el.value = "";
-  }, [filters]);
+    setSearchValue("");
+    setFilters({ ...defaults });
+  }, [defaults]);
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      const qs = new URLSearchParams(filters).toString();
-      prevQsRef.current = qs;
+    const restore = () => {
+      clearTimeout(debounceRef.current);
+      const next = filtersFromUrl({}, keys, defaults);
+      setFilters(next);
+      setSearchValue(next.q ?? "");
+    };
+    window.addEventListener("popstate", restore);
+    return () => {
+      clearTimeout(debounceRef.current);
+      window.removeEventListener("popstate", restore);
+    };
+  }, [keys, defaults]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    for (const key of keys) url.searchParams.delete(key);
+    const params = new URLSearchParams(qs);
+    for (const [key, value] of params) {
+      if (value !== defaults[key]) url.searchParams.set(key, value);
+    }
+    history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+
+    if (completedKey.current === requestKey) {
+      setLoading(false);
+      setError("");
       return;
     }
-    const qs = new URLSearchParams(filters).toString();
-    if (prevQsRef.current === qs) return;
-    prevQsRef.current = qs;
-
+    const controller = new AbortController();
+    let active = true;
     setLoading(true);
-    fetch(`${apiEndpoint}?${qs}`)
-      .then(r => r.json())
-      .then(d => setData((d?.data ?? d) as T))
-      .catch(() => {
-        setError(t.error.message(t.common.errorUnknown));
-      })
-      .finally(() => setLoading(false));
+    setError("");
 
-    const params = new URLSearchParams(location.search);
-    for (const [key, value] of Object.entries(filters)) {
-      if (value) params.set(key, value);
-      else params.delete(key);
+    async function load() {
+      try {
+        const response = await fetch(requestKey, { signal: controller.signal });
+        const body: ApiResponse<T> = await response.json();
+        if (!response.ok || !body.success || body.data === undefined) {
+          throw new Error(body.error || t.common.errorUnknown);
+        }
+        if (!active) return;
+        completedKey.current = requestKey;
+        setData(body.data);
+        setError("");
+      } catch (err: unknown) {
+        if (!active || controller.signal.aborted) return;
+        setError(t.error.message(err instanceof Error ? err.message : t.common.errorUnknown));
+      } finally {
+        if (active) setLoading(false);
+      }
     }
-    const nextQs = params.toString();
-    history.replaceState(null, "", nextQs ? `${location.pathname}?${nextQs}` : location.pathname);
-  }, [filters, apiEndpoint]);
+    void load();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [qs, requestKey, keys, defaults, t]);
 
-  return { filters, setFilter, clearFilters, data, loading, error };
+  return { filters, setFilter, clearFilters, searchValue, data, loading, error };
 }

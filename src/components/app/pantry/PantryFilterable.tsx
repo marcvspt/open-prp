@@ -16,7 +16,7 @@ interface Props {
 export default function PantryFilterable({ categories, initialData, locale = "es" }: Props) {
   const t = getLocaleDict(locale);
   const parsedInitial = initialData ? JSON.parse(initialData) as PantryItem[] : undefined;
-  const { filters, setFilter, clearFilters, data, loading, error } = useFilteredData<PantryItem[]>("/api/pantry", {}, parsedInitial);
+  const { filters, setFilter, clearFilters, searchValue, data, loading, error } = useFilteredData<PantryItem[]>("/api/pantry", {}, parsedInitial, { keys: ["category_id", "q"], locale });
 
   const items = data ?? [];
 
@@ -42,7 +42,7 @@ export default function PantryFilterable({ categories, initialData, locale = "es
             <input
               type="search"
               data-search-input
-              defaultValue={filters.q || ""}
+              value={searchValue}
               onChange={(e) => setFilter("q", e.target.value)}
               placeholder={FILTER_SEARCH_PANTRY(t)}
               className={FILTER_INPUT_CLASS}
