@@ -1,305 +1,128 @@
 # AGENTS.md — Open PRP
 
-Guía de arquitectura y convenciones para agentes/IA que trabajen en este repo. Léela antes de generar o modificar código.
+Guía obligatoria para agentes que exploren o modifiquen este repositorio. Leer antes de generar código. La configuración y el código actuales son la fuente de verdad; mantener esta guía coherente con ellos.
 
-## Mantenimiento de este archivo
+## Requisitos del entorno
 
-Cualquier cambio general, función nueva o componente importante que se agregue al proyecto debe reflejarse siempre en este `AGENTS.md`.
+- **Node.js 22.12.0 o superior**, conforme a `engines.node` en `package.json`. Mantener este requisito sincronizado con el manifiesto.
+- **pnpm** es el gestor de paquetes del proyecto y debe estar instalado. Usarlo al indicar comandos de dependencias y scripts al usuario.
 
-La documentación técnica se mantiene en español como idioma principal (`README.md`, `DOCS.md`, este `AGENTS.md`); las traducciones al inglés viven en `README.en.md` y `DOCS.en.md` y se adaptan después de actualizar las fuentes en español. Al tocar documentación, actualizar primero la versión en español y luego (si aplica) la inglesa.
+## Responsabilidades y comandos
 
-## Desarrollo
+- **El usuario ejecuta todos los comandos con `pnpm`**: `pnpm install`, `pnpm add`, `pnpm update`, `pnpm remove`, `pnpm build`, `pnpm run ...`, `pnpm dev`, `pnpm preview`, `pnpm exec` y `pnpm dlx`, entre otros. El agente solo indica el comando exacto, para qué sirve y qué salida necesita recibir.
+- El agente tampoco ejecuta instalaciones, builds, servidores, scripts de proyecto, seeds, migraciones ni despliegues mediante comandos equivalentes de Node, Astro, npm, npx, yarn u otras herramientas. No sustituir `pnpm` por otra herramienta para eludir esta regla. Node se gestiona con fnm y puede no estar en el PATH del shell.
+- El agente puede explorar archivos, buscar referencias, revisar diffs y editar código/documentación. Debe comunicar qué verificó por inspección y qué queda pendiente de ejecución por el usuario.
+- Las pruebas de guardar, editar o eliminar desde modales CRUD las realiza el usuario y comparte el resultado.
+- Si hacen falta dependencias o cambios de producción, preparar los archivos y entregar al usuario los comandos o SQL necesarios; no ejecutarlos.
 
-```bash
-astro dev --background
-astro dev stop | status | logs
-```
+## Mantenimiento de documentación
 
-- **Builds**: el **usuario** ejecuta el build (`pnpm build`) y comparte la salida. El agente **nunca** ejecuta builds ni comandos similares (node vive en fnm, fuera del PATH del shell): el usuario lo corre todo y reporta si hubo errores o si salió bien. Esto mismo aplica al guardar o editar algo desde un modal CRUD: el agente no lo prueba, el usuario lo hace y reporta el resultado.
+- **Actualizar siempre este `AGENTS.md` en la misma tarea cuando haya cambios importantes**: funcionalidades, componentes relevantes, arquitectura, rutas, datos, dependencias, autenticación, despliegue o convenciones. Describir el comportamiento final y eliminar instrucciones obsoletas o contradictorias.
+- La documentación de producto y técnica está unificada en `README.md` (fuente principal en español) y `README.en.md` (traducción inglesa). Actualizar primero el README español y después el inglés cuando el cambio afecte su contenido. Mantener enlaces e índice técnico coherentes; no crear archivos DOCS separados.
+- No documentar funciones previstas como si ya existieran. Distinguir implementación actual y trabajo pendiente, especialmente en sitemap, RSS y mutaciones CRUD.
 
-## Stack
+## Stack y coherencia tecnológica
 
-- **Framework**: Astro 7 (con **enrutamiento i18n** por directorio `[locale]`: `prefixDefaultLocale: true` → todos los locales con prefijo, `redirectToDefaultLocale: true` → `/` redirige a `/es`, `fallbackType: "redirect"`).
-- **UI interactiva**: React 19 (solo donde se necesite interactividad en cliente, directiva `client:load`)
-- **Estilos**: Tailwind 4
-- **Lenguaje**: TypeScript (sintaxis moderna, sin JavaScript plano)
-- **i18n**: diccionarios bilingües `es`/`en` (ver sección [Textos UI centralizados](#textos-ui-centralizados-i18n))
+Toda solución debe ser coherente con las tecnologías, versiones y APIs usadas por el proyecto; comprobar `package.json`, `astro.config.mjs` y los patrones existentes antes de modificarlo.
 
-## Infraestructura
+| Capa | Implementación actual | Regla |
+|---|---|---|
+| Framework | Astro 7, `output: "server"` | Priorizar SSR y componentes `.astro`; prerender solo para contenido público independiente de sesión y BD. |
+| Interactividad | React 19, `@astrojs/react` | Usar islas solo cuando haga falta interactividad, con `client:load` en el consumidor Astro. |
+| Estilos | Tailwind CSS 4, `@tailwindcss/vite` | Reutilizar tokens y clases existentes; Astro usa `class`, React `className`. |
+| Lenguaje | TypeScript estricto | Sin `any`; tipos de dominio en `src/lib/types/`. Respetar las excepciones existentes de configuración y `db/seed.js` ESM. |
+| Autenticación | Clerk, `@clerk/astro`, `@clerk/localizations` | Hooks desde `@clerk/astro/react`; servidor desde `@clerk/astro/server`. |
+| Base de datos | Turso/libSQL, `@libsql/client/web` | Reutilizar `getDb()`, SQL parametrizado y repositorios; mantener compatibilidad con Netlify Functions. |
+| Despliegue | Netlify, `@astrojs/netlify` | Mantener código de servidor y variables compatibles con el adapter actual. |
+| Sitemap | `@astrojs/sitemap` | Mantener `site`, enlaces y rutas públicas coherentes. |
 
-- **Hosting**: Netlify (adapter en `astro.config.mjs`)
-- **Base de datos**: TursoDB (`@libsql/client/web`, compatible con Netlify Functions)
-- **Autenticación**: Clerk
-- **Variables de entorno**: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`. Se declaran con el schema de `envField` de Astro en `astro.config.mjs` (`env.schema`), con `context` (`server`/`client`) y `access` (`secret`/`public`). Ventajas: valida en build que existan las obligatorias (`optional: false`), da tipos e IntelliSense para `import.meta.env.*`, y evita fugas al cliente (solo las `PUBLIC_*` con `access: 'public'` llegan al bundle del cliente; los secretos nunca se exponen).
+No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveniencia sin una necesidad de la tarea.
 
-## Arquitectura general
+## Estructura e imports
 
-- **SSR-first**: se prioriza Server-Side Rendering con Astro. Los datos se obtienen en SSR siempre que sea posible; la página llega ya renderizada al cliente.
-- **Prefetch deshabilitado**: `prefetch: false` en `astro.config.mjs`. El `<ClientRouter />` de Astro activa por defecto `init({ prefetchAll: true })` (inyecta `<link rel="prefetch">` en hover, duplicando el fetch SSR por navegación); se desactiva explícitamente para evitarlo. No usar prefetch.
-- **Indicador de navegación**: `BaseLayout.astro` incluye una barra de progreso global (`#nav-loading`, fija arriba, `bg-primary`, con `transition:persist` para que la animación no se reinicie en el swap). Se muestra en `astro:before-preparation` y se oculta en `astro:page-load` vía module script con listeners a nivel `document` (persisten entre navegaciones; el elemento se consulta fresco en cada evento porque el body se reemplaza en el swap). Respeto a `prefers-reduced-motion`. Cubre toda navegación del ClientRouter (landing y app).
-- **Mejores prácticas y rendimiento**: seguir siempre las mejores prácticas de cada tecnología (Astro, React, Tailwind, TypeScript, Clerk, TursoDB) y priorizar el rendimiento web (Core Web Vitals, bundle en cliente reducido, SSR/SSG donde aplique, queries eficientes, caching, hydration mínima).
-- React 19 se usa únicamente en componentes que requieren comportamiento dinámico en cliente (filtros, tabs, modales CRUD, interacciones en lista de compras).
-- Se prioriza la componentización y reutilización de componentes, utilidades y estilos. Cualquier funcionalidad compartida entre secciones debe implementarse como recurso reutilizable, nunca duplicado.
-- **Patrón de datos iniciales SSR**: las islas React reciben datos del primer render vía props (`initialData={JSON.stringify(...)}` desde repositorios en el frontmatter de la `.astro`). Re-fetch en cliente al cambiar filtros (vía `useFilteredData` o escuchando el evento `monthchange`) o tras una mutación. Aplica a: `ShoppingList`, `RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary`, `CardsHistory`, `CurrencySelect`, componentes `*Filterable`.
-- **Rendimiento SSR**: las queries de repositorio independientes del frontmatter se ejecutan siempre con `Promise.all` (nunca en serie con `await` secuenciales), porque cada `execute` contra Turso es un round-trip HTTP y en serie suman la latencia (2s+). El middleware inyecta `Astro.locals.user` (fila completa del usuario ya consultada en `findOrCreate`) para que componentes como el Sidebar lean `preferred_currency` de ahí y no hagan una query extra por página.
-- **Streaming SSR**: un `await` de datos en el frontmatter de una página bloquea el envío de TODO el HTML (layout incluido) hasta que se resuelve. Para que el shell llegue al navegador de inmediato, **todas las páginas de la app** traen sus datos en sub-componentes `*Content.astro` que hacen su propio `await` internamente (`XContent.astro` en `src/components/app/<sección>/`, uno por página). La página queda solo con el shell síncrono (título + `<AppLayout title>` → `<XContent userId={Astro.locals.userId} locale={locale} />`); el componente lee query params de `Astro.url` y `Astro.locals.createdAt`, hace `Promise.all` de repos y renderiza contenido + `CrudModal`/`DeleteHandler`/`ToggleHandler`. Así el shell (sidebar, título, selector de mes) se flushea en cuanto está listo y el contenido llega al resolverse las queries. Regla: si una sección completa depende de datos, mover la carga a un componente hijo; el frontmatter de la página queda solo con trabajo síncrono. Astro ya flushea cada componente SSR; no hace falta `renderToWebStream` manual.
-- `src/lib/dashboard/load.ts` → `loadDashboardMonth()`: mismas queries que la API pero vía repositorios (sin HTTP), usado por `DashboardContent.astro`. No recalcula deudas ni hace `upsert` de `card_monthly` por visita (eso ocurre bajo demanda desde el cliente vía `/api/card-monthly/calculate` y desde la página de tarjetas).
-- `src/lib/dashboard/api.ts` → fetch de datos + mutaciones del dashboard desde cliente.
+- Páginas: `src/pages/[locale]/index.astro` para landing; `src/pages/[locale]/app/*` para app; `src/pages/api/*` para API sin prefijo de idioma.
+- Layouts: `BaseLayout.astro` controla HTML, head, título, tema y ClientRouter; `AppLayout.astro` y `LandingLayout.astro` lo envuelven. Los layouts nuevos deben envolverlo y reenviar `title`.
+- Componentes: `src/components/landing/`, `src/components/app/` y UI compartida en `src/components/ui/`. UI propia de app en `src/components/app/ui/`.
+- Lógica de dominio y repositorios: `src/lib/modules/`; tipos: `src/lib/types/`; comportamiento browser: `src/lib/ui/`; traducciones: `src/lib/i18n/`.
+- **Imports internos siempre con alias `@/` definido en `tsconfig.json` y extensión explícita** (`.ts`, `.tsx`, `.astro`, `.svg`, `.css`). Nunca usar `./` o `../` para importar código interno. Los paquetes conservan sus nombres de paquete.
+- Importar el archivo concreto, sin barrels ni resolución implícita de directorios/`index.*`. Las rutas `index.ts` de API son endpoints, no barrels.
+- SVGs en `src/assets/`, nombres kebab-case; identificador PascalCase con sufijo `Icon`. En React importar con `.svg?react`.
+- Reutilizar componentes, utilidades y estilos compartidos; no duplicar funcionalidades entre secciones.
 
-## Cambio de filtros sin recarga
+## SSR, datos y navegación
 
-- Las páginas de **tarjetas** y **pagos recurrentes** usan `TabBarWithMonth` que dispatchea un evento `monthchange` en `window` al cambiar el mes. Los componentes (`RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary`, `CardsHistory`) escuchan ese evento y refetchean datos desde los endpoints API sin recargar la página. La URL se actualiza vía `history.replaceState`.
-- Los componentes `*Filterable` (transacciones, plazos, cashback, despensa) usan el hook `useFilteredData` que maneja filtros, fetch y URL de forma autónoma. El estado inicial de filtros se restaura desde los query params de la URL (la URL es la fuente de verdad; excluye `tab`, gestionado por `TabBar`), y al cambiar filtros la URL se actualiza preservando los params no gestionados por el hook. Así la UI y los filtros aplicados (SSR) siempre coinciden tras un reload (p. ej. el de `CrudModal`). El hook devuelve también `error` (string, vacío si OK) que los `*Filterable` muestran como banner `role="alert"`; nunca silenciar los errores de fetch.
-- `TransactionsFilterable` pagina a 50 registros. `page` se conserva en la URL junto con los filtros; cambiar o limpiar un filtro elimina la página actual y vuelve a la primera. La API de transacciones devuelve `{ data, total, page, pageSize }`.
-- `CrudModal` y `ConfirmDelete` actualmente **recargan la página** tras guardar o eliminar (`window.location.href = window.location.href` / `window.location.reload()`). Pendiente de migrar a refetch sin recarga.
+- SSR primero. Las páginas de app mantienen un shell síncrono y delegan queries a componentes `*Content.astro` por sección para permitir streaming del contenido.
+- Ejecutar queries independientes con `Promise.all`; no acumular round-trips de Turso en serie. Leer `Astro.locals.user` para datos del usuario ya consultados por middleware.
+- Islas React reciben datos iniciales SSR por props (`initialData={JSON.stringify(...)}`); refetchean al cambiar filtros o tras mutaciones según el patrón existente.
+- `src/lib/dashboard/load.ts` carga el dashboard directamente desde repositorios. No recalcular deudas ni hacer upserts por cada visita; el cálculo de tarjetas se solicita en cliente a `/api/card-monthly/calculate`.
+- `prefetch: false` en Astro; no añadir prefetch. La configuración actual de Clerk tiene `prefetchUI: true`; es una opción distinta del prefetch de navegación.
+- Los scripts module de Astro se ejecutan una vez con ClientRouter. Inicializar listeners ligados a elementos reemplazados en `astro:page-load`; listeners globales sobre `document` se registran una vez. No usar `data-astro-rerun` para scripts con imports.
+- Mantener el tema antes del primer paint y en `astro:after-swap`, la barra global `#nav-loading` y el respeto a `prefers-reduced-motion`.
+- Sidebar desktop de ancho `w-64`; móvil como drawer con overlay. Navegación data-driven con hrefs localizados. Mantener placeholder fijo y `transition:persist="user-button"` del avatar de Clerk.
 
-## Autenticación / Middleware
+## Idiomas y textos
 
-- `clerkMiddleware` desde `@clerk/astro/server` en `src/middleware.ts` (integración `@clerk/astro`).
-- Rutas públicas (sin autenticación requerida): `/es`, `/en` (landing) y `/es/app/login`, `/en/app/login`. Middleware protege el resto de `/es/app/*` y `/en/app/*`.
-- Sin sesión en rutas de app → redirige al login **localizado** usando `context.currentLocale` + `getRelativeLocaleUrl(locale, "/app/login")` (import de `astro:i18n`). Las URLs legacy sin prefijo (`/app/*`) redirigen a su equivalente en `/es`.
-- `needsSync` — sincroniza el perfil **solo si falta email o display_name** (el check se hace en `middleware.ts` sobre el usuario devuelto por `findOrCreate`, sin query extra ni cooldown). Así se evita la llamada HTTP a la API de Clerk en cada request.
-- Hooks React desde `@clerk/astro/react` (**no** `@clerk/clerk-react`).
-- `UserButton` con `afterSignOutUrl="/es/app/login"` y `client:load`.
-- Redirects de Clerk configurados en `astro.config.mjs`: `afterSignOutUrl`.
-- **Localización de componentes de Clerk**: `@clerk/localizations` (versión alineada con `@clerk/astro`). El mapeo locale → recurso vive en `getClerkLocalization(locale)` (`src/lib/i18n/clerk-localizations.ts`): `es` → `esES`, `en` → `enUS` (default `esES` si falta la clave). Al añadir un idioma, añadir su clave al mapa.
-- La integración `clerk()` en `astro.config.mjs` recibe `localization: getClerkLocalization(DEFAULT_LOCALE)` como valor por defecto (solo afecta a componentes embebidos, no al Account Portal) y `prefetchUI: false` (la UI de Clerk/ClerkUI se descarga bajo demanda al abrir un componente tipo modal como SignIn/UserButton; el `before-hydration` de la integración solo espera ClerkJS, no ClerkUI). `ClerkLocaleBridge` (isla `client:load` en `AppLayout` y `LandingLayout`) ajusta la localización al locale de la página con `updateClerkOptions({ localization })` desde `@clerk/astro/client`; se ejecuta tras la inicialización de Clerk (garantizada por el script `before-hydration` de la integración).
+- Locales actuales: `es` y `en`. No añadir idiomas salvo petición. Todos llevan prefijo; `/` redirige a `/es`.
+- Resolver locale SSR con `resolveLocale(Astro.currentLocale)`; props tipadas con `LocaleCode` (salvo el puente intencional `ClerkLocaleBridge`). Generar URLs con `getRelativeLocaleUrl`.
+- Todo texto UI vive en `es.ts` y `en.ts`; añadir ambos antes de usarlo. Consumir con `t = getLocaleDict(locale)` o `useLocaleDict()`, nunca importar `es` para leer etiquetas en componentes.
+- Strings dinámicos como funciones del diccionario; strings compartidos en el objeto interno `shared`. Clases, IDs, atributos `data-*` y query params no son textos UI.
+- Usar helpers de `form-fields.ts`, `filter-fields.ts` y `general-fields.ts` parametrizados con `t`; no duplicar fields ni etiquetas reutilizables inline.
+- Pasar locale a `monthLabel`, `formatDate` y `formatDateTime`. El cambio de idioma conserva ruta y query string.
+- Datos de sistema en inglés, minúsculas y kebab-case; datos del usuario se conservan exactamente como los escribió. Display mediante `displayCategoryName` y `displayPaymentMethodName`.
 
-## Estructura del proyecto
+## Autenticación y secretos
 
-- **Ruteo**: `/` → redirige a `/es` (landing). `/es/app` → redirige a `/es/app/dashboard` (logueado) o `/es/app/login` (no logueado). Con i18n, todo vive bajo `[locale]`: `src/pages/[locale]/index.astro` (landing) y `src/pages/[locale]/app/*` (app). La app se sirve en `/es/app/*` y `/en/app/*`.
-- **Prerender**: la landing `[locale]/index.astro` está prerenderizada (`export const prerender = true` + `getStaticPaths` con `LOCALES`); el resto de páginas son SSR. No prerenderizar páginas que dependan de auth, `Astro.locals` o la base de datos (todo `/es/app/*` y `/es/app/login`).
-- **Páginas**: landing en `src/pages/[locale]/index.astro`; app en `src/pages/[locale]/app/*`; API en `src/pages/api/*/` (sin prefijo de locale).
-- **Landing**: componentes en `src/components/landing/*`, layout `LandingLayout.astro`.
-- **App**: componentes en `src/components/app/*`, layout `AppLayout.astro`.
-- **UI compartida** (landing + app): `src/components/ui/*` (ThemeToggle, Select, MultiSelect, ErrorBoundary, LocaleSwitcher, ClerkLocaleBridge).
-- **UI propia de la app**: `src/components/app/ui/` (CrudModal, DataTable, FormModal, ConfirmDelete, DeleteHandler, ToggleHandler, TabBar, TabBarWithMonth, MonthSelector, FilterSelect, FilterLinks, CurrencySelect, PageHeader, Sidebar).
-- **Módulos** (`src/lib/modules/`): `transactions`, `card-monthly`, `cards`, `cashback`, `events`, `installments`, `notes`, `pantry`, `payment-methods`, `recurring-payments`, `recurring-payment-monthly`, `shopping`, `tasks`, `users`.
-- **Tipos**: `src/lib/types/` — un archivo por dominio. Nunca tipos inline.
-- **Traducción/homologación de textos** (`src/lib/i18n/`): `es.ts` (diccionario es + tipo `Locale`) y `en.ts` (diccionario en), `locale.ts` (`LOCALES`, `LocaleCode`, `getLocaleDict`, `resolveLocale`), `LocaleProvider.tsx` (`LocaleContext`, `useLocaleDict`), `category-labels.ts` y `payment-method-labels.ts` (nombres de sistema → display), `clerk-localizations.ts` (mapeo locale → recurso de `@clerk/localizations`), `form-fields.ts`, `filter-fields.ts` y `general-fields.ts` (helpers/constantes de campos, filtros y botones, parametrizados con `t`).
+- Middleware Clerk resuelve el usuario y expone `userId`, `createdAt` y `user` en locals. Sin sesión, protege las rutas app excepto login y redirige al login localizado; las landings son públicas.
+- Sincronizar perfil desde Clerk solo si falta email o display_name; evitar una llamada remota en cada request.
+- Localización Clerk mediante `getClerkLocalization` y `ClerkLocaleBridge`. `UserButton` usa `/es/app/login` al cerrar sesión.
+- Variables declaradas con `envField` en Astro: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `CLERK_SECRET_KEY` (servidor/secretas) y `PUBLIC_CLERK_PUBLISHABLE_KEY` (cliente/pública). No exponer secretos al cliente ni incluirlos en logs o documentación.
+- Toda operación de datos debe respetar el scope por `userId`; no confiar en IDs enviados por cliente para autorizar acceso.
 
-- **Tipado del locale en SSR**: en `.astro`, `Astro.currentLocale` es `string`; para estandarizar como `LocaleCode` (lo que esperan las props de islas React y los componentes `*Content.astro`), resolver siempre con `resolveLocale(Astro.currentLocale)` (import de `@/lib/i18n/locale.ts`) en lugar de `Astro.currentLocale ?? "es"`. Las props `locale` de componentes y páginas se tipan con `LocaleCode`; nunca como `string` (excepto `ClerkLocaleBridge`, que es un puente intencional).
-- **Lógica browser** (`src/lib/ui/`): `theme.ts`, `currency.ts`, `sidebar.ts`, `useFilteredData.ts`.
-- **Componentes React**: siempre directiva `client:load`.
-- **Imports**: alias `@/` con **extensión explícita** (`.ts`, `.tsx`, `.astro`, `.svg`).
-- Astro para estilos usa `class`; React usa `className`.
+## Base de datos y API
 
-### Assets
+- Esquema modular e idempotente en `db/schemas/*.sql`. Semilla existente en `db/seed.js`.
+- Cada cambio de esquema actualiza el SQL final correspondiente y entrega el SQL de migración de producción al usuario para que lo ejecute.
+- Usar `getDb()` de `src/lib/db/client.ts`, `db.execute({ sql, args })` y binds `?`; args tipados `(string | number | boolean | null)[]`. Mantener `nextSeq` existente.
+- Reutilizar `createIdRoutes` y `createIndexRoutes` de `src/lib/api-routes.ts` cuando aplique. Rutas custom también usan `withErrorHandling` y `readJsonBody` de `api-helpers.ts`.
+- Reutilizar helpers de autenticación, respuestas JSON, paginación, booleanos y rangos de fechas. JSON inválido devuelve 400; errores inesperados se registran y devuelven JSON 500.
+- Mantener duplicate-check de categorías (409), snapshots mensuales de recurrentes y sincronización tarjeta/método de pago al crear, actualizar o borrar.
+- Compras: artículos pertenecen a listas (`list_id`); finalizar completa sus artículos y borrar una lista elimina sus artículos. Nombre opcional con fecha/hora localizada como fallback visual.
+- Pagos parciales: `statement_balance` es saldo bruto; `paid_amount` guarda el pago. Un mes con `is_paid` muestra neto 0; el remanente se registra en el mes siguiente mediante `CARRYOVER_DESCRIPTION_PREFIX`. Evitar contar la misma deuda dos veces.
 
-- SVGs en `src/assets/*.svg` (kebab-case), importados vía `@/assets/*` con `vite-plugin-svgr`. Identificador PascalCase + sufijo `Icon`.
-- En `.tsx` usar sufijo `?react` para obtener el componente React.
+## UI, formularios y accesibilidad
 
-### Layouts
-
-- `BaseLayout.astro` — `<html>`, `<head>`, meta, favicon, `ClientRouter` (View Transitions), dark mode inline script, título `"Open PRP | {title}"`, `<slot name="head" />`. El script de tema aplica el tema antes del primer paint y se re-aplica en `astro:after-swap` (evita el flash blanco al navegar con view transitions).
-- `AppLayout.astro` — extiende `BaseLayout`. Incluye el shell de la app y la gestión del sidebar, y el tema visual general. Sin sesión en una ruta de app, el middleware redirige a `/es/app/login`; el fallback `<Show when="signed-out">` no pinta login embebido (la UI de auth vive en `login.astro`) sino un enlace al login localizado + auto-redirect en cliente (`data-login-redirect`).
-- `LandingLayout.astro` — extiende `BaseLayout`. Header + slot + Footer.
-- Todo layout específico (ej. `BlogLayout.astro`) debe envolverse en `BaseLayout.astro`, reenviando como mínimo la prop `title` (y otras si aplica) para que `BaseLayout` controle el `<head>` y el título de la página.
-
-```astro
----
-// BlogLayout.astro
-import BaseLayout from '@/layouts/BaseLayout.astro';
-const { title } = Astro.props;
----
-<BaseLayout title={title}>
-  <slot />
-</BaseLayout>
-```
-
-- No dupliques lógica de `<head>`/SEO en el layout hijo: eso vive solo en `BaseLayout.astro`.
-
-- El título `title=` de las páginas debe ser el nombre de la sección/página (ej. **Dashboard**), y se renderizará como `Open PRP | Dashboard`. Si no se pasa `title=`, se muestra solo `Open PRP` ya que se tiene realizado la siguiente configuracion en `BaseLayout.astro`
-
-```astro
-const { title } = Astro.props;
-const pageTitle = title ? `Open PRP | ${title}` : "Open PRP";
-```
-
-### Sidebar (app)
-
-- Fija `w-64` en desktop; oculta en móvil (drawer con overlay + backdrop).
-- Navegación data-driven: `APP_LINKS` (grupos `{ title?, links: [{ href, label, icon }] }`), estado activo vía `currentPath.startsWith(href)`. Los hrefs se generan con `getRelativeLocaleUrl(locale, path)` para conservar el prefijo de idioma.
-- Footer: ícono GitHub, `LocaleSwitcher`, `ThemeToggle`, `CurrencySelect` (moneda vía `UserRepository` en SSR), `UserButton` (`@clerk/astro/components`) + "Mi cuenta".
-  - `UserButton` envuelto en caja fija `h-8 w-8 rounded-full bg-surface-alt` (placeholder) + `appearance.userButtonAvatarBox` de 2rem: ClerkJS monta el avatar de forma asíncrona (CDN); sin la caja, el footer crece tarde y salta el layout.
-  - La caja del avatar lleva `transition:persist="user-button"`: al navegar con view transitions, Astro conserva el elemento montado de Clerk (su React root) en lugar de recrearlo, evitando que el `UserButton` desaparezca y reaparezca en cada navegación (la integración de Clerk delega el swap en `swapBodyElement` de Astro, que respeta `data-astro-transition-persist`). El label "Mi cuenta" queda fuera de la caja persistida para que se traduzca al cambiar de idioma.
-- **View transitions**: los scripts module bundled de Astro se ejecutan **solo una vez** y se ignoran en navegaciones posteriores del ClientRouter (se marcan `data-astro-exec`). Por eso `initSidebar()` (binding a elementos del DOM, que se reemplazan en cada swap) se registra dentro de `document.addEventListener("astro:page-load", ...)` en el script de `AppLayout.astro` (`astro:page-load` se dispara en la carga inicial y en cada navegación). El menú móvil de la landing (`initLandingMenu()` en `src/lib/ui/landing-menu.ts`) sigue el mismo patrón dentro de `astro:page-load` en el script de `Header.astro`. En cambio `initUserAreaForward()` (listener a nivel `document`, que persiste) corre una sola vez fuera del listener. No usar `data-astro-rerun`: fuerza `is:inline` (rompe imports) y acumula listeners.
-
-## TypeScript
-
-- **Sin `any`**. Args de bind: `(string | number | boolean | null)[]`.
-- `catch { }` o `catch (e: unknown)` + log.
-- `CategoryType`: `"global" | "personal"`.
-- `PaymentMethodType`: `"global" | "personal" | "card"`.
-- Sin `scope` ni `family_id`.
-
-## Convención de datos: valores de sistema vs datos de usuario
-
-- **Datos globales/predefinidos por el sistema** se guardan en la base de datos **en inglés, en minúsculas**, con guiones medios en vez de espacios (ej. `installments`, `expense`, `card-balance`, `salary`).
-- **Datos ingresados por el usuario** se guardan exactamente como fueron escritos, respetando idioma, formato y estilo original. Nunca se normalizan ni traducen.
-- La aplicación separa el **valor almacenado** de su **representación visual** mediante `displayCategoryName(cat, t)` en `src/lib/i18n/category-labels.ts` (categorías) y `displayPaymentMethodName(pm, t)` en `src/lib/i18n/payment-method-labels.ts` (métodos de pago globales: `payroll`, `transfer`, `cash`). Ambos reciben el diccionario `t` para resolver el display según el idioma.
-
-## Textos UI centralizados (`src/lib/i18n/`)
-
-- **Todos los textos UI** (títulos de página/sección, botones, placeholders, aria-labels, textos de tablas, mensajes vacíos, CTAs, badges, textos de filtros, mensajes de error/confirmación) viven en el diccionario del locale, un objeto `as const` organizado por dominio (`common`, `field`, `table`, `empty`, `badge`, `stat`, `tabs`, `nav`, `theme`, `page`, `cta`, `singular`, `filter`, `currency`, `shopping`, `cards`, `recurring`, `dashboard`, `sections`, `select`, `error`). Estructura label-value preparada para i18n (**no implementar más idiomas todavía**).
-- **Estructura i18n**: un archivo por idioma (`src/lib/i18n/es.ts` con `export const es`). Al añadir un idioma, se crea su archivo (`en.ts`, etc.) y los consumidores importan directamente el locale correspondiente desde su archivo — **no usar barrels ni `index.ts`** (ver convención de imports). `es.ts` define el tipo `Locale = typeof es`; `en.ts` es `export const en: Locale = {...}`. `locale.ts` exporta `LOCALES` (`["es", "en"]`), `LocaleCode` y `getLocaleDict(code)`.
-- **Consumir siempre con `t`** — nunca importar `es` para leer textos:
-  - SSR/páginas: `const locale = Astro.currentLocale ?? "es"; const t = getLocaleDict(locale);` y usar `t.*`.
-  - Islas React: reciben `locale` por prop (patrón de datos iniciales SSR) y resuelven con `getLocaleDict(locale)`, o usan el contexto `useLocaleDict()` dentro de un `<LocaleProvider locale={locale}>`.
-- **Nunca hardcodear textos UI inline** en componentes ni páginas: importar el helper parametrizado con `t` o acceder a `t.*`. Solo texto visible/al usuario va a labels; los datos del usuario (nombres, descripciones) nunca.
-- **Strings dinámicos** se modelan como funciones dentro del diccionario (template literals): ej. `t.common.deleteConfirm(label)`, `t.common.deleteTitle(label)`, `t.common.editSingular(s)`, `t.common.newSingular(s)`, `t.shopping.toBuy(n)`, `t.shopping.bought(n)`, `t.dashboard.dueInDays(n)`, `t.dashboard.overdueCount(n)`, `t.error.message(msg)`, `t.select.countSections(n)`.
-- `src/lib/i18n/general-fields.ts` y `src/lib/i18n/filter-fields.ts` exponen **funciones** que reciben `t` (`BTN_EDIT(t)`, `FILTER_ALL_MONTHS(t)`, `FILTER_SEARCH_DESC(t)`, `BTN_CLEAR(t)`, etc.); las constantes puramente CSS (clases) se mantienen estáticas (`FILTER_WRAP_CLASS`, `INPUT_CLASS`, `COLOR_CLASS`, `CURRENCY_SYMBOL`). Para esos textos importar la función desde su archivo, no acceder a `t` directamente ni importar `es`.
-- `src/lib/i18n/form-fields.ts` también se parametriza con `t`: `fieldType(t)`, `fieldTypeCurrency(t)`, `paymentMethodField(t, pms)`, `categoryField(t, cats)`, `cardField(t, cards)`, `dateField(t, name?)`, más `CURRENCY_OPTIONS`, `TYPE_OPTIONS`, `INPUT_CLASS`, `COLOR_CLASS`.
-- **Cadenas compartidas**: los valores repetidos entre secciones viven una sola vez en un diccionario interno `shared` (no exportado) al inicio del archivo; cada sección conserva su propia clave apuntando a él (`field.category: shared.category`, `filter.allCategories: shared.allCategories`). Así las secciones quedan independientes (pueden divergir creando una clave `shared` distinta) sin duplicar el string. `shared` tiene claves separadas para singular/plural/título (`category`/`categories`, `card`/`cards`, `paymentMethod`/`paymentMethods`, `start`/`home`) y para valores con texto canónico distinto (`allCategories: "Todas las categorías"`).
-- Clases CSS, atributos `data-*`, IDs, query params y emojis decorativos no van en labels.
-- Cualquier texto nuevo debe añadirse al diccionario **de ambos idiomas** (`es.ts` y `en.ts`, en la sección correspondiente) antes de usarse.
-- **Cambio de idioma**: `LocaleSwitcher.tsx` (isla React `client:load`, usada en `Sidebar` y `Header` de la landing) usa el `Select` custom y navega a `/{locale}{basePath}` conservando el query string.
-- **Fechas y meses localizados**: los helpers de `src/lib/date.ts` (`monthLabel`, `formatDate`, `formatDateTime`) reciben el `locale` y nunca lo hardcodean; pasarlo siempre en las llamadas (`monthLabel(m, locale)`, `formatDate(d, locale)`). El `<html lang>` en `BaseLayout.astro` usa `Astro.currentLocale`.
-
-## Base de datos
-
-### Schema (`db/schemas/*.sql`)
-
-- 14 archivos modulares, con prefijo numérico, idempotentes (`CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS`).
-- Semilla: `db/seed.js` (ESM, sintaxis moderna; se ejecuta con la última versión de Node).
-- **Cambios en producción**: entregar al usuario el SQL de migración (`ALTER TABLE`, `CREATE INDEX`) a ejecutar, **y además** actualizar el `.sql` correspondiente en `db/schemas/` reflejando el esquema final.
-
-### Repositorios
-
-- `src/lib/modules/*/repository.ts` usa `getDb()` de `@libsql/client/web`. Queries con `db.execute({ sql, args })` y bind params `?`.
-- `nextSeq("table")` — `COALESCE(MAX(seq), 0) + 1`.
-- Categories: `create()` verifica duplicado por nombre (la API responde 409) — manejado vía API routes, no hay repositorio separado de categorías.
-- Recurring Payments: `upsertMonthly()` hace snapshot de `category_id` y `payment_method_id`.
-- `findAll()` en recurring-payments: `LEFT JOIN` con categories y payment_methods.
-- Card repository: al crear/actualizar/eliminar una tarjeta, sincroniza automáticamente el `PaymentMethod` asociado vía `PaymentMethodRepository`.
-- Shopping: `ShoppingRepository` (artículos, en `src/lib/modules/shopping/repository.ts`) y `ShoppingListRepository` (listas, en `src/lib/modules/shopping/lists.ts`). Los artículos pertenecen a una lista (`list_id`); `ShoppingListRepository.complete()` finaliza una lista y completa todos sus artículos, y `delete()` borra la lista junto con sus artículos. El nombre de lista es opcional (null) y la UI muestra como default la fecha+hora local de creación.
-
-### API routes (factories)
-
-- **`src/lib/api-routes.ts`** centraliza el esqueleto de los CRUD de la API:
-  - `createIdRoutes(repo, { get?, patch?, put?, delete?, notFoundMessage? })` → handlers `GET`/`PATCH`/`PUT`/`DELETE` para `/api/*/[id]`. `repo` debe exponer `findById`/`update`/`delete` (con scope por `userId`). Variantes: `{ get: false }` (payment-methods, categories), `{ patch: false }` (pantry), `{ patch: false, notFoundMessage: "No encontrado" }` (recurring-payments).
-  - `createIndexRoutes(repo, { buildFilter?, validateCreate? })` → handlers `GET`/`POST` para `/api/*/`. `buildFilter(params, context)` construye el filtro del repo; `validateCreate(body)` devuelve `string | null` (mensaje de error o `null`). Si no hay `buildFilter`, el GET llama `findAll(uid)` sin filtro (payment-methods, recurring-payments, cards).
-  - Uso: `export const { GET, PATCH, PUT, DELETE } = createIdRoutes(new XRepository())`. Astro resuelve los handlers leyendo `mod[method]`, así que los exports destructurados son válidos.
-  - Todos los handlers de factory están envueltos en `withErrorHandling` y leen el body con `readJsonBody` (body inválido → `400 "Body inválido"`). El body se pasa al repo con cast `as unknown as U`/`C` (los inputs de los repos están tipados).
-- **`src/lib/api-helpers.ts`** — helpers compartidos de rutas: `jsonResponse`, `errorResponse`, `requireUserId`, `getSearchParams`, `parsePageParams`, **`parseBoolParam`** (parsea `?x=true|false` → `boolean | undefined`) y **`getDateRange`** (aplica la ventana "Último año" vía `lastYearWindow`/`lastDayOfMonth` cuando no hay `month` ni `date_from`/`date_to`; usada en transactions, installments, cashback). Además: **`withErrorHandling(handler)`** (envuelve un `APIRoute` para que cualquier throw devuelva JSON `500 "Error interno del servidor"` con `console.error` en vez del HTML 500 de Astro) y **`readJsonBody(context)`** (parsea el body como objeto; devuelve `Record<string, unknown> | null` si malformed/array/primitive).
-- **Rutas custom (no usan factory)**: `categories/index.ts` (dup-check 409 + merge de secciones), `pantry/index.ts` (default `category_id` + try/catch con 500), `recurring-payment-monthly/index.ts` (by month, PATCH/DELETE por query param), `card-monthly/index.ts` (upsert/toggle), `notes/tags/*` y `pantry/categories/*` (repo/métodos custom). Todas envueltas en `withErrorHandling` + `readJsonBody` igual que la factory.
-
-## Componentes UI reutilizables
-
-- **Select**: usar el custom `src/components/ui/Select.tsx` (filtros y formularios). Dropdown portaleado a `body` con `position: fixed`, viewport-aware (`maxHeight` dinámico). Props `ariaLabel`, `aria-activedescendant`, `role="combobox"`. `fitWidest` fija el ancho del botón a la opción más larga (mide las opciones con un contenedor oculto + ResizeObserver), evitando que el ancho cambie al cambiar de opción (usado por `ThemeToggle`).
-- **MultiSelect**: usar el custom `src/components/ui/MultiSelect.tsx`. Mismo patrón de dropdown portaleado y accesibilidad que `Select`.
-- **Tabs**: usar `src/components/app/ui/TabBar.tsx` (no confundir con `src/components/ui/`). Mismo estilo y comportamiento en todas las secciones; en móvil se convierten en un Select custom. Recibe opcionalmente un `monthSelector` para mostrar junto a las tabs.
-- **TabBarWithMonth**: wrapper de `TabBar` que añade `MonthSelector` y dispatchea el evento `monthchange` al cambiar el filtro. Props: `tabs`, `initialTab`, `defaultTab`, `ariaLabel`, `initialMonth`, `createdAt`, `allLabel`. Cuando la tab activa no es `"history"`, oculta la opción "allLabel" y si estaba seleccionada fuerza al mes actual.
-- **CrudModal**: modal CRUD genérico. Se dispara con `data-create="module"` y `data-edit-{module}="id"`. Campos `required: true` muestran `*` rojo. Decimal: raw string en `onChange`, se convierte a número en `handleSubmit`. Color picker: `w-full`, sin botón reset. `htmlFor`/`id` en todos los labels/inputs. **Actualmente recarga la página tras guardar** (usa `window.location.href = window.location.href`).
-- **FormModal**: `role="dialog"`, `aria-modal`, `aria-labelledby`, focus trap, handler de Escape, autofocus.
-- **DataTable**: siempre con prop `ariaLabel` (`.astro`).
-- **ConfirmDelete** (vía `DeleteHandler.astro`): confirmación de borrado sin `confirm()` nativo. **Actualmente recarga la página tras eliminar** (usa `window.location.reload()`).
-- **ToggleHandler.astro**: wrapper para `ConfirmDelete` específico para toggles (activo/inactivo).
-- **FilterSelect**: componente que envuelve `Select` para navegar a un href con el filtro seleccionado (usa `location.href`).
-- **PageHeader**: título de sección + botón CTA (`data-create="module"`) opcional con prop `mobileOnlyCTA`.
-
-### Reglas de uso Select vs MultiSelect en filtros
-
-- Filtro de mes → siempre `Select` custom (nunca MultiSelect).
-- Cualquier otro filtro con conjunto de opciones → `MultiSelect` custom.
-- Si se seleccionan todas las opciones de un MultiSelect, se muestran todos los registros (sin restricción).
-
-## Formularios
-
-- Usar siempre helpers de campo (`src/lib/i18n/form-fields.ts`: `CURRENCY_OPTIONS`, `TYPE_OPTIONS`, `paymentMethodField(t, pms)`, `categoryField(t, cats)`, `cardField(t, cards)`, `dateField(t, name?)`), nunca fields inline.
-- **Textos de filtros centralizados**: todas las etiquetas/placeholders reutilizables de filtros viven en `src/lib/i18n/filter-fields.ts` (`FILTER_ALL`, `FILTER_ALL_*` para opciones "todos", `FILTER_SEARCH_*` para placeholders de búsqueda, `FILTER_LABEL_*` para placeholders/ariaLabels de selects, `FILTER_SELECT_FALLBACK`, `FILTER_MULTI_SELECT_FALLBACK`, `BTN_CLEAR`). Nunca hardcodear estos textos inline en componentes: importar siempre la función y llamarla con `t` (ej. `FILTER_ALL_CATEGORIES(t)` = "Todas las categorías", `FILTER_ALL_MONTHS(t)` = "Último año", `FILTER_ALL(t)` = "Todas", `FILTER_SEARCH_DESC(t)` = "Buscar por descripción...", `FILTER_LABEL_PAYMENT_METHOD(t)` = "Método de pago").
-- Orden estándar de campos: **Fecha → Tipo → Descripción → Montos → Moneda → Método pago/Tarjeta → Categoría → Específicos**.
-- `required: true` en el campo → `NOT NULL` en el schema SQL (mantener auditado y sincronizado).
-- Campos `required: true` muestran asterisco rojo `*`.
-- Campos decimales: manejar como raw string en `onChange`, convertir a número recién en `handleSubmit`.
-- Color picker: `w-full`, sin botón de reset.
-- Todo label/input debe llevar `htmlFor`/`id` correspondiente.
-- CRUD vía modal genérico, disparado con `data-create="module"` y `data-edit-{module}="id"` (sintaxis con `=`, no con guiones).
-- Botón CTA que abre el modal: `PageHeader` con `createLabel` y `createModule`, o inline en la página para secciones sin `PageHeader`. En móvil, el CTA se alinea con el título de la sección, quedando a la derecha.
+- Reutilizar `Select`, `MultiSelect`, `TabBar`, `TabBarWithMonth`, `MonthSelector`, `PageHeader`, `DataTable`, `CrudModal`, `FormModal`, `ConfirmDelete`, `DeleteHandler` y `ToggleHandler`.
+- Filtro de mes: `Select`; otros filtros con opciones: `MultiSelect`. Todas las opciones seleccionadas equivalen a no restringir.
+- Orden de formulario: fecha → tipo → descripción → montos → moneda → método de pago/tarjeta → categoría → específicos. Usar helpers de campos.
+- `required: true` muestra asterisco rojo y debe corresponder a `NOT NULL`. Decimales como raw string hasta submit; color picker de ancho completo, sin reset.
+- Labels e inputs con `htmlFor`/`id`. Modales con `role="dialog"`, `aria-modal`, `aria-labelledby`, focus trap, Escape y autofocus. `DataTable` requiere `ariaLabel`.
+- Disparadores CRUD: `data-create="module"`, `data-edit-{module}="id"`. CTA móvil junto al título, a la derecha.
+- No usar `alert()`, `confirm()` ni `prompt()` nativos; errores inline con `role="alert"` y borrado mediante `ConfirmDelete`.
+- Tabs con botones, roles APG, `aria-selected`, `aria-controls`, roving tabIndex y teclas ←/→/Home/End; paneles asociados. En móvil, tabs como Select junto al filtro de mes.
+- Mantener `focus-visible`, contraste, aria-labels traducidos y `aria-hidden` en iconos decorativos. Dropdowns portaleados y adaptados al viewport.
+- Usar tokens existentes de `global.css` (surface, panel, border, string, primary, success, danger, warning, info y variantes), con soporte claro/oscuro.
+- En móvil, filtros de dos en dos, último impar a ancho completo; search y Limpiar al final en líneas propias. Cards de dos en dos, última impar ocupa ambas columnas.
 
 ## Filtros, tabs y estado en URL
 
-- **La URL es la fuente de verdad.** Tab activa, filtros y search se restauran automáticamente al cargar la página a partir de los query params. Sin params → valores predeterminados.
-- Al cambiar de filtro o de tab, **no hay recarga de página ni navegación**: la URL se actualiza (vía `history.pushState`/`replaceState`) y la UI se actualiza en cliente con los nuevos datos.
-- Filtros en su valor predeterminado (ej. mes = mes actual en vistas de resumen o "Últimos 12 meses" en vistas de historial/registros, categorías = "todas") **no** agregan query params. Al elegir un valor específico, sí se agrega. Al volver al valor predeterminado, el param se elimina.
-- Todos los filtros son interoperables: se combinan con AND (ej. categoría + mes + search aplican simultáneamente).
-- Tab predeterminada no agrega el param `tab` a la URL; cambiar de tab sí lo actualiza. Estado de tab siempre en query param `?tab=`, **nunca** `#hash`. Hashes viejos `#tab` se adoptan en cliente por compatibilidad.
-- Al crear/actualizar vía modal CRUD, la app permanece en la misma tab; no se resetea el param de la URL. (Actualmente recarga la página, pero los params se conservan.)
-- Orden de aparición de los filtros (select custom): mismo orden que en el modal CRUD → primero mes → luego orden específico → input-search → botón Limpiar (si un filtro no existe en la sección, se salta al siguiente).
-- Todos los filtros (Select de mes, MultiSelect, Search, botón Limpiar) deben mantener diseño y comportamiento homogéneos en todas las secciones: mismo ancho, alto, colores de fondo, colores de texto, etc.
-- **Implementación de tabs**: patrón APG con `<button>` (no anchors ni `<nav>`). `role="tablist"` + `aria-label`; tabs con `role="tab"`, `aria-selected`, `aria-controls`, roving `tabIndex` y navegación con ←/→/Home/End; paneles con `role="tabpanel"` + `aria-labelledby` + `tabindex="0"`. Implementado en `TabBar.tsx` (reutilizable) y en `ShoppingList` (duplicado).
+- URL como fuente de verdad: restaurar filtros, search, tab y página desde query params. Predeterminados no agregan params; al volver al default eliminarlos.
+- Cambios de filtros/tabs actualizan UI y URL con history, sin recarga. Combinar filtros con AND y preservar params ajenos. Tab mediante `?tab=`, adoptando hashes legacy solo por compatibilidad.
+- `useFilteredData` para componentes `*Filterable`; mostrar su `error` en banner `role="alert"`. Transacciones paginan a 50; cambiar/limpiar filtros vuelve a página 1. API devuelve `{ data, total, page, pageSize }`.
+- `TabBarWithMonth` emite `monthchange` con `detail: { month }`; recurrentes y tarjetas lo escuchan y refetchean. Fuera de history, no permitir la opción de todos los meses.
+- Resúmenes usan mes actual por defecto; registros/historial usan últimos 12 meses. Generar opciones desde el alta, máximo últimos 12 meses, más mes siguiente. Reutilizar `lastYearWindow` y helpers de fecha en SSR/API.
+- **Estado actual**: `CrudModal` recarga tras guardar y `ConfirmDelete` tras borrar; conservar query params y tab. La migración a refetch está pendiente. `FilterSelect` conserva su navegación existente por href.
 
-### Filtro de mes — reglas de generación de opciones
+## Sitemap, robots y RSS
 
-- Antigüedad del usuario < 12 meses: se muestran los meses desde su mes de registro hasta el mes actual (nunca antes del alta), más el mes siguiente al actual.
-- Antigüedad del usuario ≥ 12 meses: se muestran como máximo los últimos 12 meses, incluyendo el actual, más el mes siguiente al actual.
-- Opción "Últimos 12 meses": si antigüedad ≥ 12 meses, cubre los últimos 12; si antigüedad < 12 meses, cubre desde el mes de registro hasta el actual (sin periodos previos al alta).
-- **Valor por defecto según tipo de vista**:
-  - **Vistas de resumen general**: por defecto el **mes actual**.
-  - **Vistas de historial/registros** (con creación, edición o eliminación): por defecto **"Últimos 12 meses"**.
-- **Ventana "Último año" en APIs y SSR**: sin param `month`, los endpoints (`/api/transactions`, `/api/installments`, `/api/cashback`, `/api/card-monthly/history`, `/api/recurring-payment-monthly/history`) y las páginas SSR aplican la ventana `lastYearWindow(createdAt)` de `src/lib/date.ts` (12 meses atrás o mes de registro, hasta el mes siguiente) en vez de devolver todo el histórico. Con `month` presente, filtran solo ese mes. Transacciones limita el payload inicial y los refetches a páginas de 50 mediante `page`/`pageSize`; el dashboard solicita sus transacciones sin paginar para calcular totales.
+- `astro.config.mjs` configura `site: 'https://oprp.marcvspt.tech'` e integra `sitemap()` desde `@astrojs/sitemap`.
+- `BaseLayout.astro` enlaza `/sitemap-index.xml`; `src/pages/robots.txt.ts` expone `robots.txt`, permite rastreo (`Allow: /`) y anuncia el sitemap usando `Astro.site`.
+- Las landings `/es` y `/en` se prerenderizan con `getStaticPaths` y `LOCALES`; la app/login son SSR. Revisar cobertura del sitemap al añadir rutas públicas; no asumir que enumera automáticamente páginas SSR dinámicas.
+- No incluir datos privados ni URLs dependientes de sesión en sitemap o feeds. `robots.txt` no sustituye la autenticación ni garantiza exclusión de indexación.
+- **RSS no está implementado**: no hay dependencia `@astrojs/rss` ni endpoint de feed. Sitemap y RSS son mecanismos distintos. No afirmar que existe un feed ni añadirlo sin una necesidad de la tarea.
+- Si se solicita RSS, mantener una implementación coherente con Astro, contenido público, URLs basadas en `site`, localización y políticas de privacidad; indicar al usuario la instalación necesaria y actualizar esta guía y los README.
 
-### Evento `monthchange`
+## Entrega y validación
 
-- `TabBarWithMonth` dispatchea `window.dispatchEvent(new CustomEvent("monthchange", { detail: { month } }))` al cambiar el filtro de mes.
-- Componentes que escuchan: `RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary`, `CardsHistory`.
-- Los componentes refetchean desde los endpoints API correspondientes cuando el mes cambia.
-
-## Comportamiento en móvil
-
-- Tabs → se convierten en el Select custom (mismo comportamiento que las tabs de escritorio). En móvil, tabs y filtro de mes siempre se ponen alineados en la misma línea.
-- Filtros Select/MultiSelect custom → se alinean de dos en dos, saltando de línea al llenarse; si el número es impar, el último ocupa el espacio de dos.
-- Input-search → penúltimo, en su propia línea.
-- Botón Limpiar → último, en la línea siguiente al search.
-- CTA del modal CRUD → alineado con el título de la sección, a la derecha.
-- Cards (de cualquier tipo de información) → en móvil siempre se muestran dos por línea; si el número es impar, la última ocupa el espacio de ambas.
-- Sidebar → oculta, se convierte en drawer con overlay + backdrop.
-
-## Dashboard
-
-- `DashboardHeader.tsx` — solo `MonthSelector` (sin tabs). Alineado a la derecha del título.
-- `DashboardContent.astro` — contenido SSR del dashboard (stats, deudas, recurrentes, transacciones recientes). Recibe por props `userId`, `month`, `locale` y hace su `await loadDashboardMonth` interno para aprovechar el **streaming SSR**: el shell (título + `DashboardHeader`) se flushea de inmediato y el contenido llega al resolverse las queries. No hay islas React de contenido.
-- Datos desde `src/lib/dashboard/load.ts` (server-only), `src/lib/dashboard/api.ts` (cliente, para mutaciones de pago).
-- `StatCard`: props `label`, `value`, `colorClass`, `sub`.
-- `FilterLinks`: props `filters: { value, label, href }[]` + `active`.
-- La página de **tarjetas** no recalcula deudas en SSR: `CreditCardSummary` las fetchea bajo demanda en cliente (`/api/card-monthly/calculate`) al montar y al cambiar de mes (`monthchange`). El dashboard lee el `statement_balance` almacenado en `card_monthly`.
-- **Pagas parciales de tarjeta**: `card_monthly` guarda `paid_amount` (default 0) con lo efectivamente pagado de ese mes-tarjeta. `statement_balance` es siempre el saldo bruto del periodo (lo recalcula `calculator.ts` desde transacciones). El pago parcial (`payCardDebtPartial` en `src/lib/dashboard/api.ts`) marca `is_paid = true`, registra `paid_amount` y crea una transacción "Saldo pendiente {mes}" por el remanente dentro del periodo del mes siguiente. El PATCH `/api/card-monthly` acepta `paid_amount` (vía `togglePaid(..., paidAmount?)`). **Un mes pagado se muestra como saldado (neto $0) y el remanente vive solo en el mes siguiente** (siempre que `is_paid` muestran `0`; solo los meses sin pagar muestran `max(0, statement_balance - paid_amount)`). Aplica a Dashboard, `CreditCardSummary` (donde `committed` también descuenta lo saldado) y `CardsHistory`. Esto evita ver la deuda dos veces en el mes de origen. La transacción de arrastre se crea con el literal `CARRYOVER_DESCRIPTION_PREFIX` (`src/lib/modules/card-monthly/carryover.ts`) y cuenta normalmente en el mes siguiente: entra al `statement_balance` de la tarjeta vía `calculateCardDebt` y aparece como gasto en `loadDashboardMonth` (se ve reflejada ahí, en el mes al que se movió).
-
-## Tema / CSS
-
-- `ThemeToggle` con persistencia en `localStorage`, íconos como `options[].icon`.
-- Tokens CSS `@theme`: `primary`, `success`, `danger`, `warning`, `info`, con variantes `-hover`, `-text`, `-bg`, `-border`.
-- Colores base: `surface`, `surface-alt`, `panel`, `border`, `border-light`, `string`, `string-muted`, `nav`, `nav-hover`, `nav-active`, `nav-active-text`, `overlay`.
-- `color-scheme: light` en `:root`, `color-scheme: dark` en `.dark`.
-
-## Accesibilidad
-
-- `:focus-visible` global, contraste mejorado en colores oscuros.
-- `aria-hidden="true"` en íconos decorativos (Hero, Sidebar, Header, Select).
-- `aria-label` en nav, inputs y botones sin texto visible.
-- `role="dialog"`, `aria-modal`, `aria-labelledby` en modales.
-- Tabs: patrón APG completo (ver sección de tabs arriba).
-
-## Landing
-
-- `LandingLayout.astro` → Header + slot + Footer.
-- Header: hamburger menu móvil con animación, links data-driven (`LANDING_LINKS`), CTA, GitHub, `ThemeToggle`.
-- Login buttons: `SignInButton`/`SignUpButton` con `asChild` + estilos Tailwind.
-- `FeatureCard.astro` alimentado desde el array `FEATURES_INFO`.
-- Footer: GitHub + marcvspt.tech.
-
-## Despliegue
-
-- Netlify adapter en `astro.config.mjs`.
-- `@libsql/client/web` funciona en Netlify Functions.
-- Variables de entorno: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`.
-
-## Convenciones generales de código
-
-- Componentes React: siempre con directiva `client:load`.
-- **Imports**: siempre con alias `@/` y extensión explícita (`.ts`, `.tsx`, `.astro`, `.svg`). **Nunca** usar imports relativos a la ruta actual (`../` o `./`).
-- **Nunca importar directorios ni `index.*`**: no hacer `import funTest from "@/scripts/data"` (resuelve al `index.*` del directorio) ni importar `scripts/data/index.*`. Importar siempre el archivo exacto con su extensión, ej. `import funTest from "@/scripts/data/index.ts"`.
-- Estilos: Astro usa `class`, React usa `className`.
-- Sin `key={}` en elementos HTML dentro de `.astro`.
-- `data-create` usa sintaxis con `=` (`data-create="categories"`), no con guiones.
-- **Sin `alert()`/`confirm()`/`prompt()` nativos**: confirmación de borrado con `ConfirmDelete` (vía `DeleteHandler.astro`); errores de formulario inline dentro del modal con `role="alert"`.
+- Revisar archivos afectados y diff, respetando cambios previos del usuario. No revertir modificaciones ajenas.
+- Explicar qué cambió y cualquier limitación real. Para validaciones de ejecución, dar al usuario el comando exacto y esperar su salida para corregir errores.
+- No afirmar que un build, instalación, prueba CRUD o despliegue pasó si el usuario no proporcionó el resultado.

@@ -3,6 +3,9 @@
   "type": "module",
   "version": "1.8.1",
   "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
