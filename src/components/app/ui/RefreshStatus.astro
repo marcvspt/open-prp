@@ -1,0 +1,11 @@
+---
+import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
+const t = getLocaleDict(resolveLocale(Astro.currentLocale));
+---
+<div data-refresh-status hidden class="fixed bottom-4 right-4 left-4 sm:left-auto z-40 max-w-sm rounded-lg border border-border bg-panel px-4 py-3 text-sm shadow-lg" aria-live="polite" aria-atomic="true">
+  <p data-refresh-state="loading" hidden>{t.common.refreshing}</p>
+  <div data-refresh-state="error" hidden>
+    <p>{t.error.refreshData}</p>
+    <button type="button" data-refresh-retry class="mt-2 font-medium text-primary hover:text-primary-hover cursor-pointer">{t.common.retry}</button>
+  </div>
+</div>

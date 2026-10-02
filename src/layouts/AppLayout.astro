@@ -5,6 +5,7 @@ import { Show } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import ClerkLocaleBridge from "@/components/ui/ClerkLocaleBridge.tsx";
 import Sidebar from "@/components/app/ui/Sidebar.astro";
+import RefreshStatus from "@/components/app/ui/RefreshStatus.astro";
 import MenuIcon from "@/assets/menu.svg";
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 
@@ -13,9 +14,12 @@ const currentPath = Astro.url.pathname;
 const locale = resolveLocale(Astro.currentLocale);
 const loginPath = getRelativeLocaleUrl(locale, "/app/login");
 const t = getLocaleDict(locale);
+const isContentRefresh = Astro.request.headers.get("X-Open-PRP-Refresh") === "content";
+Astro.response.headers.append("Vary", "X-Open-PRP-Refresh");
+if (isContentRefresh) Astro.response.headers.set("Cache-Control", "private, no-store");
 ---
 
-<BaseLayout title={title}>
+{isContentRefresh ? <slot /> : <BaseLayout title={title}>
   <Fragment slot="head">
     <meta name="theme-color" content="#4f46e5" />
   </Fragment>
@@ -39,6 +43,7 @@ const t = getLocaleDict(locale);
       class="min-h-screen bg-surface pl-0 transition-all duration-300 lg:pl-64"
     >
       <div class="p-4 lg:p-6 pt-16 lg:pt-6">
+        <RefreshStatus />
         <slot />
       </div>
     </main>
@@ -64,12 +69,14 @@ const t = getLocaleDict(locale);
       </div>
     </div>
   </Show>
-</BaseLayout>
+</BaseLayout>}
 
 <script>
   import { initSidebar, initUserAreaForward } from "@/lib/ui/sidebar.ts";
+  import { initDataRefresh } from "@/lib/ui/data-refresh.ts";
 
   initUserAreaForward();
+  initDataRefresh();
   document.addEventListener("astro:page-load", () => {
     initSidebar();
     const redirectLink = document.querySelector("[data-login-redirect] a");

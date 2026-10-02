@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { notifyDataChange } from "@/lib/ui/data-refresh.ts";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
 import { BTN_CANCEL, BTN_DELETE, BTN_DELETING } from "@/lib/i18n/general-fields.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
@@ -18,10 +19,12 @@ export default function ConfirmDelete({ module, label, locale = "es" }: Props) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const deletingRef = useRef(false);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      const del = (e.target as HTMLElement).closest(`[data-delete-${module}]`);
+      if (deletingRef.current || !(e.target instanceof Element)) return;
+      const del = e.target.closest(`[data-delete-${module}]`);
       const id = del?.getAttribute(`data-delete-${module}`);
       if (id) {
         setError("");
@@ -33,22 +36,26 @@ export default function ConfirmDelete({ module, label, locale = "es" }: Props) {
   }, [module]);
 
   async function handleConfirm() {
-    if (!deleteId) return;
+    if (!deleteId || deletingRef.current) return;
+    deletingRef.current = true;
     setDeleting(true);
     setError("");
     try {
       const res = await fetch(`/api/${module}/${deleteId}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      window.location.reload();
+      setDeleteId(null);
+      notifyDataChange(module);
     } catch {
       setError(t.common.errorDelete);
+    } finally {
+      deletingRef.current = false;
       setDeleting(false);
     }
   }
 
   return (
     <LocaleProvider locale={locale}>
-      <FormModal open={deleteId !== null} onClose={() => setDeleteId(null)} title={t.common.deleteTitle(deleteLabel)}>
+      <FormModal open={deleteId !== null} onClose={() => { if (!deletingRef.current) setDeleteId(null); }} title={t.common.deleteTitle(deleteLabel)}>
         <p className="text-sm text-string-muted">
           {t.common.deleteConfirm(deleteLabel)}
         </p>
@@ -61,6 +68,7 @@ export default function ConfirmDelete({ module, label, locale = "es" }: Props) {
           <button
             type="button"
             onClick={() => setDeleteId(null)}
+            disabled={deleting}
             className="px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-string hover:bg-surface-alt cursor-pointer"
           >
             {BTN_CANCEL(t)}

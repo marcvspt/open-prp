@@ -1,7 +1,16 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { FilterState, FilterOptions } from "@/lib/types/filters.ts";
-import type { ApiResponse } from "@/lib/types/general.ts";
+import { registerDataRefresh } from "@/lib/ui/data-refresh.ts";
+import type { ApiResponse, PaginatedResponse } from "@/lib/types/general.ts";
+
+function isPaginated(value: unknown): value is PaginatedResponse<unknown> {
+  return typeof value === "object" && value !== null
+    && "data" in value && Array.isArray(value.data)
+    && "total" in value && typeof value.total === "number" && value.total >= 0
+    && "page" in value && typeof value.page === "number" && Number.isInteger(value.page)
+    && "pageSize" in value && typeof value.pageSize === "number" && value.pageSize > 0;
+}
 
 function filtersFromUrl(initial: FilterState, keys: readonly string[], defaults: FilterState): FilterState {
   const filters: FilterState = {};
@@ -25,6 +34,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const requestController = useRef<AbortController | null>(null);
   const qs = new URLSearchParams(filters).toString();
   const requestKey = `${apiEndpoint}?${qs}`;
   // SSR data already corresponds to the initial URL; completed requests replace this key.
@@ -76,41 +86,77 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
       if (value !== defaults[key]) url.searchParams.set(key, value);
     }
     history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [qs, keys, defaults]);
 
+  const refresh = useCallback(async (externalSignal?: AbortSignal) => {
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
+    const abort = () => controller.abort();
+    externalSignal?.addEventListener("abort", abort, { once: true });
+    if (externalSignal?.aborted) controller.abort();
+    if (!externalSignal) setLoading(true);
+    setError("");
+    let nextRequestKey = requestKey;
+    let correctedPage: number | undefined;
+    try {
+      async function readData(url: string): Promise<T> {
+        const response = await fetch(url, { signal: controller.signal, cache: "no-store" });
+        const body: ApiResponse<T> = await response.json();
+        if (!response.ok || !body.success || body.data === undefined) {
+          throw new Error(body.error || t.common.errorUnknown);
+        }
+        return body.data;
+      }
+      let result = await readData(nextRequestKey);
+      // Deleting the final row on a page may move the last available page backwards.
+      if (isPaginated(result)) {
+        const lastPage = Math.max(1, Math.ceil(result.total / result.pageSize));
+        if (result.page > lastPage) {
+          correctedPage = lastPage;
+          const url = new URL(requestKey, window.location.origin);
+          if (lastPage === 1) url.searchParams.delete("page");
+          else url.searchParams.set("page", String(lastPage));
+          nextRequestKey = `${url.pathname}?${url.searchParams.toString()}`;
+          result = await readData(nextRequestKey);
+        }
+      }
+      if (controller.signal.aborted) throw new DOMException("Request aborted", "AbortError");
+      completedKey.current = nextRequestKey;
+      if (correctedPage !== undefined) {
+        const page = correctedPage;
+        setFilters(prev => {
+          const next = { ...prev };
+          if (page === 1) delete next.page;
+          else next.page = String(page);
+          return next;
+        });
+      }
+      setData(result);
+      setError("");
+    } catch (err: unknown) {
+      if (!controller.signal.aborted) {
+        setError(externalSignal ? t.error.refreshData : t.error.message(err instanceof Error ? err.message : t.common.errorUnknown));
+      }
+      throw err;
+    } finally {
+      externalSignal?.removeEventListener("abort", abort);
+      if (requestController.current === controller) setLoading(false);
+    }
+  }, [requestKey, t]);
+
+  useEffect(() => {
     if (completedKey.current === requestKey) {
       setLoading(false);
       setError("");
       return;
     }
-    const controller = new AbortController();
-    let active = true;
-    setLoading(true);
-    setError("");
+    void refresh().catch(() => {});
+    return () => requestController.current?.abort();
+  }, [requestKey, refresh]);
 
-    async function load() {
-      try {
-        const response = await fetch(requestKey, { signal: controller.signal });
-        const body: ApiResponse<T> = await response.json();
-        if (!response.ok || !body.success || body.data === undefined) {
-          throw new Error(body.error || t.common.errorUnknown);
-        }
-        if (!active) return;
-        completedKey.current = requestKey;
-        setData(body.data);
-        setError("");
-      } catch (err: unknown) {
-        if (!active || controller.signal.aborted) return;
-        setError(t.error.message(err instanceof Error ? err.message : t.common.errorUnknown));
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-    void load();
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [qs, requestKey, keys, defaults, t]);
+  useEffect(() => registerDataRefresh(apiEndpoint.replace(/^\/api\//, ""), refresh), [apiEndpoint, refresh]);
+  useEffect(() => () => requestController.current?.abort(), []);
 
   return { filters, setFilter, clearFilters, searchValue, data, loading, error };
 }

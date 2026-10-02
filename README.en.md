@@ -396,7 +396,7 @@ INPUT_CLASS / COLOR_CLASS → classes
 | `CrudModal.tsx` | Generic CRUD modal (triggered by `data-create="module"` / `data-edit-{module}="id"`) |
 | `FormModal.tsx` | Base modal: focus trap, Escape, autofocus, ARIA |
 | `ConfirmDelete.tsx` / `DeleteHandler.astro` | Delete confirmation without native `confirm()` |
-| `ToggleHandler.astro` | Active/inactive toggle (try/catch + reload only on success) |
+| `ToggleHandler.astro` | Delegated toggle: updates the section after saving and restores the checkbox on failure |
 | `DataTable.astro` | Table with `ariaLabel` prop (`.astro`) |
 | `TabBar.tsx` | APG tabs; become a custom Select on mobile |
 | `TabBarWithMonth.tsx` | `TabBar` + `MonthSelector` + `monthchange` event |
@@ -411,7 +411,15 @@ INPUT_CLASS / COLOR_CLASS → classes
 
 `CrudModal.tsx` composes `CrudField.tsx` to render fields, `useCrudModal.ts` to load and save records, and `crud-form.ts` for defaults, visibility and payloads. Types are centralized in `src/lib/types/crud.ts`; `Field` is a discriminated union requiring options for selects and restricting numeric properties to number fields. SSR field arrays are typed before serialization.
 
-Editing displays loading and errors inside the modal, cancels loads when closing or switching records, and blocks saving until data is received. Numeric values remain strings until submission, are converted with `Number` and validated for finiteness and minimum values. Empty optional numbers are sent as `null`; empty required or invalid numbers show a translated error. Saving still reloads the page while preserving the URL.
+Editing displays loading and errors inside the modal, cancels loads when closing or switching records, and blocks saving until data is received. Numeric values remain strings until submission, are converted with `Number` and validated for finiteness and minimum values. Empty optional numbers are sent as `null`; empty required or invalid numbers show a translated error. Saving and deleting close the modal and update the section without reloading the page, preserving the URL.
+
+### Updates after saving or deleting
+
+The shared `datachange` event identifies the modified module. `src/lib/ui/data-refresh.ts` coordinates updates to the visible section and its related dependencies. Transactions, cashback and pantry refetch through `useFilteredData` while retaining their interface, filters and search. Pagination is adjusted if deleting a record leaves the current page outside the available range.
+
+Sections with SSR tables or summaries retain Astro: they request the current URL with the `X-Open-PRP-Refresh: content` header. `AppLayout` returns content only, avoiding shell rendering and sidebar queries. The response is private and uncached; `Vary` distinguishes partial HTML from the full document. The client replaces only the `[data-module]` block using [Astro swap utilities](https://docs.astro.build/en/guides/view-transitions/#building-a-custom-swap-function), cleans up removed islands and allows new ones to hydrate. URL, tab, month and scroll are preserved; the sidebar and session remain mounted.
+
+`RefreshStatus.astro` displays progress and offers a retry when the mutation succeeded but the visual update failed. Retrying only queries data again; it never repeats saving or deleting. Previous refreshes are cancelled when starting another or navigating away. Task toggles use a single delegated listener and the same update mechanism.
 
 ### Section components (`src/components/app/{module}/`)
 

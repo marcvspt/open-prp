@@ -1,28 +1,16 @@
 ---
+import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 export interface Props {
   module: string;
   key?: string;
   endpoint?: string;
 }
-
 const { module, key = "is_checked", endpoint = `/api/${module}/toggle` } = Astro.props;
+const t = getLocaleDict(resolveLocale(Astro.currentLocale));
 ---
-
-<script define:vars={{ module, endpoint, key }}>
-  document.addEventListener('click', async (e) => {
-    const toggle = /** @type {HTMLElement} */(e.target).closest(`[data-toggle-${module}]`);
-    if (toggle) {
-      const id = toggle.getAttribute(`data-toggle-${module}`);
-      const value = /** @type {HTMLInputElement} */(toggle).checked;
-      try {
-        const res = await fetch(endpoint, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, [key]: value }) });
-        if (!res.ok) {
-          return;
-        }
-        window.location.reload();
-      } catch {
-        console.error("Toggle failed");
-      }
-    }
-  });
+<span hidden data-toggle-config={module} data-toggle-endpoint={endpoint} data-toggle-key={key}></span>
+<p hidden data-toggle-error role="alert" class="rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-sm text-danger-text">{t.common.errorUnknown}</p>
+<script>
+  import { initToggleHandler } from "@/lib/ui/toggle-handler.ts";
+  initToggleHandler();
 </script>
