@@ -51,7 +51,8 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 
 ## SSR, datos y navegación
 
-- SSR primero. Las páginas de app mantienen un shell síncrono y delegan queries a componentes `*Content.astro` por sección para permitir streaming del contenido.
+- **Priorizar Astro SSR en todo lo que sea posible y tenga sentido**: obtener datos y renderizar contenido en servidor cuando no requiera interacción en cliente. Usar islas React solo para el comportamiento dinámico necesario; no convertir una sección completa a React si puede conservar su contenido en Astro SSR.
+- Las páginas de app mantienen un shell síncrono y delegan queries a componentes `*Content.astro` por sección para permitir streaming del contenido.
 - Ejecutar queries independientes con `Promise.all`; no acumular round-trips de Turso en serie. Leer `Astro.locals.user` para datos del usuario ya consultados por middleware.
 - Islas React reciben datos iniciales SSR por props (`initialData={JSON.stringify(...)}`); refetchean al cambiar filtros o tras mutaciones según el patrón existente.
 - `src/lib/dashboard/load.ts` carga el dashboard directamente desde repositorios. No recalcular deudas ni hacer upserts por cada visita; el cálculo de tarjetas se solicita en cliente a `/api/card-monthly/calculate`.
@@ -92,6 +93,9 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 
 ## UI, formularios y accesibilidad
 
+- `CrudModal` compone `CrudField.tsx` (render de campos), `useCrudModal.ts` (carga y guardado) y `crud-form.ts` (defaults, visibilidad y payload). Los tipos viven en `src/lib/types/crud.ts`: `Field` es una unión discriminada, exige opciones para selects y limita `step`/`min` a números. Tipar los arrays de campos antes de serializarlos en SSR.
+- La carga de edición muestra estado y errores dentro del modal, cancela peticiones al cerrar/cambiar registro y bloquea guardar hasta cargar los datos. Los números se convierten al enviar con `Number`, validan finitud y mínimo; vacío opcional es `null`, vacío obligatorio es error. Nunca convertir una entrada inválida en cero.
+
 - Reutilizar `Select`, `MultiSelect`, `TabBar`, `TabBarWithMonth`, `MonthSelector`, `PageHeader`, `DataTable`, `CrudModal`, `FormModal`, `ConfirmDelete`, `DeleteHandler` y `ToggleHandler`.
 - Filtro de mes: `Select`; otros filtros con opciones: `MultiSelect`. Todas las opciones seleccionadas equivalen a no restringir.
 - Orden de formulario: fecha → tipo → descripción → montos → moneda → método de pago/tarjeta → categoría → específicos. Usar helpers de campos.
@@ -105,6 +109,9 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 - En móvil, filtros de dos en dos, último impar a ancho completo; search y Limpiar al final en líneas propias. Cards de dos en dos, última impar ocupa ambas columnas.
 
 ## Filtros, tabs y estado en URL
+
+- Cada consumidor de `useFilteredData` declara `keys`, `locale` y defaults opcionales (tipos en `src/lib/types/filters.ts`). El hook restaura y modifica solo sus params, elimina los retirados y conserva params ajenos, hash e `history.state`; los defaults no se escriben en URL. Plazos usa `active_only=true` por defecto y `false` para todos.
+- El hook valida HTTP y el envelope `{ success, data, error }`, cancela peticiones anteriores y descarta respuestas obsoletas, limpia errores al recuperarse y respeta datos iniciales SSR. `searchValue` controla la búsqueda con debounce de 300 ms y limpieza al desmontar; `popstate` restaura filtros y búsqueda.
 
 - URL como fuente de verdad: restaurar filtros, search, tab y página desde query params. Predeterminados no agregan params; al volver al default eliminarlos.
 - Cambios de filtros/tabs actualizan UI y URL con history, sin recarga. Combinar filtros con AND y preservar params ajenos. Tab mediante `?tab=`, adoptando hashes legacy solo por compatibilidad.

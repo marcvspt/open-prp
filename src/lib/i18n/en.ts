@@ -489,6 +489,9 @@ export const en: Locale = {
   },
 
   error: {
+    invalidNumber: (label: string) => `Enter a valid number in ${label}.`,
+    numberMinimum: (label: string, min: number) => `${label} must be greater than or equal to ${min}.`,
+    loadRecord: (message: string) => `Could not load the record: ${message}`,
     message: (message: string) => `Error: ${message}`,
   },
 };

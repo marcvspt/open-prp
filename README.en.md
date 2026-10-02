@@ -364,6 +364,7 @@ INPUT_CLASS / COLOR_CLASS → classes
 - Filters at their default value don't add params; picking a specific one does. Active tab is always in `?tab=` (never `#hash`; old hashes are adopted in the client).
 - Filters are interoperable (AND).
 - `*Filterable` components use `useFilteredData` (`src/lib/ui/useFilteredData.ts`): it handles filters, fetch, URL and error state (`error`, shown as a `role="alert"` banner). The initial filter state is restored from the URL; it excludes `tab` (managed by `TabBar`).
+- Each section declares its managed parameters, locale and defaults for `useFilteredData`. The hook removes cleared filters from the URL, preserves unrelated params, hash and navigation state, and omits defaults from the URL. It checks HTTP status and the API envelope, cancels previous requests, ignores stale responses and clears errors after recovery. `searchValue` controls search with a 300 ms debounce; `popstate` restores filters and search. Installments default to active only and use `active_only=false` for all.
 - **Transactions** use pagination with 50 records per page. The page is stored in `?page=` alongside filters; changing or clearing a filter returns to the first page. The API returns `{ data, total, page, pageSize }`.
 - `TabBarWithMonth` dispatches `window.dispatchEvent(new CustomEvent("monthchange", { detail: { month } }))`. `RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary` and `CardsHistory` listen to it to refetch.
 
@@ -405,6 +406,12 @@ INPUT_CLASS / COLOR_CLASS → classes
 | `CurrencySelect.tsx` | Currency selector, syncs API + localStorage |
 | `PageHeader.astro` | Title + CTA button (`createLabel`/`createModule`) |
 | `Sidebar.astro` | Data-driven nav sidebar (`APP_LINKS`) + ThemeToggle + CurrencySelect + UserButton |
+
+### CRUD modal implementation
+
+`CrudModal.tsx` composes `CrudField.tsx` to render fields, `useCrudModal.ts` to load and save records, and `crud-form.ts` for defaults, visibility and payloads. Types are centralized in `src/lib/types/crud.ts`; `Field` is a discriminated union requiring options for selects and restricting numeric properties to number fields. SSR field arrays are typed before serialization.
+
+Editing displays loading and errors inside the modal, cancels loads when closing or switching records, and blocks saving until data is received. Numeric values remain strings until submission, are converted with `Number` and validated for finiteness and minimum values. Empty optional numbers are sent as `null`; empty required or invalid numbers show a translated error. Saving still reloads the page while preserving the URL.
 
 ### Section components (`src/components/app/{module}/`)
 

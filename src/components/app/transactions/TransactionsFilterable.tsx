@@ -24,10 +24,10 @@ interface Props {
 export default function TransactionsFilterable({ initialMonth, filterType: initialType, paymentMethods, categories, initialData, createdAt, locale = "es" }: Props) {
   const t = getLocaleDict(locale);
   const parsedInitial = initialData ? JSON.parse(initialData) as PaginatedResponse<Transaction> : undefined;
-  const { filters, setFilter, clearFilters, data, loading, error } = useFilteredData<PaginatedResponse<Transaction>>("/api/transactions", {
+  const { filters, setFilter, clearFilters, searchValue, data, loading, error } = useFilteredData<PaginatedResponse<Transaction>>("/api/transactions", {
     ...(initialType !== "all" ? { type: initialType } : {}),
     ...(initialMonth ? { month: initialMonth } : {}),
-  }, parsedInitial);
+  }, parsedInitial, { keys: ["month", "type", "payment_method_id", "category_id", "q", "page", "date_from", "date_to", "pageSize"], locale });
 
   const pageData = data ?? { data: [], total: 0, page: 1, pageSize: 50 };
   const items = pageData.data;
@@ -80,7 +80,7 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
             <input
               type="search"
               data-search-input
-              defaultValue={filters.q || ""}
+              value={searchValue}
               onChange={(e) => setFilter("q", e.target.value)}
               placeholder={FILTER_SEARCH_DESC(t)}
               className={FILTER_INPUT_CLASS}

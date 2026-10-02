@@ -1,3 +1,4 @@
+import type { Field } from "@/lib/types/crud.ts";
 import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import type { Category } from "@/lib/types/category.ts";
 import type { Card } from "@/lib/types/card.ts";
@@ -5,7 +6,7 @@ import type { Locale } from "@/lib/i18n/es.ts";
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
 
-export function fieldTypeCurrency(t: Locale) {
+export function fieldTypeCurrency(t: Locale): Field {
   return {
     name: "currency",
     label: t.field.currency,
@@ -14,7 +15,7 @@ export function fieldTypeCurrency(t: Locale) {
   };
 }
 
-export function fieldType(t: Locale) {
+export function fieldType(t: Locale): Field {
   return {
     name: "type",
     label: t.field.type,
@@ -27,7 +28,7 @@ export function fieldType(t: Locale) {
   };
 }
 
-export function paymentMethodField(t: Locale, paymentMethods: PaymentMethod[]) {
+export function paymentMethodField(t: Locale, paymentMethods: PaymentMethod[]): Field {
   return {
     name: "payment_method_id",
     label: t.field.method,
@@ -40,7 +41,7 @@ export function paymentMethodField(t: Locale, paymentMethods: PaymentMethod[]) {
   };
 }
 
-export function categoryField(t: Locale, categories: Category[]) {
+export function categoryField(t: Locale, categories: Category[]): Field {
   return {
     name: "category_id",
     label: t.field.category,
@@ -55,7 +56,7 @@ export function categoryField(t: Locale, categories: Category[]) {
   };
 }
 
-export function dateField(t: Locale, name: string = "date") {
+export function dateField(t: Locale, name: string = "date"): Field {
   return {
     name,
     label: t.field.date,
@@ -64,7 +65,7 @@ export function dateField(t: Locale, name: string = "date") {
   };
 }
 
-export function cardField(t: Locale, cards: Card[]) {
+export function cardField(t: Locale, cards: Card[]): Field {
   const emoji = (type: string) =>
     type === "credit" ? "💳" : type === "debit" ? "🏦" : "🎫";
   return {

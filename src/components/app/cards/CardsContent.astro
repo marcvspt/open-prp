@@ -1,4 +1,5 @@
 ---
+import type { Field } from "@/lib/types/crud.ts";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 import { FILTER_ALL_MONTHS } from "@/lib/i18n/filter-fields.ts";
@@ -61,7 +62,7 @@ function resolveCutoffDate(cutoffDay: number): string {
   return resolveDate(cutoffDay, currentYear, month);
 }
 
-const fields = [
+const fields: Field[] = [
   { name: "name", label: t.field.name, type: "text" as const, required: true },
   { name: "type", label: t.field.type, type: "select" as const, required: true, options: [{ value: "credit", label: t.badge.credit }, { value: "debit", label: t.badge.debit }, { value: "voucher", label: t.badge.voucherFull }] },
   { name: "max_limit", label: t.field.maxLimit, type: "number" as const, step: "0.01", showIf: { field: "type", value: "credit" } },

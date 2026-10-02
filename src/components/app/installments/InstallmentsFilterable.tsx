@@ -23,10 +23,10 @@ interface Props {
 export default function InstallmentsFilterable({ initialMonth, activeOnly: initialActive, paymentMethods, categories, initialData, createdAt, locale = "es" }: Props) {
   const t = getLocaleDict(locale);
   const parsedInitial = initialData ? JSON.parse(initialData) as Installment[] : undefined;
-  const { filters, setFilter, clearFilters, data, loading, error } = useFilteredData<Installment[]>("/api/installments", {
+  const { filters, setFilter, clearFilters, searchValue, data, loading, error } = useFilteredData<Installment[]>("/api/installments", {
     ...(initialActive ? { active_only: "true" } : {}),
     ...(initialMonth ? { month: initialMonth } : {}),
-  }, parsedInitial);
+  }, parsedInitial, { keys: ["month", "active_only", "payment_method_id", "category_id", "q", "date_from", "date_to"], defaults: { active_only: "true" }, locale });
 
   const items = data ?? [];
 
@@ -49,7 +49,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
                 onChange={(v) => setFilter("active_only", v)}
                 options={[
                   { value: "true", label: t.filter.activeOnly },
-                  { value: "", label: FILTER_ALL_STATUS_INSTALLMENTS(t) },
+                  { value: "false", label: FILTER_ALL_STATUS_INSTALLMENTS(t) },
                 ]}
                 placeholder={FILTER_LABEL_STATUS(t)}
                 ariaLabel={FILTER_LABEL_STATUS(t)}
@@ -76,7 +76,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
             <input
               type="search"
               data-search-input
-              defaultValue={filters.q || ""}
+              value={searchValue}
               onChange={(e) => setFilter("q", e.target.value)}
               placeholder={FILTER_SEARCH_DESC(t)}
               className={FILTER_INPUT_CLASS}

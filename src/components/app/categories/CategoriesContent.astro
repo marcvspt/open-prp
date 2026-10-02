@@ -1,4 +1,5 @@
 ---
+import type { Field } from "@/lib/types/crud.ts";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
@@ -50,7 +51,7 @@ const sectionOptions = Object.entries(SECTION_LABELS).map(([value, label]) => ({
   value,
   label,
 }));
-const fields = [
+const fields: Field[] = [
   {
     name: "name",
     label: t.field.name,

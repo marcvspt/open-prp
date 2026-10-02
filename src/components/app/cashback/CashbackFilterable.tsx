@@ -23,9 +23,9 @@ const cardEmoji = (type: string) => type === "credit" ? "💳" : type === "debit
 export default function CashbackFilterable({ initialMonth, cards, initialData, createdAt, locale = "es" }: Props) {
   const t = getLocaleDict(locale);
   const parsedInitial = initialData ? JSON.parse(initialData) as Cashback[] : undefined;
-  const { filters, setFilter, clearFilters, data, loading, error } = useFilteredData<Cashback[]>("/api/cashback", {
+  const { filters, setFilter, clearFilters, searchValue, data, loading, error } = useFilteredData<Cashback[]>("/api/cashback", {
     ...(initialMonth ? { month: initialMonth } : {}),
-  }, parsedInitial);
+  }, parsedInitial, { keys: ["month", "card_id", "q", "date_from", "date_to"], locale });
 
   const items = data ?? [];
 
@@ -54,7 +54,7 @@ export default function CashbackFilterable({ initialMonth, cards, initialData, c
             <input
               type="search"
               data-search-input
-              defaultValue={filters.q || ""}
+              value={searchValue}
               onChange={(e) => setFilter("q", e.target.value)}
               placeholder={FILTER_SEARCH_DESC(t)}
               className={FILTER_INPUT_CLASS}

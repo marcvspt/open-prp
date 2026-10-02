@@ -487,6 +487,9 @@ export const es = {
   },
 
   error: {
+    invalidNumber: (label: string) => `Introduce un número válido en ${label}.`,
+    numberMinimum: (label: string, min: number) => `${label} debe ser mayor o igual que ${min}.`,
+    loadRecord: (message: string) => `No se pudo cargar el registro: ${message}`,
     message: (message: string) => `Error: ${message}`,
   },
 };

@@ -1,4 +1,5 @@
 ---
+import type { Field } from "@/lib/types/crud.ts";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
 import { formatDate } from "@/lib/date.ts";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
@@ -24,7 +25,7 @@ const items = itemsResult.data ?? [];
 const catMap = Object.fromEntries(evCategories.map(c => [c.id, c]));
 const statusLabels: Record<string, string> = { pending: t.badge.pendingEvent, confirmed: t.badge.confirmed, completed: t.badge.completed, cancelled: t.badge.cancelled };
 const statusColor: Record<string, string> = { pending: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300", confirmed: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300", completed: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300", cancelled: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300" };
-const fields = [
+const fields: Field[] = [
   { name: "description", label: t.field.description, type: "textarea" as const, required: true },
   { name: "category_id", label: t.field.category, type: "select" as const, options: [{ value: "", label: t.field.noCategory }, ...evCategories.map(c => ({ value: c.id, label: `${c.icon || "📁"} ${displayCategoryName(c, t)}` }))] },
   { name: "location", label: t.field.location, type: "text" as const },
