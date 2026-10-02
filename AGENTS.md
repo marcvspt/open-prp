@@ -83,6 +83,7 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 - Esquema modular e idempotente en `db/schemas/*.sql`. Semilla existente en `db/seed.js`.
 - Cada cambio de esquema actualiza el SQL final correspondiente y entrega el SQL de migración de producción al usuario para que lo ejecute.
 - Usar `getDb()` de `src/lib/db/client.ts`, `db.execute({ sql, args })` y binds `?`; args tipados `(string | number | boolean | null)[]`. Mantener `nextSeq` existente.
+- Cashback no tiene columna `updated_at`: tanto `insertRow` como `applyUpdate` deben recibir `withUpdatedAt: false` en su repositorio.
 - Reutilizar `createIdRoutes` y `createIndexRoutes` de `src/lib/api-routes.ts` cuando aplique. Rutas custom también usan `withErrorHandling` y `readJsonBody` de `api-helpers.ts`.
 - Reutilizar helpers de autenticación, respuestas JSON, paginación, booleanos y rangos de fechas. JSON inválido devuelve 400; errores inesperados se registran y devuelven JSON 500.
 - Mantener duplicate-check de categorías (409), snapshots mensuales de recurrentes y sincronización tarjeta/método de pago al crear, actualizar o borrar.
