@@ -1,7 +1,7 @@
 import { clerkMiddleware, createClerkClient } from "@clerk/astro/server";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { UserRepository } from "@/lib/modules/users/repository.ts";
-import { isAvailableMonth } from "@/lib/date.ts";
+import { currentMonthStr, isAvailableMonth } from "@/lib/date.ts";
 import { errorResponse } from "@/lib/api-helpers.ts";
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 
@@ -58,8 +58,12 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
         return errorResponse(t.error.monthUnavailable, 400);
       }
       if (/^\/(es|en)\/app(?:\/|$)/.test(url.pathname)) {
-        for (const key of invalidKeys) url.searchParams.delete(key);
-        return context.redirect(`${url.pathname}${url.search}`, 302);
+        // Explicitly replace rejected values: Netlify may pass through the
+        // original query string when a 302 destination merely removes them.
+        for (const key of invalidKeys) {
+          url.searchParams.set(key, key === "summary_month" ? currentMonthStr() : "");
+        }
+        return context.redirect(`${url.pathname}${url.search}`, 303);
       }
     }
   }
