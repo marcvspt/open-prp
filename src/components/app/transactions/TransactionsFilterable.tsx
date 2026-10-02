@@ -27,7 +27,7 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
   const { filters, setFilter, clearFilters, searchValue, data, loading, error } = useFilteredData<PaginatedResponse<Transaction>>("/api/transactions", {
     ...(initialType !== "all" ? { type: initialType } : {}),
     ...(initialMonth ? { month: initialMonth } : {}),
-  }, parsedInitial, { keys: ["month", "type", "payment_method_id", "category_id", "q", "page", "date_from", "date_to", "pageSize"], locale });
+  }, parsedInitial, { keys: ["month", "type", "payment_method_id", "category_id", "q", "page", "date_from", "date_to", "pageSize"], locale, createdAt });
 
   const pageData = data ?? { data: [], total: 0, page: 1, pageSize: 50 };
   const items = pageData.data;

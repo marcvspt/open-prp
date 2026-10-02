@@ -4,6 +4,7 @@ import type { FilterState, FilterOptions } from "@/lib/types/filters.ts";
 import { registerDataRefresh } from "@/lib/ui/data-refresh.ts";
 import { apiData, apiErrorMessage } from "@/lib/api-client.ts";
 import type { PaginatedResponse } from "@/lib/types/general.ts";
+import { isAvailableMonth } from "@/lib/date.ts";
 
 function isPaginated(value: unknown): value is PaginatedResponse<unknown> {
   return typeof value === "object" && value !== null
@@ -13,11 +14,12 @@ function isPaginated(value: unknown): value is PaginatedResponse<unknown> {
     && "pageSize" in value && typeof value.pageSize === "number" && value.pageSize > 0;
 }
 
-function filtersFromUrl(initial: FilterState, keys: readonly string[], defaults: FilterState): FilterState {
+function filtersFromUrl(initial: FilterState, keys: readonly string[], defaults: FilterState, createdAt?: string): FilterState {
   const filters: FilterState = {};
   const params = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
   for (const key of keys) {
-    const value = params ? params.get(key) ?? defaults[key] : initial[key] ?? defaults[key];
+    let value = params ? params.get(key) ?? defaults[key] : initial[key] ?? defaults[key];
+    if (key === "month" && value && !isAvailableMonth(value, createdAt)) value = defaults[key];
     if (value) filters[key] = value;
   }
   return filters;
@@ -29,7 +31,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
   const keys = useMemo(() => keysSignature.split(","), [keysSignature]);
   const defaultsSignature = JSON.stringify(options.defaults ?? {});
   const defaults = useMemo(() => JSON.parse(defaultsSignature) as FilterState, [defaultsSignature]);
-  const [filters, setFilters] = useState<FilterState>(() => filtersFromUrl(initial, keys, defaults));
+  const [filters, setFilters] = useState<FilterState>(() => filtersFromUrl(initial, keys, defaults, options.createdAt));
   const [searchValue, setSearchValue] = useState(filters.q ?? "");
   const [data, setData] = useState<T | null>(initialData ?? null);
   const [loading, setLoading] = useState(false);
@@ -43,6 +45,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
 
   const setFilter = useCallback((key: string, value: string) => {
     if (!keys.includes(key)) return;
+    if (key === "month" && value && !isAvailableMonth(value, options.createdAt)) return;
     const update = () => setFilters(prev => {
       const next = { ...prev };
       if (key !== "page") delete next.page;
@@ -57,7 +60,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
     } else {
       update();
     }
-  }, [keys]);
+  }, [keys, options.createdAt]);
 
   const clearFilters = useCallback(() => {
     clearTimeout(debounceRef.current);
@@ -68,7 +71,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
   useEffect(() => {
     const restore = () => {
       clearTimeout(debounceRef.current);
-      const next = filtersFromUrl({}, keys, defaults);
+      const next = filtersFromUrl({}, keys, defaults, options.createdAt);
       setFilters(next);
       setSearchValue(next.q ?? "");
     };
@@ -77,7 +80,7 @@ export function useFilteredData<T>(apiEndpoint: string, initial: FilterState, in
       clearTimeout(debounceRef.current);
       window.removeEventListener("popstate", restore);
     };
-  }, [keys, defaults]);
+  }, [keys, defaults, options.createdAt]);
 
   useEffect(() => {
     const url = new URL(window.location.href);

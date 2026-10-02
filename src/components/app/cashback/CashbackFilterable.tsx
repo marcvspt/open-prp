@@ -25,7 +25,7 @@ export default function CashbackFilterable({ initialMonth, cards, initialData, c
   const parsedInitial = initialData ? JSON.parse(initialData) as Cashback[] : undefined;
   const { filters, setFilter, clearFilters, searchValue, data, loading, error } = useFilteredData<Cashback[]>("/api/cashback", {
     ...(initialMonth ? { month: initialMonth } : {}),
-  }, parsedInitial, { keys: ["month", "card_id", "q", "date_from", "date_to"], locale });
+  }, parsedInitial, { keys: ["month", "card_id", "q", "date_from", "date_to"], locale, createdAt });
 
   const items = data ?? [];
 

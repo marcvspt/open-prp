@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { fetchList, apiErrorMessage } from "@/lib/api-client.ts";
+import { currentMonthStr, isAvailableMonth } from "@/lib/date.ts";
 import type { Installment } from "@/lib/types/installment.ts";
 import type { Card } from "@/lib/types/card.ts";
 import type { PaymentMethod } from "@/lib/types/payment-method.ts";
@@ -9,14 +11,44 @@ import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface InstallmentsSummaryProps {
   initialData: string;
+  initialMonth: string;
+  createdAt?: string;
   initialCards: string;
   initialPaymentMethods: string;
   locale?: LocaleCode;
 }
 
-export default function InstallmentsSummary({ initialData, initialCards, initialPaymentMethods, locale = "es" }: InstallmentsSummaryProps) {
+export default function InstallmentsSummary({ initialData, initialMonth, createdAt, initialCards, initialPaymentMethods, locale = "es" }: InstallmentsSummaryProps) {
   const t = getLocaleDict(locale);
-  const installments: Installment[] = useMemo(() => JSON.parse(initialData), [initialData]);
+  const [installments, setInstallments] = useState<Installment[]>(() => JSON.parse(initialData));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let controller: AbortController | undefined;
+    let loadedMonth = initialMonth;
+    function refresh() {
+      const value = new URLSearchParams(location.search).get("summary_month");
+      const month = value && isAvailableMonth(value, createdAt) ? value : currentMonthStr();
+      if (value && month !== value) {
+        const url = new URL(location.href);
+        url.searchParams.delete("summary_month");
+        history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      }
+      controller?.abort();
+      setError("");
+      if (month === loadedMonth) { setLoading(false); return; }
+      const request = new AbortController();
+      controller = request;
+      setLoading(true);
+      void fetchList<Installment>(`/api/installments/summary?month=${month}`, { signal: request.signal })
+        .then(data => { if (!request.signal.aborted) { setInstallments(data); loadedMonth = month; } })
+        .catch((err: unknown) => { if (!request.signal.aborted) setError(apiErrorMessage(err, t)); })
+        .finally(() => { if (!request.signal.aborted) setLoading(false); });
+    }
+    window.addEventListener("monthchange", refresh);
+    window.addEventListener("popstate", refresh);
+    return () => { controller?.abort(); window.removeEventListener("monthchange", refresh); window.removeEventListener("popstate", refresh); };
+  }, [initialMonth, createdAt, t]);
   const cards: Card[] = useMemo(() => JSON.parse(initialCards), [initialCards]);
   const paymentMethods: PaymentMethod[] = useMemo(() => JSON.parse(initialPaymentMethods), [initialPaymentMethods]);
 
@@ -26,6 +58,8 @@ export default function InstallmentsSummary({ initialData, initialCards, initial
   return (
     <LocaleProvider locale={locale}>
       <div className="space-y-4">
+        {loading && <p role="status" className="text-sm text-string-muted">{t.common.loading}</p>}
+        {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="p-4 rounded-xl bg-panel border border-border shadow-sm text-center">
             <p className="text-xs text-string-muted mb-1">{t.stat.activeInstallments}</p>

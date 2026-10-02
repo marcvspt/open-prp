@@ -491,6 +491,7 @@ export const en: Locale = {
   },
 
   error: {
+    monthUnavailable: "The selected month is not available.",
     paymentCarryover: (message: string) => `The payment was recorded, but the remaining balance charge could not be created: ${message}`,
     network: "Could not connect to the server.",
     invalidResponse: "The server returned an invalid response.",
