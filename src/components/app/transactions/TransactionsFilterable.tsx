@@ -1,6 +1,7 @@
 import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
 import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
+import Pagination from "@/components/app/ui/Pagination.tsx";
 import type { Transaction } from "@/lib/types/transaction.ts";
 import type { PaginatedResponse } from "@/lib/types/general.ts";
 import { formatDate } from "@/lib/date.ts";
@@ -31,7 +32,6 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
 
   const pageData = data ?? { data: [], total: 0, page: 1, pageSize: 50 };
   const items = pageData.data;
-  const totalPages = Math.ceil(pageData.total / pageData.pageSize);
 
   return (
     <LocaleProvider locale={locale}>
@@ -139,29 +139,7 @@ export default function TransactionsFilterable({ initialMonth, filterType: initi
             </table>
           )}
         </div>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <button
-              type="button"
-              onClick={() => setFilter("page", String(pageData.page - 1))}
-              disabled={pageData.page <= 1 || loading}
-              className="rounded border border-border px-3 py-2 text-string-muted hover:bg-nav-hover disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t.common.pagination.previous}
-            </button>
-            <span className="text-string-muted" aria-live="polite">
-              {t.common.pagination.page(pageData.page, totalPages)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setFilter("page", String(pageData.page + 1))}
-              disabled={pageData.page >= totalPages || loading}
-              className="rounded border border-border px-3 py-2 text-string-muted hover:bg-nav-hover disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t.common.pagination.next}
-            </button>
-          </div>
-        )}
+        <Pagination page={pageData.page} total={pageData.total} pageSize={pageData.pageSize} loading={loading} onPageChange={page => setFilter("page", String(page))} locale={locale} />
       </div>
     </LocaleProvider>
   );

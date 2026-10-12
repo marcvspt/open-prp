@@ -317,6 +317,12 @@ Deuda = SUM(transacciones del mes)
        - SUM(cashback aplicado)
 ```
 
+El mes de la tarjeta es el **mes de corte**. Transacciones y cashback abarcan desde el día siguiente al corte anterior hasta el corte seleccionado, incluido. Los cortes 29–31 se ajustan al último día de los meses cortos sin repetir cargos entre periodos.
+
+Los plazos usan la fecha de compra (`start_date`) para determinar el primer corte: una compra hasta el día de corte entra en ese mes; después del corte, entra en el siguiente. A partir de ahí se cuenta una cuota por mes de corte, usando los mismos helpers de `date.ts` en Plazos, Tarjetas y Dashboard. Sin tarjeta de crédito con corte, empiezan en el mes de compra. La fecha límite de pago se calcula por separado; cuando el día de pago es menor o igual al de corte, cae en el mes siguiente.
+
+Por ejemplo, una compra del **13/12/2025 a 9 meses**, con corte y pago el día **7**, tiene cuotas de **enero a septiembre de 2026**: la primera corta el 7 de enero y vence el 7 de febrero; la última corta el 7 de septiembre y vence el 7 de octubre. En agosto quedan **1/9** cuotas después de ese mes; en septiembre se muestra **0/9** y se incluye la última cuota en la tarjeta; en octubre deja de aparecer entre los plazos vigentes y no aporta cuota a la tarjeta. El progreso representa el calendario de cuotas, no pagos confirmados. Las lecturas lo calculan sin actualizar la BD; los saldos mensuales de tarjetas siguen siendo snapshots persistidos al solicitar su cálculo.
+
 ### Categories
 
 - `UNIQUE(user_id, name)` — no dos categorías con el mismo nombre.
@@ -364,8 +370,8 @@ INPUT_CLASS / COLOR_CLASS → clases
 - Filtros en valor predeterminado no agregan params; al elegir uno específico, sí. Tab activa siempre en `?tab=` (nunca `#hash`; hashes viejos se adoptan en cliente).
 - Filtros interoperables (AND).
 - Los `*Filterable` usan `useFilteredData` (`src/lib/ui/useFilteredData.ts`): maneja filtros, fetch, URL y estado de error (`error`, mostrado como banner `role="alert"`). El estado inicial de filtros se restaura desde la URL; excluye `tab` (lo gestiona `TabBar`).
-- Cada sección declara los parámetros gestionados, locale y defaults de `useFilteredData`. El hook elimina filtros retirados de la URL, conserva params ajenos, hash y estado de navegación, y omite defaults de la URL. Valida HTTP y el envelope API, cancela peticiones previas, descarta respuestas obsoletas y limpia errores al recuperarse. `searchValue` controla la búsqueda con debounce de 300 ms; `popstate` restaura filtros y búsqueda. Plazos usa solo activos por defecto y `active_only=false` para todos.
-- **Transacciones** usa paginación de 50 registros por página. La página se guarda en `?page=` junto con los filtros; al cambiar o limpiar un filtro se vuelve a la primera página. La API devuelve `{ data, total, page, pageSize }`.
+- Cada sección declara los parámetros gestionados, locale y defaults de `useFilteredData`. El hook elimina filtros retirados de la URL, conserva params ajenos, hash y estado de navegación, y omite defaults de la URL. Valida HTTP y el envelope API, cancela peticiones previas, descarta respuestas obsoletas y limpia errores al recuperarse. `searchValue` controla la búsqueda con debounce de 300 ms; `popstate` restaura filtros y búsqueda. Plazos muestra Activo por defecto; Inactivo usa `active_only=inactive` y Ambos usa `active_only=false`. El estado se evalúa respecto al mes seleccionado (o al actual): el plazo sigue activo durante su última cuota, incluso con `0/x`, y pasa a inactivo el mes siguiente. Con mes concreto, Ambos incluye los plazos iniciados hasta ese mes.
+- **Transacciones y administración de Plazos** usan paginación de 50 registros por página y el componente compartido `Pagination.tsx`. La página se guarda en `?page=` junto con los filtros; al cambiar o limpiar un filtro se vuelve a la primera página. Sus APIs devuelven `{ data, total, page, pageSize }`. Si un borrado deja la página fuera del rango disponible, Plazos vuelve a la última página válida, también después de un refresco SSR.
 - `TabBarWithMonth` dispatchea `window.dispatchEvent(new CustomEvent("monthchange", { detail: { month } }))`. Lo escuchan `RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary`, `CardsHistory` para refetchear.
 
 ### Filtro de mes
@@ -374,7 +380,7 @@ INPUT_CLASS / COLOR_CLASS → clases
 - Antigüedad ≥ 12 meses: últimos 12 meses incl. actual + el siguiente.
 - Opción "Últimos 12 meses" (`FILTER_ALL_MONTHS(t)`).
 - **Resumen general** → mes actual por defecto. **Historial/registros** → "Últimos 12 meses" por defecto.
-- Sin `month`, las APIs y SSR aplican `lastYearWindow(createdAt)` (`src/lib/date.ts`) en vez de todo el histórico. La lista de transacciones aplica además su paginación de 50 registros por página.
+- Sin `month`, las APIs y SSR aplican `lastYearWindow(createdAt)` (`src/lib/date.ts`) en vez de todo el histórico. En Plazos, el rango selecciona los calendarios de cuotas que coinciden con esa ventana y se combina con Activo, Inactivo o Ambos; no exige que la compra tenga menos de un año. El resumen mensual y los cálculos de tarjetas conservan la vigencia por mes de corte sin paginación.
 
 ## Componentes
 

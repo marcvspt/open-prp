@@ -1,10 +1,18 @@
 import { createIndexRoutes } from "@/lib/api-routes.ts";
-import { getDateRange, parseBoolParam } from "@/lib/api-helpers.ts";
+import { getDateRange, parsePageParams } from "@/lib/api-helpers.ts";
 import { InstallmentRepository } from "@/lib/modules/installments/repository.ts";
+import type { InstallmentInput, InstallmentListFilter } from "@/lib/types/installment.ts";
 
-export const { GET, POST } = createIndexRoutes(new InstallmentRepository(), {
-  buildFilter: (params, context) => ({
-    active_only: parseBoolParam(params.active_only),
+const repository = new InstallmentRepository();
+
+export const { GET, POST } = createIndexRoutes({
+  findAll: (userId: string, filter?: InstallmentListFilter) => repository.findPaginated(userId, filter),
+  create: (data: InstallmentInput, userId: string) => repository.create(data, userId),
+}, {
+  buildFilter: (params, context): InstallmentListFilter => ({
+    ...parsePageParams(context.url),
+    active_only: params.active_only !== "false" && params.active_only !== "inactive",
+    inactive_only: params.active_only === "inactive",
     category_id: params.category_id,
     payment_method_id: params.payment_method_id,
     q: params.q,

@@ -141,18 +141,44 @@ export function addMonths(dateStr: string, n: number): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   const totalM = m - 1 + n;
   const newY = y + Math.floor(totalM / 12);
-  const newM = totalM % 12 + 1;
+  const newM = ((totalM % 12) + 12) % 12 + 1;
   const lastDay = new Date(newY, newM, 0).getDate();
   const newD = Math.min(d, lastDay);
   return `${newY}-${String(newM).padStart(2, "0")}-${String(newD).padStart(2, "0")}`;
 }
 
-export function isInstallmentInMonth(month: string, startDate: string, totalMonths: number): boolean {
-  const [my, mm] = month.split("-").map(Number);
-  for (let n = 0; n < totalMonths; n++) {
-    const pd = addMonths(startDate, n);
-    const [py, pm] = pd.split("-").map(Number);
-    if (py === my && pm === mm) return true;
-  }
-  return false;
+/** The first statement includes purchases made on its cutoff day. */
+export function installmentFirstMonth(startDate: string, cutoffDay: number | null = null): string {
+  const month = startDate.slice(0, 7);
+  if (cutoffDay == null) return month;
+  const cutoff = Math.min(cutoffDay, Number(lastDayOfMonth(month).slice(8, 10)));
+  return Number(startDate.slice(8, 10)) <= cutoff ? month : addMonths(`${month}-01`, 1).slice(0, 7);
+}
+
+/** Remaining scheduled installments after the selected statement month, not actual payments. */
+export function installmentRemaining(month: string, firstMonth: string, totalMonths: number): number {
+  const [year, mon] = month.split("-").map(Number);
+  const [firstYear, firstMon] = firstMonth.split("-").map(Number);
+  const elapsed = (year - firstYear) * 12 + mon - firstMon + 1;
+  return Math.max(0, totalMonths - Math.max(0, elapsed));
+}
+
+export function isInstallmentInMonth(month: string, startDate: string, totalMonths: number, cutoffDay: number | null = null): boolean {
+  const firstMonth = installmentFirstMonth(startDate, cutoffDay);
+  return totalMonths > 0 && month >= firstMonth && month <= addMonths(`${firstMonth}-01`, totalMonths - 1).slice(0, 7);
+}
+
+/** Inclusive period from the day after the previous cutoff through this cutoff. */
+export function cardStatementPeriod(month: string, cutoffDay: number | null): { start: string; end: string } {
+  const previousMonth = addMonths(`${month}-01`, -1).slice(0, 7);
+  const previousEnd = lastDayOfMonth(previousMonth);
+  const monthEnd = lastDayOfMonth(month);
+  const previousCutoff = cutoffDay == null ? Number(previousEnd.slice(8, 10)) : Math.min(cutoffDay, Number(previousEnd.slice(8, 10)));
+  const currentCutoff = cutoffDay == null ? Number(monthEnd.slice(8, 10)) : Math.min(cutoffDay, Number(monthEnd.slice(8, 10)));
+  const [year, mon] = previousMonth.split("-").map(Number);
+  const nextDay = new Date(year, mon - 1, previousCutoff + 1);
+  return {
+    start: `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, "0")}-${String(nextDay.getDate()).padStart(2, "0")}`,
+    end: `${month}-${String(currentCutoff).padStart(2, "0")}`,
+  };
 }

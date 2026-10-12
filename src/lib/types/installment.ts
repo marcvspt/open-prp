@@ -26,12 +26,23 @@ export interface InstallmentInput {
   currency?: string;
 }
 
+/** Repository projection; only credit cards contribute a statement cutoff. */
+export interface InstallmentScheduleRow extends Installment {
+  cutoff_day: number | null;
+}
+
 export interface InstallmentFilter {
   active_only?: boolean;
+  inactive_only?: boolean;
   category_id?: string;
   payment_method_id?: string;
   q?: string;
   month?: string;
   date_from?: string;
   date_to?: string;
+}
+
+export interface InstallmentListFilter extends InstallmentFilter {
+  page?: number;
+  pageSize?: number;
 }
