@@ -317,6 +317,12 @@ Debt = SUM(month transactions)
        - SUM(applied cashback)
 ```
 
+The card's month is the **statement closing month**. Transactions and cashback run from the day after the previous cutoff through the selected cutoff, inclusive. Cutoff days 29–31 are clamped to the last day of shorter months without repeating charges between periods.
+
+Installment plans use the purchase date (`start_date`) to determine the first statement: purchases on or before the cutoff belong to that month; purchases after it belong to the next. From there, one installment is scheduled per statement month, using the same `date.ts` helpers in Installments, Cards and Dashboard. Without a credit card cutoff, plans start in the purchase month. The payment deadline is calculated separately; when the payment day is on or before the cutoff day, it falls in the following month.
+
+For example, a purchase on **December 13, 2025 with 9 installments**, closing and payment days both **7**, has installments from **January through September 2026**: the first closes January 7 and is due February 7; the last closes September 7 and is due October 7. August shows **1/9** installments remaining after that month; September shows **0/9** and includes the final installment in the card; in October the plan disappears from active installments and contributes no card installment. Progress represents the installment schedule, not confirmed payments. Reads calculate it without updating the database; monthly card balances remain snapshots persisted when calculation is requested.
+
 ### Categories
 
 - `UNIQUE(user_id, name)` — no two categories with the same name.
@@ -364,8 +370,8 @@ INPUT_CLASS / COLOR_CLASS → classes
 - Filters at their default value don't add params; picking a specific one does. Active tab is always in `?tab=` (never `#hash`; old hashes are adopted in the client).
 - Filters are interoperable (AND).
 - `*Filterable` components use `useFilteredData` (`src/lib/ui/useFilteredData.ts`): it handles filters, fetch, URL and error state (`error`, shown as a `role="alert"` banner). The initial filter state is restored from the URL; it excludes `tab` (managed by `TabBar`).
-- Each section declares its managed parameters, locale and defaults for `useFilteredData`. The hook removes cleared filters from the URL, preserves unrelated params, hash and navigation state, and omits defaults from the URL. It checks HTTP status and the API envelope, cancels previous requests, ignores stale responses and clears errors after recovery. `searchValue` controls search with a 300 ms debounce; `popstate` restores filters and search. Installments default to active only and use `active_only=false` for all.
-- **Transactions** use pagination with 50 records per page. The page is stored in `?page=` alongside filters; changing or clearing a filter returns to the first page. The API returns `{ data, total, page, pageSize }`.
+- Each section declares its managed parameters, locale and defaults for `useFilteredData`. The hook removes cleared filters from the URL, preserves unrelated params, hash and navigation state, and omits defaults from the URL. It checks HTTP status and the API envelope, cancels previous requests, ignores stale responses and clears errors after recovery. `searchValue` controls search with a 300 ms debounce; `popstate` restores filters and search. Installments show Active by default; Inactive uses `active_only=inactive` and Both uses `active_only=false`. Status is evaluated against the selected month (or the current one): a plan remains active during its final installment, even with `0/x`, and becomes inactive the following month. With a specific month, Both includes plans started through that month.
+- **Transactions and installment administration** use pagination with 50 records per page and the shared `Pagination.tsx` component. The page is stored in `?page=` alongside filters; changing or clearing a filter returns to the first page. Their APIs return `{ data, total, page, pageSize }`. If deletion leaves a page outside the available range, Installments returns to the last valid page, including after an SSR refresh.
 - `TabBarWithMonth` dispatches `window.dispatchEvent(new CustomEvent("monthchange", { detail: { month } }))`. `RecurringPaymentsMonthly`, `RecurringPaymentsHistory`, `CreditCardSummary` and `CardsHistory` listen to it to refetch.
 
 ### Month filter
@@ -374,7 +380,7 @@ INPUT_CLASS / COLOR_CLASS → classes
 - Account age ≥ 12 months: last 12 months incl. the current one + the next one.
 - "Last 12 months" option (`FILTER_ALL_MONTHS(t)`).
 - **General summary** → current month by default. **History/records** → "Last 12 months" by default.
-- Without `month`, APIs and SSR apply `lastYearWindow(createdAt)` (`src/lib/date.ts`) instead of the whole history. The transactions list also applies pagination with 50 records per page.
+- Without `month`, APIs and SSR apply `lastYearWindow(createdAt)` (`src/lib/date.ts`) instead of the whole history. For Installments, the range selects schedules that overlap this window and combines with Active, Inactive or Both; it does not require purchases to be younger than one year. Monthly summaries and card calculations keep filtering by statement-month activity without pagination.
 
 ## Components
 

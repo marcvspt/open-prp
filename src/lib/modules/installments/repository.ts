@@ -1,84 +1,71 @@
 import { getDb } from "@/lib/db/client.ts";
-import { scopedFindById, scopedDelete, insertRow, applyUpdate, now, type SqlValue } from "@/lib/db/utils.ts";
-import { addMonths, lastDayOfMonth } from "@/lib/date.ts";
-import type { Installment, InstallmentInput, InstallmentFilter } from "@/lib/types/installment.ts";
+import { scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
+import { addMonths, currentMonthStr, installmentFirstMonth, installmentRemaining, lastDayOfMonth } from "@/lib/date.ts";
+import type { Installment, InstallmentInput, InstallmentFilter, InstallmentListFilter, InstallmentScheduleRow } from "@/lib/types/installment.ts";
+import type { PaginatedResponse } from "@/lib/types/general.ts";
 
-function computeRemaining(startDate: string, totalMonths: number, referenceDate?: string): number {
-  const today = referenceDate ? new Date(`${referenceDate}T00:00:00`) : new Date();
-  today.setHours(23, 59, 59, 999);
-  let paid = 0;
-  for (let n = 0; n < totalMonths; n++) {
-    const pd = addMonths(startDate, n);
-    const [y, m, d] = pd.split("-").map(Number);
-    if (new Date(y, m - 1, d) <= today) paid++;
-    else break;
-  }
-  return Math.max(0, totalMonths - paid);
+const scheduleQuery = `SELECT i.*, CASE WHEN c.type = 'credit' THEN c.cutoff_day ELSE NULL END AS cutoff_day
+  FROM installments i
+  LEFT JOIN payment_methods pm ON pm.id = i.payment_method_id AND (pm.user_id = i.user_id OR pm.type = 'global')
+  LEFT JOIN cards c ON c.id = pm.card_id AND c.user_id = i.user_id`;
+
+function withRemaining(row: InstallmentScheduleRow, month: string): Installment {
+  const { cutoff_day, ...installment } = row;
+  return {
+    ...installment,
+    remaining_months: installmentRemaining(month, installmentFirstMonth(row.start_date, cutoff_day), row.total_months),
+  };
 }
 
 export class InstallmentRepository {
+  async findPaginated(userId: string, filter: InstallmentListFilter = {}): Promise<PaginatedResponse<Installment>> {
+    const rows = await this.findAll(userId, filter);
+    const page = Number.isFinite(filter.page) ? Math.max(1, Math.trunc(filter.page ?? 1)) : 1;
+    const pageSize = Number.isFinite(filter.pageSize) ? Math.min(100, Math.max(1, Math.trunc(filter.pageSize ?? 50))) : 50;
+    const offset = (page - 1) * pageSize;
+    return { data: rows.slice(offset, offset + pageSize), total: rows.length, page, pageSize };
+  }
+
   async findSummaryByMonth(userId: string, month: string): Promise<Installment[]> {
-    const monthEnd = lastDayOfMonth(month);
-    const result = await getDb().execute({
-      sql: "SELECT * FROM installments WHERE user_id = ? AND start_date <= ? ORDER BY start_date DESC",
-      args: [userId, monthEnd],
-    });
-    const rows = result.rows as unknown as Installment[];
-    return rows
-      .filter(row => addMonths(row.start_date, Math.max(0, row.total_months - 1)) >= `${month}-01`)
-      .map(row => ({ ...row, remaining_months: computeRemaining(row.start_date, row.total_months, monthEnd) }));
+    return this.findAll(userId, { month, active_only: true });
   }
 
   async findAll(userId: string, filter?: InstallmentFilter): Promise<Installment[]> {
     const db = getDb();
-    const conditions: string[] = ["user_id = ?"];
+    const conditions: string[] = ["i.user_id = ?"];
     const args: (string | number | boolean | null)[] = [userId];
 
-    if (filter?.category_id) { conditions.push("category_id = ?"); args.push(filter.category_id); }
-    if (filter?.payment_method_id) { conditions.push("payment_method_id = ?"); args.push(filter.payment_method_id); }
-    if (filter?.q) { conditions.push("description LIKE ?"); args.push(`%${filter.q}%`); }
+    if (filter?.category_id) { conditions.push("i.category_id = ?"); args.push(filter.category_id); }
+    if (filter?.payment_method_id) { conditions.push("i.payment_method_id = ?"); args.push(filter.payment_method_id); }
+    if (filter?.q) { conditions.push("i.description LIKE ?"); args.push(`%${filter.q}%`); }
 
     const result = await db.execute({
-      sql: `SELECT * FROM installments WHERE ${conditions.join(" AND ")} ORDER BY start_date DESC`,
+      sql: `${scheduleQuery} WHERE ${conditions.join(" AND ")} ORDER BY i.start_date DESC, i.created_at DESC, i.id DESC`,
       args,
     });
-    const rows = result.rows as unknown as Installment[];
-    const currentMonthStart = `${now().slice(0, 7)}-01`;
-    const monthFilter = filter?.month || (filter?.active_only ? undefined : undefined);
-    const targetMonthStart = monthFilter ? `${monthFilter}-01` : currentMonthStart;
-    const computedRows: Installment[] = [];
-    for (const r of rows) {
-      const computed = computeRemaining(r.start_date, r.total_months);
-      if (computed !== r.remaining_months) {
-        await db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now(), r.id] });
-      }
-      computedRows.push({ ...r, remaining_months: computed });
-      // Active = its last payment falls in the month or later, so an
-      // installment stays visible during its final month.
-    }
-    return computedRows.filter(i => {
-      const lastPaymentDate = addMonths(i.start_date, Math.max(0, i.total_months - 1));
-      if (filter?.month) {
-        const monthEnd = lastDayOfMonth(filter.month);
-        return i.start_date <= monthEnd && lastPaymentDate >= targetMonthStart;
-      }
-      if (filter?.active_only) return lastPaymentDate >= targetMonthStart;
+    const rows = result.rows as unknown as InstallmentScheduleRow[];
+    const targetMonth = filter?.month || currentMonthStr();
+    return rows.filter(i => {
+      if (i.total_months <= 0) return false;
+      const firstMonth = installmentFirstMonth(i.start_date, i.cutoff_day);
+      const lastMonth = addMonths(`${firstMonth}-01`, i.total_months - 1).slice(0, 7);
+      if (filter?.month && firstMonth > targetMonth) return false;
+      if (filter?.active_only && lastMonth < targetMonth) return false;
+      if (filter?.inactive_only && lastMonth >= targetMonth) return false;
       if (filter?.date_from || filter?.date_to) {
-        return (!filter.date_from || lastPaymentDate >= filter.date_from) && (!filter.date_to || i.start_date <= filter.date_to);
+        return (!filter.date_from || lastDayOfMonth(lastMonth) >= filter.date_from) && (!filter.date_to || `${firstMonth}-01` <= filter.date_to);
       }
       return true;
-    });
+    }).map(row => withRemaining(row, targetMonth));
   }
 
   async findById(id: string, userId: string): Promise<Installment | null> {
-    const db = getDb();
-    const row = await scopedFindById<Installment>("installments", id, userId);
-    if (!row) return null;
-    const computed = computeRemaining(row.start_date, row.total_months);
-    if (computed !== row.remaining_months) {
-      await db.execute({ sql: "UPDATE installments SET remaining_months = ?, updated_at = ? WHERE id = ?", args: [computed, now(), row.id] });
-    }
-    return { ...row, remaining_months: computed };
+    const result = await getDb().execute({
+      sql: `${scheduleQuery} WHERE i.id = ? AND i.user_id = ?`,
+      args: [id, userId],
+    });
+    const row = result.rows[0] as unknown as InstallmentScheduleRow | undefined;
+    return row ? withRemaining(row, currentMonthStr()) : null;
   }
 
   async create(data: InstallmentInput, userId: string): Promise<Installment> {

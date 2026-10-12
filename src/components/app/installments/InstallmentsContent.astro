@@ -18,7 +18,9 @@ import {
 } from "@/lib/i18n/form-fields.ts";
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
-import { currentMonthStr, lastYearWindow, lastDayOfMonth, isAvailableMonth } from "@/lib/date.ts";
+import { currentMonthStr, isAvailableMonth } from "@/lib/date.ts";
+import { getDateRange, parsePageParams } from "@/lib/api-helpers.ts";
+import type { InstallmentListFilter } from "@/lib/types/installment.ts";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Props {
@@ -32,26 +34,23 @@ const currentMonth = currentMonthStr();
 const params = Astro.url.searchParams;
 const paramSummaryMonth = params.get("summary_month");
 const summaryMonth = paramSummaryMonth && isAvailableMonth(paramSummaryMonth, Astro.locals.createdAt) ? paramSummaryMonth : currentMonth;
-const activeOnly = params.get("active_only") !== "false";
+const inactiveOnly = params.get("active_only") === "inactive";
+const activeOnly = params.get("active_only") !== "false" && !inactiveOnly;
 const filterMonth = params.get("month") || "";
 const filterQ = params.get("q") || "";
 const filterPm = params.get("payment_method_id") || "";
 const filterCat = params.get("category_id") || "";
 const initialTab = params.get("tab") === "admin" ? "admin" : "summary";
-const instFilter: Record<string, unknown> = { active_only: activeOnly };
+const instFilter: InstallmentListFilter = { active_only: activeOnly, inactive_only: inactiveOnly, ...parsePageParams(Astro.url) };
 if (filterMonth) instFilter.month = filterMonth;
 if (filterQ) instFilter.q = filterQ;
 if (filterPm) instFilter.payment_method_id = filterPm;
 if (filterCat) instFilter.category_id = filterCat;
-if (!filterMonth) {
-  const { from, to } = lastYearWindow(Astro.locals.createdAt);
-  instFilter.date_from = `${from}-01`;
-  instFilter.date_to = lastDayOfMonth(to);
-}
+Object.assign(instFilter, getDateRange({ month: filterMonth, date_from: params.get("date_from") || undefined, date_to: params.get("date_to") || undefined }, Astro.locals.createdAt));
 const [instCategories, paymentMethods, initialData, allCards, summaryData] = await Promise.all([
   new CategoryRepository().findBySections(userId, ["installments"]),
   new PaymentMethodRepository().findAll(userId),
-  new InstallmentRepository().findAll(userId, instFilter),
+  new InstallmentRepository().findPaginated(userId, instFilter),
   new CardRepository().findAll(userId),
   new InstallmentRepository().findSummaryByMonth(userId, summaryMonth),
 ]);
@@ -154,6 +153,7 @@ const defaultForm = {
         initialMonth={filterMonth}
         createdAt={Astro.locals.createdAt}
         activeOnly={activeOnly}
+        inactiveOnly={inactiveOnly}
         paymentMethods={paymentMethods.map((pm) => ({
           id: pm.id,
           icon: pm.icon,

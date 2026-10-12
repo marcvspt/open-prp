@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
 import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
+import Pagination from "@/components/app/ui/Pagination.tsx";
 import type { Installment } from "@/lib/types/installment.ts";
+import type { PaginatedResponse } from "@/lib/types/general.ts";
 import { formatDate } from "@/lib/date.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_CATEGORIES, FILTER_ALL_PAYMENT_METHODS, FILTER_ALL_STATUS_INSTALLMENTS, FILTER_ALL_MONTHS, FILTER_SEARCH_DESC, FILTER_LABEL_CATEGORY, FILTER_LABEL_PAYMENT_METHOD, FILTER_LABEL_STATUS } from "@/lib/i18n/filter-fields.ts";
 import { BTN_EDIT, BTN_DELETE } from "@/lib/i18n/general-fields.ts";
@@ -13,6 +16,7 @@ import { formatCurrency } from "@/lib/format.ts";
 interface Props {
   initialMonth: string;
   activeOnly: boolean;
+  inactiveOnly: boolean;
   paymentMethods: { id: string; icon: string | null; name: string }[];
   categories: { id: string; icon: string | null; name: string }[];
   initialData?: string;
@@ -20,15 +24,24 @@ interface Props {
   locale?: LocaleCode;
 }
 
-export default function InstallmentsFilterable({ initialMonth, activeOnly: initialActive, paymentMethods, categories, initialData, createdAt, locale = "es" }: Props) {
+export default function InstallmentsFilterable({ initialMonth, activeOnly: initialActive, inactiveOnly, paymentMethods, categories, initialData, createdAt, locale = "es" }: Props) {
   const t = getLocaleDict(locale);
-  const parsedInitial = initialData ? JSON.parse(initialData) as Installment[] : undefined;
-  const { filters, setFilter, clearFilters, searchValue, data, loading, error } = useFilteredData<Installment[]>("/api/installments", {
-    ...(initialActive ? { active_only: "true" } : {}),
+  const parsedInitial = initialData ? JSON.parse(initialData) as PaginatedResponse<Installment> : undefined;
+  const { filters, setFilter, clearFilters, searchValue, data, loading, error } = useFilteredData<PaginatedResponse<Installment>>("/api/installments", {
+    active_only: inactiveOnly ? "inactive" : String(initialActive),
     ...(initialMonth ? { month: initialMonth } : {}),
-  }, parsedInitial, { keys: ["month", "active_only", "payment_method_id", "category_id", "q", "date_from", "date_to"], defaults: { active_only: "true" }, locale, createdAt });
+    ...(parsedInitial && parsedInitial.page > 1 ? { page: String(parsedInitial.page) } : {}),
+    ...(parsedInitial && parsedInitial.pageSize !== 50 ? { pageSize: String(parsedInitial.pageSize) } : {}),
+  }, parsedInitial, { keys: ["month", "active_only", "payment_method_id", "category_id", "q", "page", "pageSize", "date_from", "date_to"], defaults: { active_only: "true", page: "1", pageSize: "50" }, locale, createdAt });
 
-  const items = data ?? [];
+  const pageData = data ?? { data: [], total: 0, page: 1, pageSize: 50 };
+  const items = pageData.data;
+  // SSR refreshes can leave a deleted page empty; use the same correction as API refreshes.
+  useEffect(() => {
+    if (!data || loading) return;
+    const lastPage = Math.max(1, Math.ceil(data.total / data.pageSize));
+    if (data.page > lastPage) setFilter("page", String(lastPage));
+  }, [data, loading, setFilter]);
 
   return (
     <LocaleProvider locale={locale}>
@@ -49,6 +62,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
                 onChange={(v) => setFilter("active_only", v)}
                 options={[
                   { value: "true", label: t.filter.activeOnly },
+                  { value: "inactive", label: t.filter.inactiveOnly },
                   { value: "false", label: FILTER_ALL_STATUS_INSTALLMENTS(t) },
                 ]}
                 placeholder={FILTER_LABEL_STATUS(t)}
@@ -134,6 +148,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
             </table>
           )}
         </div>
+        <Pagination page={pageData.page} total={pageData.total} pageSize={pageData.pageSize} loading={loading} onPageChange={page => setFilter("page", String(page))} locale={locale} />
       </div>
     </LocaleProvider>
   );
