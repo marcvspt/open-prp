@@ -215,6 +215,7 @@ export const en: Locale = {
     cashback: shared.cashback,
     monthDebt: "Month debt",
     paidAmount: "Paid",
+    unpaidBalance: "Unpaid balance",
     futureInstallments: "Future installments",
     totalCommitted: "Total committed",
     activeInstallments: "Active installments",
