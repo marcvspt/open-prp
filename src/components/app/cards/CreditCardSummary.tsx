@@ -160,7 +160,9 @@ export default function CreditCardSummary({
             const outstanding = Math.max(0, gross - settled);
             const committed = (calc ? calc.total_committed : gross) - settled;
             const available = card.max_limit != null ? card.max_limit - committed : 0;
-            const borderClass = debt && !debt.is_paid ? dueDaysBorder(dueIn) : paidLate ? "border-danger" : "border-border";
+            const borderClass = debt?.is_paid
+              ? paidLate ? "border-danger" : "border-info"
+              : debt ? dueDaysBorder(dueIn) : "border-border";
             return (
               <div key={card.id} className={`bg-panel rounded-xl border-2 p-4 shadow-sm ${borderClass}`}>
                 <div className="flex items-start justify-between mb-3">
@@ -177,7 +179,7 @@ export default function CreditCardSummary({
                     </button>
                   )}
                   {debt?.is_paid && (
-                    <span className={`px-3 py-1 text-xs font-medium rounded-lg ${paidLate ? "bg-danger-bg text-danger-text" : "bg-success-bg text-success-text"}`}>
+                    <span className={`px-3 py-1 text-xs font-medium rounded-lg ${paidLate ? "bg-danger-bg text-danger-text" : "bg-info-bg text-info-text"}`}>
                       {paidLate ? t.badge.paidLate : t.badge.paidF}
                     </span>
                   )}
