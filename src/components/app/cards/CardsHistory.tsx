@@ -85,7 +85,7 @@ export default function CardsHistory({ initialData, initialCards, locale = "es" 
                       <td className="px-3 py-2 text-right font-mono text-success">{formatCurrency(d.paid_amount)}</td>
                       <td className="px-3 py-2 text-right font-mono text-string">{formatCurrency(Math.max(0, d.statement_balance - d.paid_amount))}</td>
                       <td className="px-3 py-2 text-center">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${d.is_paid ? "bg-success-bg text-success-text" : "bg-warning-bg text-warning-text"}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${d.is_paid ? "bg-info-bg text-info-text" : "bg-warning-bg text-warning-text"}`}>
                           {d.is_paid ? t.badge.paid : t.badge.pending}
                         </span>
                       </td>
