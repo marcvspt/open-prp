@@ -188,27 +188,28 @@ export default function CreditCardSummary({
                     <p className="font-mono font-medium text-success">{card.max_limit != null ? formatCurrency(card.max_limit) : "—"}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-string-muted">{t.stat.calculatedDebt}</p>
+                    <p className="text-xs text-string-muted">{t.stat.monthDebt}</p>
                     {calc ? (
                       <div className="group relative">
-                        <p className="font-mono font-medium text-danger cursor-help">{formatCurrency(outstanding, { showPlus: true })}</p>
+                        <p className="font-mono font-medium text-danger cursor-help">{formatCurrency(gross, { showPlus: true })}</p>
                         <div className="absolute left-0 right-0 top-full mt-1 max-w-xs bg-panel border border-border rounded-lg shadow-lg p-3 text-xs z-10 hidden group-hover:block">
                           <div className="space-y-1">
                             <div className="flex justify-between"><span>{t.stat.purchases}</span><span className="font-mono text-danger">{formatCurrency(-calc.total_purchases, { showPlus: true })}</span></div>
                             <div className="flex justify-between"><span>{t.stat.installmentsThisMonth}</span><span className="font-mono text-danger">{formatCurrency(-calc.total_installments, { showPlus: true })}</span></div>
                             <div className="flex justify-between"><span>{t.stat.recurringPayments}</span><span className="font-mono text-danger">{formatCurrency(-calc.total_recurring, { showPlus: true })}</span></div>
                             <div className="flex justify-between"><span>{t.stat.cashback}</span><span className="font-mono text-success">{formatCurrency(calc.total_cashback, { showPlus: true })}</span></div>
+                            <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.monthDebt}</span><span className="font-mono">{formatCurrency(gross, { showPlus: true })}</span></div>
                             {paidAmount > 0 && (
                               <div className="flex justify-between"><span>{t.stat.paidAmount}</span><span className="font-mono text-success">{formatCurrency(-paidAmount, { showPlus: true })}</span></div>
                             )}
-                            <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.monthDebt}</span><span className="font-mono">{formatCurrency(outstanding, { showPlus: true })}</span></div>
+                            <div className="flex justify-between"><span>{t.stat.pending}</span><span className="font-mono">{formatCurrency(outstanding, { showPlus: true })}</span></div>
                             <div className="flex justify-between text-string-muted"><span>{t.stat.futureInstallments}</span><span className="font-mono">{formatCurrency(-calc.committed_installments, { showPlus: true })}</span></div>
                             <div className="border-t border-border pt-1 flex justify-between font-semibold"><span>{t.stat.totalCommitted}</span><span className="font-mono">{formatCurrency(committed, { showPlus: true })}</span></div>
                           </div>
                         </div>
                       </div>
                     ) : debt ? (
-                      <p className="font-mono font-medium text-danger">{formatCurrency(outstanding, { showPlus: true })}</p>
+                      <p className="font-mono font-medium text-danger">{formatCurrency(gross, { showPlus: true })}</p>
                     ) : (
                       <p className="text-xs text-string-muted">-</p>
                     )}
@@ -220,6 +221,16 @@ export default function CreditCardSummary({
                   <div>
                     <p className="text-xs text-string-muted">{t.stat.cutoffPayment}</p>
                     <p className="font-mono font-medium">{card.cutoff_day != null && card.payment_due_day != null ? `${card.cutoff_day} / ${card.payment_due_day}` : "—"}</p>
+                  </div>
+                </div>
+                <div className="mt-3 border-t border-border pt-3 grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-string-muted">{t.stat.paidAmount}</p>
+                    <p className="font-mono font-medium text-success">{formatCurrency(paidAmount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-string-muted">{t.stat.unpaidBalance}</p>
+                    <p className="font-mono font-medium text-string">{formatCurrency(Math.max(0, gross - paidAmount))}</p>
                   </div>
                 </div>
                 {debt && !debt.is_paid && (

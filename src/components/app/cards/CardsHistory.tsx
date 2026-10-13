@@ -68,7 +68,9 @@ export default function CardsHistory({ initialData, initialCards, locale = "es" 
                 <tr className="text-string-muted text-xs uppercase border-b border-border">
                   <th className="text-left px-3 py-2">{t.table.month}</th>
                   <th className="text-left px-3 py-2">{t.table.card}</th>
-                  <th className="text-right px-3 py-2">{t.table.debt}</th>
+                  <th className="text-right px-3 py-2">{t.stat.monthDebt}</th>
+                  <th className="text-right px-3 py-2">{t.stat.paidAmount}</th>
+                  <th className="text-right px-3 py-2">{t.stat.unpaidBalance}</th>
                   <th className="text-center px-3 py-2">{t.table.status}</th>
                 </tr>
               </thead>
@@ -79,7 +81,9 @@ export default function CardsHistory({ initialData, initialCards, locale = "es" 
                     <tr key={`${d.month}-${d.card_id}-${i}`} className="border-b border-border/50">
                       <td className="px-3 py-2 text-string-muted">{monthLabel(d.month, locale)}</td>
                       <td className="px-3 py-2 font-medium text-string">{card?.name ?? "?"}</td>
-                      <td className="px-3 py-2 text-right font-mono text-string">{formatCurrency(d.is_paid ? 0 : -Math.max(0, d.statement_balance - d.paid_amount), { showPlus: true })}</td>
+                      <td className="px-3 py-2 text-right font-mono text-string">{formatCurrency(d.statement_balance)}</td>
+                      <td className="px-3 py-2 text-right font-mono text-success">{formatCurrency(d.paid_amount)}</td>
+                      <td className="px-3 py-2 text-right font-mono text-string">{formatCurrency(Math.max(0, d.statement_balance - d.paid_amount))}</td>
                       <td className="px-3 py-2 text-center">
                         <span className={`text-xs px-2 py-0.5 rounded-full ${d.is_paid ? "bg-success-bg text-success-text" : "bg-warning-bg text-warning-text"}`}>
                           {d.is_paid ? t.badge.paid : t.badge.pending}

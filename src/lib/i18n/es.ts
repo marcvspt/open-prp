@@ -213,6 +213,7 @@ export const es = {
     cashback: shared.cashback,
     monthDebt: "Adeudo del mes",
     paidAmount: "Pagado",
+    unpaidBalance: "Saldo no pagado",
     futureInstallments: "Plazos futuros",
     totalCommitted: "Total comprometido",
     activeInstallments: "Plazos activos",

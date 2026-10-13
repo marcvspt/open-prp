@@ -47,6 +47,8 @@ export default function InstallmentsSummary({ initialData, initialMonth, created
     }
     window.addEventListener("monthchange", refresh);
     window.addEventListener("popstate", refresh);
+    // The selector may have changed the URL before this island finished hydrating.
+    refresh();
     return () => { controller?.abort(); window.removeEventListener("monthchange", refresh); window.removeEventListener("popstate", refresh); };
   }, [initialMonth, createdAt, t]);
   const cards: Card[] = useMemo(() => JSON.parse(initialCards), [initialCards]);
