@@ -1,4 +1,4 @@
-import { getDb } from "@/lib/db/client.ts";
+import { getDb } from "@/lib/server/db/client.ts";
 import type { RecurringPaymentMonthly, RecurringPaymentMonthlyUpdate } from "@/lib/types/recurring-payment.ts";
 
 export class RecurringPaymentMonthlyRepository {

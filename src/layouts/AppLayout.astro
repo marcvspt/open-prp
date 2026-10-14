@@ -8,6 +8,7 @@ import Sidebar from "@/components/app/ui/Sidebar.astro";
 import RefreshStatus from "@/components/app/ui/RefreshStatus.astro";
 import MenuIcon from "@/assets/menu.svg";
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
+import { SITE_DATA } from "@/lib/site.ts";
 
 const { title } = Astro.props;
 const currentPath = Astro.url.pathname;
@@ -54,7 +55,7 @@ if (isContentRefresh) Astro.response.headers.set("Cache-Control", "private, no-s
       data-login-redirect
     >
       <div class="text-center space-y-4 px-6">
-        <h1 class="text-2xl font-bold">Open PRP</h1>
+        <h1 class="text-2xl font-bold">{SITE_DATA.name}</h1>
         <div>
           <a
             href={loginPath}

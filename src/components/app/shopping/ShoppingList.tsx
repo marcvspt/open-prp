@@ -1,4 +1,4 @@
-import { apiFetch, fetchList, apiErrorMessage, isAbortError } from "@/lib/api-client.ts";
+import { apiFetch, fetchList, apiErrorMessage, isAbortError } from "@/lib/ui/api-client.ts";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Select from "@/components/ui/Select.tsx";
 import type { PantryItem } from "@/lib/types/pantry.ts";

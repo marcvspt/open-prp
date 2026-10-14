@@ -1,5 +1,5 @@
-import { createIndexRoutes } from "@/lib/api-routes.ts";
-import { getDateRange } from "@/lib/api-helpers.ts";
+import { createIndexRoutes } from "@/lib/server/api-routes.ts";
+import { getDateRange } from "@/lib/server/api-helpers.ts";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
 
 export const { GET, POST } = createIndexRoutes(new CashbackRepository(), {
@@ -11,6 +11,6 @@ export const { GET, POST } = createIndexRoutes(new CashbackRepository(), {
   }),
   validateCreate: (body) =>
     !body.amount || !body.date || !body.card_id
-      ? "amount, date, and card_id are required"
+      ? "cashback-fields-required"
       : null,
 });

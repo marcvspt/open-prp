@@ -1,5 +1,5 @@
-import { createIndexRoutes } from "@/lib/api-routes.ts";
-import { parseBoolParam } from "@/lib/api-helpers.ts";
+import { createIndexRoutes } from "@/lib/server/api-routes.ts";
+import { parseBoolParam } from "@/lib/server/api-helpers.ts";
 import { TaskRepository } from "@/lib/modules/tasks/repository.ts";
 
 export const { GET, POST } = createIndexRoutes(new TaskRepository(), {
@@ -9,5 +9,5 @@ export const { GET, POST } = createIndexRoutes(new TaskRepository(), {
     due_date_from: params.due_date_from,
     due_date_to: params.due_date_to,
   }),
-  validateCreate: (body) => (!body.description ? "description is required" : null),
+  validateCreate: (body) => (!body.description ? "description-required" : null),
 });

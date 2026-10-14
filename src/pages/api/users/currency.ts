@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId, readJsonBody, withErrorHandling } from "@/lib/api-helpers.ts";
+import { jsonResponse, errorResponse, requireUserId, readJsonBody, withErrorHandling } from "@/lib/server/api-helpers.ts";
 import { UserRepository } from "@/lib/modules/users/repository.ts";
 
 const repo = new UserRepository();
@@ -17,9 +17,9 @@ export const PUT: APIRoute = withErrorHandling(async (context) => {
   if (uid instanceof Response) return uid;
 
   const body = await readJsonBody(context);
-  if (!body) return errorResponse("Body inválido", 400);
+  if (!body) return errorResponse("invalid-body", 400);
   if (!body.currency || !["EUR", "MXN", "USD"].includes(body.currency as string)) {
-    return errorResponse("Invalid currency");
+    return errorResponse("invalid-currency");
   }
 
   await repo.setPreferredCurrency(uid, body.currency as string);

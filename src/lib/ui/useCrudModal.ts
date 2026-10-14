@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { FormEvent } from "react";
-import { apiFetch, apiData, apiErrorMessage } from "@/lib/api-client.ts";
+import { apiFetch, apiData, apiErrorMessage } from "@/lib/ui/api-client.ts";
 import { notifyDataChange } from "@/lib/ui/data-refresh.ts";
 import { createDefaultForm, createCrudPayload } from "@/lib/ui/crud-form.ts";
 import type { Field, CrudForm } from "@/lib/types/crud.ts";

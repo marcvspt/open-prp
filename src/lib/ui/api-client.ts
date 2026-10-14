@@ -1,10 +1,16 @@
-import type { ApiResponse } from "@/lib/types/general.ts";
+import { isApiErrorCode } from "@/lib/types/api.ts";
+import type { ApiResponse, ApiErrorCode, ApiErrorParams } from "@/lib/types/api.ts";
 import type { Locale } from "@/lib/i18n/es.ts";
 import type { ApiErrorKind } from "@/lib/types/api-client.ts";
 
 export class ApiError extends Error {
-  constructor(public readonly kind: ApiErrorKind, public readonly status?: number, public readonly serverMessage?: string) {
-    super(serverMessage ?? kind);
+  constructor(
+    public readonly kind: ApiErrorKind,
+    public readonly status?: number,
+    public readonly code?: ApiErrorCode,
+    public readonly params?: ApiErrorParams,
+  ) {
+    super(code ?? kind);
     this.name = "ApiError";
   }
 }
@@ -15,7 +21,11 @@ export function isAbortError(error: unknown): boolean {
 
 export function apiErrorMessage(error: unknown, t: Locale): string {
   if (error instanceof ApiError) {
-    return error.serverMessage ?? (error.kind === "network" ? t.error.network : error.kind === "response" ? t.error.invalidResponse : t.common.errorUnknown);
+    if (error.code === "category-exists" && error.params?.name !== undefined) {
+      return t.error.categoryExists(error.params.name);
+    }
+    if (error.code) return t.error.api[error.code];
+    return error.kind === "network" ? t.error.network : error.kind === "response" ? t.error.invalidResponse : t.common.errorUnknown;
   }
   return error instanceof Error ? error.message : t.common.errorUnknown;
 }
@@ -42,7 +52,11 @@ export async function apiFetch<T = unknown>(url: string, options?: RequestInit):
     throw new ApiError("response", response.status);
   }
   if (!response.ok || !body.success) {
-    throw new ApiError("http", response.status, "error" in body && typeof body.error === "string" ? body.error : undefined);
+    const code = "error" in body && isApiErrorCode(body.error) ? body.error : undefined;
+    const params = "params" in body && typeof body.params === "object" && body.params !== null
+      && "name" in body.params && typeof body.params.name === "string"
+      ? { name: body.params.name } : undefined;
+    throw new ApiError("http", response.status, code, params);
   }
   return body as ApiResponse<T>;
 }

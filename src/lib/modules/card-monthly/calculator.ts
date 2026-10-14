@@ -1,4 +1,4 @@
-import { getDb } from "@/lib/db/client.ts";
+import { getDb } from "@/lib/server/db/client.ts";
 import { cardStatementPeriod, installmentFirstMonth, installmentRemaining, isInstallmentInMonth } from "@/lib/date.ts";
 import type { CalculatedDebt } from "@/lib/types/card-monthly.ts";
 

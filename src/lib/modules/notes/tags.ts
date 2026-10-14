@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { scopedFindById, insertRow } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { scopedFindById, insertRow } from "@/lib/server/db/utils.ts";
 import type { NoteTag } from "@/lib/types/note.ts";
 
 export class NoteTagRepository {

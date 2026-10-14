@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n/es.ts";
+import { SITE_DATA } from "@/lib/site.ts";
 
 const shared = {
   name: "Name",
@@ -465,19 +466,19 @@ export const en: Locale = {
   landing: {
     heroTitle: "Take control of your",
     heroTitleAccent: "personal finances",
-    heroDescription: "Open PRP is your personal finance management hub. Transactions, cards, installments, subscriptions, pantry and more, all in one place.",
+    heroDescription: `${SITE_DATA.name} is your personal finance management hub. Transactions, cards, installments, subscriptions, pantry and more, all in one place.`,
     ctaStart: "Start for free",
     ctaMore: "Learn more",
     featuresTitle: "Everything you need",
     featuresTagline: "Manage every aspect of your finances from a single panel.",
-    features: [
-      { title: shared.transactions, description: "Track income and expenses with custom categories." },
-      { title: shared.cards, description: "Control your cards, cutoff dates and monthly payments." },
-      { title: shared.installments, description: "Split purchases into installments and follow each one." },
-      { title: shared.recurringPayments, description: "Subscriptions and services with automatic monthly entry." },
-      { title: shared.pantry, description: "Product inventory, expiry dates and purchases." },
-      { title: shared.purchases, description: "Shopping list with history and categories." },
-    ],
+    features: {
+      transactions: { title: shared.transactions, description: "Track income and expenses with custom categories." },
+      cards: { title: shared.cards, description: "Control your cards, cutoff dates and monthly payments." },
+      installments: { title: shared.installments, description: "Split purchases into installments and follow each one." },
+      "recurring-payments": { title: shared.recurringPayments, description: "Subscriptions and services with automatic monthly entry." },
+      pantry: { title: shared.pantry, description: "Product inventory, expiry dates and purchases." },
+      shopping: { title: shared.purchases, description: "Shopping list with history and categories." },
+    },
     navFeatures: "Features",
     navAbout: "About Me",
     ariaMenu: "Menu",
@@ -493,6 +494,33 @@ export const en: Locale = {
   },
 
   error: {
+    categoryExists: (name: string) => `A category named "${name}" already exists. Edit it to add more sections.`,
+    api: {
+      "internal-error": "Internal server error.",
+      unauthorized: "Sign in to continue.",
+      "invalid-body": "The submitted data is invalid.",
+      "not-found": "The record was not found.",
+      "name-required": "Name is required.",
+      "description-required": "Description is required.",
+      "card-fields-required": "Card name and type are required.",
+      "invalid-card-type": "Select a credit, debit or voucher card.",
+      "transaction-fields-required": "Type, amount, date and payment method are required.",
+      "event-fields-required": "Description and start date are required.",
+      "cashback-fields-required": "Amount, date and card are required.",
+      "installment-fields-required": "Complete the description, total amount, monthly amount, months, start date and payment method.",
+      "recurring-payment-fields-required": "Name, default amount and payment method are required.",
+      "month-required": "Select a month in YYYY-MM format.",
+      "id-required": "The identifier is required.",
+      "card-month-required": "Card and month are required.",
+      "month-amount-required": "Month and amount are required.",
+      "invalid-currency": "Select EUR, MXN or USD.",
+      "category-exists": "A category with that name already exists. Edit it to add more sections.",
+      "predefined-category-readonly": "Categories are predefined and cannot be edited or deleted.",
+      "database-unavailable": "The database is unavailable.",
+      "pantry-create-failed": "Could not create the product.",
+      "card-calculation-failed": "Could not calculate the card debt.",
+      "month-unavailable": "The selected month is not available.",
+    },
     monthUnavailable: "The selected month is not available.",
     paymentCarryover: (message: string) => `The payment was recorded, but the remaining balance charge could not be created: ${message}`,
     network: "Could not connect to the server.",

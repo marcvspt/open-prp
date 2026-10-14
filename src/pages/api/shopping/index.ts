@@ -1,5 +1,5 @@
-import { createIndexRoutes } from "@/lib/api-routes.ts";
-import { parseBoolParam } from "@/lib/api-helpers.ts";
+import { createIndexRoutes } from "@/lib/server/api-routes.ts";
+import { parseBoolParam } from "@/lib/server/api-helpers.ts";
 import { ShoppingRepository } from "@/lib/modules/shopping/repository.ts";
 
 export const { GET, POST } = createIndexRoutes(new ShoppingRepository(), {
@@ -10,5 +10,5 @@ export const { GET, POST } = createIndexRoutes(new ShoppingRepository(), {
     category: params.category,
     event_id: params.event_id,
   }),
-  validateCreate: (body) => (!body.name ? "name is required" : null),
+  validateCreate: (body) => (!body.name ? "name-required" : null),
 });

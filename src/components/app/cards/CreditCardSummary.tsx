@@ -5,7 +5,7 @@ import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import type { Category } from "@/lib/types/category.ts";
 import { daysUntilPaymentDue, isPaymentLate } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
-import { apiData, fetchList, apiErrorMessage, isAbortError } from "@/lib/api-client.ts";
+import { apiData, fetchList, apiErrorMessage, isAbortError } from "@/lib/ui/api-client.ts";
 import { payCardDebtFull, payCardDebtPartial, CarryoverError } from "@/lib/dashboard/api.ts";
 import { BTN_CANCEL } from "@/lib/i18n/general-fields.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";

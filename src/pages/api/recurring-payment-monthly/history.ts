@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, requireUserId, withErrorHandling } from "@/lib/api-helpers.ts";
+import { jsonResponse, requireUserId, withErrorHandling } from "@/lib/server/api-helpers.ts";
 import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
 import { lastYearWindow } from "@/lib/date.ts";
 

@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api-client.ts";
+import { apiFetch } from "@/lib/ui/api-client.ts";
 import { notifyDataChange } from "@/lib/ui/data-refresh.ts";
 
 let initialized = false;

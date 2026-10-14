@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { apiData, apiFetch, apiErrorMessage, isAbortError } from "@/lib/api-client.ts";
+import { apiData, apiFetch, apiErrorMessage, isAbortError } from "@/lib/ui/api-client.ts";
 import { currentMonthStr } from "@/lib/date.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";

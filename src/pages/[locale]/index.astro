@@ -10,6 +10,7 @@ import PackageIcon from "@/assets/package.svg";
 import CartIcon from "@/assets/cart.svg";
 import { LOCALES } from "@/lib/i18n/locale.ts";
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
+import { LANDING_FEATURES } from "@/lib/catalog/landing.ts";
 
 export const prerender = true;
 
@@ -20,8 +21,11 @@ export function getStaticPaths() {
 const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
 
-const FEATURE_ICONS = [DollarIcon, CardIcon, ClipboardIcon, RecurringIcon, PackageIcon, CartIcon];
-const FEATURES_INFO = t.landing.features.map((feature, i) => ({ icon: FEATURE_ICONS[i], ...feature }));
+const FEATURE_ICONS = {
+  dollar: DollarIcon, card: CardIcon, clipboard: ClipboardIcon,
+  recurring: RecurringIcon, package: PackageIcon, cart: CartIcon,
+};
+const FEATURES_INFO = LANDING_FEATURES.map(({ id, icon }) => ({ icon: FEATURE_ICONS[icon], ...t.landing.features[id] }));
 ---
 
 <LandingLayout title={`${t.page.home}`}>

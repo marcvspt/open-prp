@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { fetchList, apiErrorMessage } from "@/lib/api-client.ts";
+import { fetchList, apiErrorMessage } from "@/lib/ui/api-client.ts";
 import { currentMonthStr, isAvailableMonth } from "@/lib/date.ts";
 import type { Installment } from "@/lib/types/installment.ts";
 import type { Card } from "@/lib/types/card.ts";

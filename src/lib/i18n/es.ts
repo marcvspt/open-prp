@@ -1,3 +1,7 @@
+import { SITE_DATA } from "@/lib/site.ts";
+import type { ApiErrorCode } from "@/lib/types/api.ts";
+import type { LandingFeatureId } from "@/lib/types/site.ts";
+
 const shared = {
   name: "Nombre",
   description: "Descripción",
@@ -463,19 +467,19 @@ export const es = {
   landing: {
     heroTitle: "Controla tus",
     heroTitleAccent: "finanzas personales",
-    heroDescription: "Open PRP es tu centro de gestión financiera personal. Transacciones, tarjetas, plazos, suscripciones, despensa y más, todo en un solo lugar.",
+    heroDescription: `${SITE_DATA.name} es tu centro de gestión financiera personal. Transacciones, tarjetas, plazos, suscripciones, despensa y más, todo en un solo lugar.`,
     ctaStart: "Comenzar gratis",
     ctaMore: "Ver más",
     featuresTitle: "Todo lo que necesitas",
     featuresTagline: "Gestiona cada aspecto de tus finanzas desde un solo panel.",
-    features: [
-      { title: shared.transactions, description: "Registra ingresos y gastos con categorías personalizadas." },
-      { title: shared.cards, description: "Controla tus plásticos, fechas de corte y pagos mensuales." },
-      { title: shared.installments, description: "Divide compras en cuotas y da seguimiento a cada una." },
-      { title: shared.recurringPayments, description: "Suscripciones y servicios con registro mensual automático." },
-      { title: shared.pantry, description: "Inventario de productos, fechas de vencimiento y compras." },
-      { title: shared.purchases, description: "Lista de compras con historial y categorías." },
-    ],
+    features: {
+      transactions: { title: shared.transactions, description: "Registra ingresos y gastos con categorías personalizadas." },
+      cards: { title: shared.cards, description: "Controla tus plásticos, fechas de corte y pagos mensuales." },
+      installments: { title: shared.installments, description: "Divide compras en cuotas y da seguimiento a cada una." },
+      "recurring-payments": { title: shared.recurringPayments, description: "Suscripciones y servicios con registro mensual automático." },
+      pantry: { title: shared.pantry, description: "Inventario de productos, fechas de vencimiento y compras." },
+      shopping: { title: shared.purchases, description: "Lista de compras con historial y categorías." },
+    } satisfies Record<LandingFeatureId, { title: string; description: string }>,
     navFeatures: "Características",
     navAbout: "Sobre Mí",
     ariaMenu: "Menú",
@@ -491,6 +495,33 @@ export const es = {
   },
 
   error: {
+    categoryExists: (name: string) => `Ya existe una categoría "${name}". Edítala para agregar más secciones.`,
+    api: {
+      "internal-error": "Error interno del servidor.",
+      unauthorized: "Inicia sesión para continuar.",
+      "invalid-body": "Los datos enviados no son válidos.",
+      "not-found": "No se encontró el registro.",
+      "name-required": "El nombre es obligatorio.",
+      "description-required": "La descripción es obligatoria.",
+      "card-fields-required": "El nombre y el tipo de tarjeta son obligatorios.",
+      "invalid-card-type": "Selecciona una tarjeta de crédito, débito o vales.",
+      "transaction-fields-required": "El tipo, monto, fecha y método de pago son obligatorios.",
+      "event-fields-required": "La descripción y la fecha de inicio son obligatorias.",
+      "cashback-fields-required": "El monto, fecha y tarjeta son obligatorios.",
+      "installment-fields-required": "Completa la descripción, monto total, cuota mensual, meses, fecha de inicio y método de pago.",
+      "recurring-payment-fields-required": "El nombre, monto predeterminado y método de pago son obligatorios.",
+      "month-required": "Selecciona un mes con formato AAAA-MM.",
+      "id-required": "El identificador es obligatorio.",
+      "card-month-required": "La tarjeta y el mes son obligatorios.",
+      "month-amount-required": "El mes y el monto son obligatorios.",
+      "invalid-currency": "Selecciona EUR, MXN o USD.",
+      "category-exists": "Ya existe una categoría con ese nombre. Edítala para agregar más secciones.",
+      "predefined-category-readonly": "Las categorías son predefinidas y no pueden modificarse ni eliminarse.",
+      "database-unavailable": "La base de datos no está disponible.",
+      "pantry-create-failed": "No se pudo crear el producto.",
+      "card-calculation-failed": "No se pudo calcular el adeudo de la tarjeta.",
+      "month-unavailable": "El mes seleccionado no está disponible.",
+    } satisfies Record<ApiErrorCode, string>,
     monthUnavailable: "El mes seleccionado no está disponible.",
     paymentCarryover: (message: string) => `El pago se registró, pero no se creó el cargo del saldo restante: ${message}`,
     network: "No se pudo conectar con el servidor.",

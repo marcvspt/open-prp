@@ -1,4 +1,4 @@
-import { getDb } from "@/lib/db/client.ts";
+import { getDb } from "@/lib/server/db/client.ts";
 import { localISOString } from "@/lib/date.ts";
 
 export type SqlValue = string | number | boolean | null;

@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { PantryItem, PantryItemInput, PantryItemUpdate, PantryFilter } from "@/lib/types/pantry.ts";
 
 export class PantryRepository {

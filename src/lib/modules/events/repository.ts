@@ -1,7 +1,7 @@
-import { getDb } from "@/lib/db/client.ts";
-import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { Event, CreateEventInput, UpdateEventInput, EventFilter } from "@/lib/types/event.ts";
-import type { PaginatedResponse } from "@/lib/types/general.ts";
+import type { PaginatedResponse } from "@/lib/types/api.ts";
 
 export class EventRepository {
   async findAll(userId: string, filter?: EventFilter): Promise<PaginatedResponse<Event>> {

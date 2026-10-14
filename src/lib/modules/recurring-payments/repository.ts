@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { nextSeq, scopedFindById, scopedDelete, insertRow, applyUpdate, now, type SqlValue } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { nextSeq, scopedFindById, scopedDelete, insertRow, applyUpdate, now, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { RecurringPayment, RecurringPaymentInput, RecurringPaymentMonthly, RecurringPaymentMonthlyUpdate } from "@/lib/types/recurring-payment.ts";
 
 export class RecurringPaymentRepository {

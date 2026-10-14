@@ -1,5 +1,6 @@
 ﻿import type { APIContext, APIRoute } from "astro";
-import { errorResponse, getSearchParams, jsonResponse, readJsonBody, requireUserId, withErrorHandling } from "@/lib/api-helpers.ts";
+import { errorResponse, getSearchParams, jsonResponse, readJsonBody, requireUserId, withErrorHandling } from "@/lib/server/api-helpers.ts";
+import type { ApiErrorCode } from "@/lib/types/api.ts";
 
 interface IdCrudRepo<T, U> {
   findById: (id: string, userId: string) => Promise<T | null>;
@@ -12,13 +13,13 @@ interface IdRouteOptions {
   patch?: boolean;
   put?: boolean;
   delete?: boolean;
-  notFoundMessage?: string;
+  notFoundCode?: ApiErrorCode;
 }
 
 /** Handlers GET/PATCH/PUT/DELETE for a "/api/[id]" CRUD route. */
 export function createIdRoutes<T, U>(repo: IdCrudRepo<T, U>, options: IdRouteOptions = {}) {
-  const { get = true, patch = true, put = true, delete: del = true, notFoundMessage = "Not found" } = options;
-  const notFound = () => errorResponse(notFoundMessage, 404);
+  const { get = true, patch = true, put = true, delete: del = true, notFoundCode = "not-found" } = options;
+  const notFound = () => errorResponse(notFoundCode, 404);
 
   const routes: Record<string, APIRoute> = {};
 
@@ -39,7 +40,7 @@ export function createIdRoutes<T, U>(repo: IdCrudRepo<T, U>, options: IdRouteOpt
     if (uid instanceof Response) return uid;
 
     const body = await readJsonBody(context);
-    if (!body) return errorResponse("Body inválido", 400);
+    if (!body) return errorResponse("invalid-body", 400);
 
     const row = await repo.update(context.params.id!, body as unknown as U, uid);
     if (!row) return notFound();
@@ -72,7 +73,7 @@ interface IndexCrudRepo<F, C> {
 
 interface IndexRouteOptions<F> {
   buildFilter?: (params: Record<string, string | undefined>, context: APIContext) => F;
-  validateCreate?: (body: Record<string, unknown>) => string | null;
+  validateCreate?: (body: Record<string, unknown>) => ApiErrorCode | null;
 }
 
 /** Handlers GET/POST for a "/api/" CRUD list route. */
@@ -93,7 +94,7 @@ export function createIndexRoutes<F, C>(repo: IndexCrudRepo<F, C>, options: Inde
     if (uid instanceof Response) return uid;
 
     const body = await readJsonBody(context);
-    if (!body) return errorResponse("Body inválido", 400);
+    if (!body) return errorResponse("invalid-body", 400);
 
     const error = options.validateCreate?.(body);
     if (error) return errorResponse(error);
