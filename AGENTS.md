@@ -2,9 +2,14 @@
 
 Guía obligatoria para agentes que exploren o modifiquen este repositorio. Leer antes de generar código. La configuración y el código actuales son la fuente de verdad; mantener esta guía coherente con ellos.
 
+## Contribuciones y mensajes de commit
+
+- Seguir [CONTRIBUTING.md](CONTRIBUTING.md) para preparar contribuciones y redactar commits.
+- Usar prefijos con inicial mayúscula, como `Fix:`, `Feature:` y `Docs:`, seguidos de una descripción breve en español. El ámbito es opcional: `Fix(cards): corrige el saldo de pagos parciales`. Conservar `Fix:` y `Feature:` en lugar de `fix:` y `feat:`.
+
 ## Requisitos del entorno
 
-- **Node.js 22.12.0 o superior**, conforme a `engines.node` en `package.json`. Mantener este requisito sincronizado con el manifiesto.
+- **Node.js 24.0.0 o superior**, conforme a `engines.node` en `package.json`. Mantener este requisito sincronizado con el manifiesto.
 - **pnpm** es el gestor de paquetes del proyecto y debe estar instalado. Usarlo al indicar comandos de dependencias y scripts al usuario.
 
 ## Responsabilidades y comandos
@@ -44,6 +49,9 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 - Layouts: `BaseLayout.astro` controla HTML, head, título, tema y ClientRouter; `AppLayout.astro` y `LandingLayout.astro` lo envuelven. Los layouts nuevos deben envolverlo y reenviar `title`.
 - Componentes: `src/components/landing/`, `src/components/app/` y UI compartida en `src/components/ui/`. UI propia de app en `src/components/app/ui/`.
 - Lógica de dominio y repositorios: `src/lib/modules/`; tipos: `src/lib/types/`; comportamiento browser: `src/lib/ui/`; traducciones: `src/lib/i18n/`.
+- Identidad invariable del producto en `src/lib/site.ts`; URLs externas en `src/lib/links.ts`; menús localizados en `src/lib/navigation.ts`; orden e iconos de características en `src/lib/catalog/landing.ts`. Relacionar el catálogo con los textos por ID estable, nunca por posición.
+- Utilidades de API y BD en `src/lib/server/`; los repositorios permanecen en `src/lib/modules/` y son de servidor, salvo utilidades puras compartidas como `card-monthly/carryover.ts`. No importar repositorios, BD ni `astro:env/server` desde islas o scripts browser, tampoco indirectamente.
+- Importar tipos desde `@/lib/types/<archivo>.ts`. `types/api.ts` contiene envelopes, paginación y códigos de error; `types/site.ts` contiene contratos de navegación y características. No restaurar `@/types/` ni el barrel `general.ts`.
 - **Imports internos siempre con alias `@/` definido en `tsconfig.json` y extensión explícita** (`.ts`, `.tsx`, `.astro`, `.svg`, `.css`). Nunca usar `./` o `../` para importar código interno. Los paquetes conservan sus nombres de paquete.
 - Importar el archivo concreto, sin barrels ni resolución implícita de directorios/`index.*`. Las rutas `index.ts` de API son endpoints, no barrels.
 - SVGs en `src/assets/`, nombres kebab-case; identificador PascalCase con sufijo `Icon`. En React importar con `.svg?react`.
@@ -65,7 +73,7 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 
 - Locales actuales: `es` y `en`. No añadir idiomas salvo petición. Todos llevan prefijo; `/` redirige a `/es`.
 - Resolver locale SSR con `resolveLocale(Astro.currentLocale)`; props tipadas con `LocaleCode` (salvo el puente intencional `ClerkLocaleBridge`). Generar URLs con `getRelativeLocaleUrl`.
-- Todo texto UI vive en `es.ts` y `en.ts`; añadir ambos antes de usarlo. Consumir con `t = getLocaleDict(locale)` o `useLocaleDict()`, nunca importar `es` para leer etiquetas en componentes.
+- Todo texto traducible UI vive en `es.ts` y `en.ts`; añadir ambos antes de usarlo. La identidad invariable de marca se comparte desde `site.ts`. Consumir con `t = getLocaleDict(locale)` o `useLocaleDict()`, nunca importar `es` para leer etiquetas en componentes. No añadir un `texts.ts` paralelo.
 - Strings dinámicos como funciones del diccionario; strings compartidos en el objeto interno `shared`. Clases, IDs, atributos `data-*` y query params no son textos UI.
 - Usar helpers de `form-fields.ts`, `filter-fields.ts` y `general-fields.ts` parametrizados con `t`; no duplicar fields ni etiquetas reutilizables inline.
 - Pasar locale a `monthLabel`, `formatDate` y `formatDateTime`. El cambio de idioma conserva ruta y query string.
@@ -77,12 +85,14 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 - Sincronizar perfil desde Clerk solo si falta email o display_name; evitar una llamada remota en cada request.
 - Localización Clerk mediante `getClerkLocalization` y `ClerkLocaleBridge`. `UserButton` usa `/es/app/login` al cerrar sesión.
 - Variables declaradas con `envField` en Astro: `TURSO_DB_URL`, `TURSO_DB_TOKEN`, `CLERK_SECRET_KEY` (servidor/secretas) y `PUBLIC_CLERK_PUBLISHABLE_KEY` (cliente/pública). No exponer secretos al cliente ni incluirlos en logs o documentación.
+- Consumir secretos desde `astro:env/server` en el cliente Turso y middleware; no usar `import.meta.env` para ellos.
 - Toda operación de datos debe respetar el scope por `userId`; no confiar en IDs enviados por cliente para autorizar acceso.
 
 ## Peticiones API desde cliente
 
-- Usar exclusivamente `src/lib/api-client.ts` para JSON: `apiFetch<T>` devuelve el envelope validado, `apiData<T>` devuelve `data` y `fetchList<T>` normaliza arrays simples/paginados. No usar `safeFetch` ni `fetch` directo a endpoints JSON.
-- El cliente comprueba HTTP, JSON y `success`; los tipos de dominio son estáticos, no validación de sus campos en runtime. Los errores lanzan `ApiError` (`kind`, `status`, `serverMessage`); mostrar mensajes mediante `apiErrorMessage(error, t)` y `role="alert"`. Nunca convertir errores en `[]`, `false` o `undefined`.
+- Usar exclusivamente `src/lib/ui/api-client.ts` para JSON: `apiFetch<T>` devuelve el envelope validado, `apiData<T>` devuelve `data` y `fetchList<T>` normaliza arrays simples/paginados. No usar `safeFetch` ni `fetch` directo a endpoints JSON.
+- El cliente comprueba HTTP, JSON y `success`; los tipos de dominio son estáticos, no validación de sus campos en runtime. Los errores lanzan `ApiError` (`kind`, `status`, `code`, `params`); mostrar mensajes mediante `apiErrorMessage(error, t)` y `role="alert"`. Nunca convertir errores en `[]`, `false` o `undefined`.
+- Los endpoints devuelven `error: ApiErrorCode` y parámetros tipados opcionales. Añadir códigos en `types/api.ts` y mensajes en `t.error.api` de ambos idiomas. No devolver prosa localizada ni mensajes internos de excepciones. `category-exists` usa `{ name }` sin traducir el nombre del usuario; códigos desconocidos muestran un respaldo localizado. Factories usan `notFoundCode` y `validateCreate` devuelve `ApiErrorCode | null`.
 - Pasar `AbortSignal` en consultas reemplazables, cancelarlas al cambiar filtros/desmontar y descartar resultados obsoletos. Mantener los datos anteriores ante fallos y limpiar el error al recuperarse. Las cancelaciones no se muestran como errores.
 - No reintentar mutaciones automáticamente. Distinguir guardado fallido de guardado exitoso cuyo refetch falló (`t.error.refreshData`). La moneda solo se actualiza localmente tras confirmar el guardado.
 - Los pagos parciales registran primero el pago y después el cargo del saldo restante. `CarryoverError` indica que el primer paso sí terminó: informar el fallo del segundo sin ofrecer repetir el pago desde el mismo diálogo. El cálculo de tarjetas persiste snapshots; consultar las deudas después de terminar los cálculos.
@@ -91,9 +101,9 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 
 - Esquema modular e idempotente en `db/schemas/*.sql`. Semilla existente en `db/seed.js`.
 - Cada cambio de esquema actualiza el SQL final correspondiente y entrega el SQL de migración de producción al usuario para que lo ejecute.
-- Usar `getDb()` de `src/lib/db/client.ts`, `db.execute({ sql, args })` y binds `?`; args tipados `(string | number | boolean | null)[]`. Mantener `nextSeq` existente.
+- Usar `getDb()` de `src/lib/server/db/client.ts`, `db.execute({ sql, args })` y binds `?`; args tipados `(string | number | boolean | null)[]`. Mantener `nextSeq` existente.
 - Cashback no tiene columna `updated_at`: tanto `insertRow` como `applyUpdate` deben recibir `withUpdatedAt: false` en su repositorio.
-- Reutilizar `createIdRoutes` y `createIndexRoutes` de `src/lib/api-routes.ts` cuando aplique. Rutas custom también usan `withErrorHandling` y `readJsonBody` de `api-helpers.ts`.
+- Reutilizar `createIdRoutes` y `createIndexRoutes` de `src/lib/server/api-routes.ts` cuando aplique. Rutas custom también usan `withErrorHandling` y `readJsonBody` de `api-helpers.ts`.
 - Reutilizar helpers de autenticación, respuestas JSON, paginación, booleanos y rangos de fechas. JSON inválido devuelve 400; errores inesperados se registran y devuelven JSON 500.
 - Mantener duplicate-check de categorías (409), snapshots mensuales de recurrentes y sincronización tarjeta/método de pago al crear, actualizar o borrar.
 - Compras: artículos pertenecen a listas (`list_id`); finalizar completa sus artículos y borrar una lista elimina sus artículos. Nombre opcional con fecha/hora localizada como fallback visual.

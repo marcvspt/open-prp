@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { fetchList, apiErrorMessage, isAbortError } from "@/lib/api-client.ts";
+import { fetchList, apiErrorMessage, isAbortError } from "@/lib/ui/api-client.ts";
 import { monthLabel } from "@/lib/date.ts";
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";

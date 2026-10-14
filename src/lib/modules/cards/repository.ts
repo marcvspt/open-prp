@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { nextSeq, scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { nextSeq, scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { Card, CardInput, CardType } from "@/lib/types/card.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 

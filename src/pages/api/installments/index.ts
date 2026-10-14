@@ -1,5 +1,5 @@
-import { createIndexRoutes } from "@/lib/api-routes.ts";
-import { getDateRange, parsePageParams } from "@/lib/api-helpers.ts";
+import { createIndexRoutes } from "@/lib/server/api-routes.ts";
+import { getDateRange, parsePageParams } from "@/lib/server/api-helpers.ts";
 import { InstallmentRepository } from "@/lib/modules/installments/repository.ts";
 import type { InstallmentInput, InstallmentListFilter } from "@/lib/types/installment.ts";
 
@@ -21,6 +21,6 @@ export const { GET, POST } = createIndexRoutes({
   }),
   validateCreate: (body) =>
     !body.description || !body.total_amount || !body.monthly_amount || !body.total_months || !body.start_date || !body.payment_method_id
-      ? "description, total_amount, monthly_amount, total_months, start_date, and payment_method_id are required"
+      ? "installment-fields-required"
       : null,
 });

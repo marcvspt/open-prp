@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { nextSeq, now } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { nextSeq, now } from "@/lib/server/db/utils.ts";
 import type { User } from "@/lib/types/user.ts";
 
 export class UserRepository {

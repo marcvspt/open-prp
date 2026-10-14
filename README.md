@@ -41,11 +41,11 @@ Todo se guarda bajo tu cuenta: puedes usarlo desde tu celular, computadora o tab
 
 ## Para desarrolladores
 
-La guía de arquitectura, desarrollo y contribución está integrada en la [documentación técnica](#documentación-técnica) de este README. Consulta [AGENTS.md](AGENTS.md) para las instrucciones de trabajo de agentes.
+La guía de arquitectura y desarrollo está integrada en la [documentación técnica](#documentación-técnica) de este README. Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para preparar contribuciones y escribir mensajes de commit, y [AGENTS.md](AGENTS.md) para las instrucciones de trabajo de agentes.
 
 ### Requisitos de desarrollo
 
-- Node.js **22 o superior**.
+- Node.js **24 o superior**.
 - `pnpm` disponible en el entorno.
 
 Los comandos de instalación, desarrollo y build los ejecuta el usuario; el agente indica qué comando debe ejecutar y revisa la salida que comparta.
@@ -101,7 +101,7 @@ cliente (navegador) → Astro SSR → API Routes → Repositorios → Turso (lib
 
 - **SSR-first**: Astro renderiza en servidor; los datos se obtienen vía repositorios en el frontmatter de la `.astro` y la página llega renderizada al cliente.
 - **React 19** se hidrata con `client:load` únicamente donde hay interactividad en cliente (islas). El contenido del dashboard es 100% SSR, sin islas.
-- **API REST**: endpoints en `src/pages/api/*` construidos con factories en `src/lib/api-routes.ts` y helpers en `src/lib/api-helpers.ts`.
+- **API REST**: endpoints en `src/pages/api/*` construidos con factories en `src/lib/server/api-routes.ts` y helpers en `src/lib/server/api-helpers.ts`.
 - **Sin ORM**: queries SQL directas con `@libsql/client/web` y bind params `?`.
 - **Prefetch deshabilitado**: `prefetch: false` en `astro.config.mjs` (el `ClientRouter` por defecto precarga todo en hover, duplicando el fetch SSR por navegación).
 
@@ -124,9 +124,15 @@ src/
     LandingLayout.astro   → Header + slot + Footer
   lib/
     modules/{modulo}/     → Repositorios y lógica de dominio
-    types/                → Tipos (un archivo por dominio)
-    api-routes.ts         → Factories CRUD de la API
-    api-helpers.ts        → Helpers de rutas API
+    types/                → Tipos de dominio, contratos API y navegación
+    site.ts               → Identidad de producto compartida
+    links.ts              → URLs externas
+    navigation.ts         → Navegación localizada de app y landing
+    catalog/landing.ts    → Características por ID, orden e iconos
+    server/
+      api-routes.ts       → Factories CRUD de la API
+      api-helpers.ts      → Helpers de rutas API
+      db/                 → Cliente Turso y helpers SQL
     i18n/
       es.ts               → Diccionario de textos UI (español) + tipo `Locale`
       en.ts               → Diccionario de textos UI (inglés)
@@ -139,9 +145,13 @@ src/
       filter-fields.ts    → Constantes de filtros (textos parametrizados con `t`)
       general-fields.ts   → Constantes de botones/CTAs (textos parametrizados con `t`)
     dashboard/            → load.ts (SSR) + api.ts (cliente)
-    ui/                   → Lógica browser (theme, currency, sidebar, hooks)
+    ui/                   → Cliente HTTP, theme, currency, sidebar y hooks
   middleware.ts           → Clerk + locale por ruta
 ```
+
+La identidad del producto se define en `src/lib/site.ts` y las URLs externas en `src/lib/links.ts`. Los textos traducibles permanecen en `es.ts` y `en.ts`; OPRP conserva sus diccionarios en lugar de añadir un `texts.ts` paralelo. `src/lib/navigation.ts` construye los menús con URLs localizadas. La landing une los textos de `landing.features` con `src/lib/catalog/landing.ts` por ID estable, sin emparejar arrays por posición.
+
+Los repositorios y cálculos de dominio permanecen en `src/lib/modules/`. Las utilidades de API y BD viven en `src/lib/server/`, mientras que las peticiones browser usan `src/lib/ui/api-client.ts`. Los tipos se importan del archivo concreto con `@/lib/types/`; no existe el alias `@/types/` ni el barrel `general.ts`.
 
 ## Enrutamiento
 
@@ -151,7 +161,7 @@ Enrutamiento i18n por directorio `[locale]` (config `i18n` en `astro.config.mjs`
 `Astro.currentLocale` resuelve el locale de la URL; el patrón estándar en páginas es:
 
 ```ts
-const locale = Astro.currentLocale ?? "es";
+const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
 ```
 
@@ -185,24 +195,24 @@ Reglas de prerender: solo la landing `[locale]/index.astro` está prerenderizada
 1. Clerk valida la sesión.
 2. `findOrCreate(clerkId)` crea el usuario local si no existe.
 3. `needsSync` — si falta email o display_name, sincroniza desde la API de Clerk (evita la llamada HTTP en cada request).
-4. Inyecta `context.locals.userId` y `context.locals.createdAt`.
-5. Sin sesión en rutas `/app/*` o `/en/app/*` → redirige a `/app/login` localizado vía `context.currentLocale` + `getRelativeLocaleUrl`.
+4. Inyecta `context.locals.userId`, `context.locals.createdAt` y `context.locals.user`.
+5. Sin sesión en rutas `/es/app/*` o `/en/app/*` (excepto login) → redirige al login localizado vía `context.currentLocale` + `getRelativeLocaleUrl`. Las rutas antiguas `/app/*` redirigen a `/es/app/*`.
 
-Rutas públicas: `/`, `/en`, `/app/login` y `/en/app/login`. Hooks de React desde `@clerk/astro/react` (no `@clerk/clerk-react`).
+Páginas públicas: `/es`, `/en`, `/es/app/login` y `/en/app/login`; `/` redirige a `/es`. Hooks de React desde `@clerk/astro/react` (no `@clerk/clerk-react`).
 
 ### Localización de componentes de Clerk
 
-Los componentes de Clerk (UserButton, SignIn/SignUp) se localizan por idioma con `@clerk/localizations`. El mapeo locale → recurso vive en `getClerkLocalization(locale)` (`src/lib/i18n/clerk-localizations.ts`): `es` → `esES`, `en` → `enUS` (default `esES`). La integración `clerk()` en `astro.config.mjs` recibe `localization: getClerkLocalization(DEFAULT_LOCALE)` como valor por defecto (solo afecta a componentes embebidos, no al Account Portal) y `prefetchUI: false` (la UI de Clerk/ClerkUI se descarga bajo demanda al abrir un componente tipo modal como SignIn/UserButton; el `before-hydration` de la integración solo espera ClerkJS, no ClerkUI). `ClerkLocaleBridge` (`src/components/ui/ClerkLocaleBridge.tsx`, isla `client:load` en `AppLayout` y `LandingLayout`) ajusta la localización al locale de la página con `updateClerkOptions({ localization })` desde `@clerk/astro/client`.
+Los componentes de Clerk (UserButton, SignIn/SignUp) se localizan por idioma con `@clerk/localizations`. El mapeo locale → recurso vive en `getClerkLocalization(locale)` (`src/lib/i18n/clerk-localizations.ts`): `es` → `esES`, `en` → `enUS` (default `esES`). La integración `clerk()` en `astro.config.mjs` recibe `localization: getClerkLocalization(DEFAULT_LOCALE)` como valor por defecto (solo afecta a componentes embebidos, no al Account Portal) y `prefetchUI: true`, independiente del `prefetch: false` de navegación Astro. `ClerkLocaleBridge` (`src/components/ui/ClerkLocaleBridge.tsx`, isla `client:load` en `AppLayout` y `LandingLayout`) ajusta la localización al locale de la página con `updateClerkOptions({ localization })` desde `@clerk/astro/client`.
 
 ## Base de datos
 
-### Conexión (`src/lib/db/client.ts`)
+### Conexión (`src/lib/server/db/client.ts`)
 
 ```ts
 getDb() → cliente singleton @libsql/client/web
 ```
 
-### Helpers (`src/lib/db/utils.ts`)
+### Helpers (`src/lib/server/db/utils.ts`)
 
 - `nextSeq("table")` → `COALESCE(MAX(seq), 0) + 1`
 - `scopedFindById`, `scopedDelete`, `insertRow`, `applyUpdate`, `now`, `SqlValue`
@@ -241,14 +251,14 @@ pnpm db:seed:prod   # usa .env.production
 
 ## API REST
 
-### Factories (`src/lib/api-routes.ts`)
+### Factories (`src/lib/server/api-routes.ts`)
 
-- **`createIdRoutes(repo, { get?, patch?, put?, delete?, notFoundMessage? })`** → handlers `GET`/`PATCH`/`PUT`/`DELETE` para `/api/*/[id]`. `repo` debe exponer `findById`/`update`/`delete` (scope por `userId`). Variantes: `{ get: false }` (payment-methods, categories), `{ patch: false }` (pantry), `{ patch: false, notFoundMessage: "No encontrado" }` (recurring-payments).
-- **`createIndexRoutes(repo, { buildFilter?, validateCreate? })`** → handlers `GET`/`POST` para `/api/*/`. `buildFilter(params, context)` construye el filtro del repo; `validateCreate(body)` devuelve `string | null`. Sin `buildFilter`, el GET llama `findAll(uid)` (payment-methods, recurring-payments, cards).
+- **`createIdRoutes(repo, { get?, patch?, put?, delete?, notFoundCode? })`** → handlers `GET`/`PATCH`/`PUT`/`DELETE` para `/api/*/[id]`. `repo` debe exponer `findById`/`update`/`delete` (scope por `userId`). Variantes: `{ get: false }` (payment-methods, categories), `{ patch: false }` (pantry), `{ patch: false, notFoundCode: "not-found" }` (recurring-payments).
+- **`createIndexRoutes(repo, { buildFilter?, validateCreate? })`** → handlers `GET`/`POST` para `/api/*/`. `buildFilter(params, context)` construye el filtro del repo; `validateCreate(body)` devuelve `ApiErrorCode | null`. Sin `buildFilter`, el GET llama `findAll(uid)` (payment-methods, recurring-payments, cards).
 
 Uso: `export const { GET, PATCH, PUT, DELETE } = createIdRoutes(new XRepository())`. Astro resuelve los handlers leyendo `mod[method]`.
 
-Todos los handlers de factory están envueltos en `withErrorHandling` y leen el body con `readJsonBody` (body inválido → `400 "Body inválido"`), con cast `as unknown as U`/`C` a los inputs tipados del repo.
+Todos los handlers de factory están envueltos en `withErrorHandling` y leen el body con `readJsonBody` (body inválido → `400 "invalid-body"`), con cast `as unknown as U`/`C` a los inputs tipados del repo.
 
 ### Rutas custom (sin factory)
 
@@ -258,7 +268,7 @@ Todos los handlers de factory están envueltos en `withErrorHandling` y leen el 
 
 | Ruta | Acción |
 |---|---|
-| `POST /api/card-monthly/calculate` | Calcula deuda de tarjeta en un mes |
+| `GET /api/card-monthly/calculate` | Calcula deuda de tarjeta en un mes |
 | `GET /api/card-monthly/history` | Historial de pagos de tarjetas |
 | `POST /api/recurring-payments/[id]/monthly` | Upsert snapshot mensual |
 | `GET/PATCH/DELETE /api/recurring-payment-monthly` | Snapshots por mes (`?month=`) |
@@ -270,21 +280,21 @@ Todos los handlers de factory están envueltos en `withErrorHandling` y leen el 
 | `GET/PUT /api/users/currency` | Preferencia de moneda |
 | `GET /api/users/created-at` | Fecha de alta del usuario |
 
-### Helpers (`src/lib/api-helpers.ts`)
+### Helpers (`src/lib/server/api-helpers.ts`)
 
 - `jsonResponse(data, status?)` — respuesta JSON estándar `{ success, data }`
-- `errorResponse(message, status?)` — error JSON `{ success, error }`
+- `errorResponse(code, status?, params?)` — error JSON `{ success: false, error: ApiErrorCode, params? }`; el cliente localiza el mensaje
 - `requireUserId(context)` — extrae `locals.userId` o devuelve `Response` 401
 - `getSearchParams(context)` — query params tipados
 - `parsePageParams(url)` — `page`/`pageSize` con clamps
 - `parseBoolParam(value)` — `?x=true|false` → `boolean | undefined`
 - `getDateRange(params, createdAt)` — ventana "Último año" (ver [filtro de mes](#filtro-de-mes))
-- `withErrorHandling(handler)` — envuelve un `APIRoute`; cualquier throw → JSON `500 "Error interno del servidor"` con `console.error` (en vez del HTML 500 de Astro)
+- `withErrorHandling(handler)` — envuelve un `APIRoute`; cualquier throw → JSON `500 "internal-error"` con `console.error` (en vez del HTML 500 de Astro)
 - `readJsonBody(context)` — parsea el body como objeto; `Record<string, unknown> | null` si malformed/array/primitive
 
 ## Tipos
 
-16 archivos en `src/lib/types/`, uno por dominio. Convenciones:
+Tipos de dominio y contratos en `src/lib/types/`, importados desde sus archivos concretos. `api.ts` define `ApiResponse`, `PaginatedResponse`, los códigos de error y sus parámetros; `site.ts` define navegación e IDs de características. Convenciones:
 
 - Todos los IDs son `string` (UUID, `TEXT PRIMARY KEY` en SQL)
 - `category_id`, `payment_method_id`, `card_id`, `list_id`, `despensa_item_id` son `string | null` si opcionales
@@ -414,7 +424,7 @@ INPUT_CLASS / COLOR_CLASS → clases
 | `FilterLinks.astro` | Pills de filtro con estado activo |
 | `CurrencySelect.tsx` | Selector de moneda, sincroniza API + localStorage |
 | `PageHeader.astro` | Título + botón CTA (`createLabel`/`createModule`) |
-| `Sidebar.astro` | Sidebar navegación data-driven (`APP_LINKS`) + ThemeToggle + CurrencySelect + UserButton |
+| `Sidebar.astro` | Navegación desde `getAppNavigation` + ThemeToggle + CurrencySelect + UserButton |
 
 ### Implementación del modal CRUD
 
@@ -466,8 +476,8 @@ Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={loca
 
 ## Manejo de errores
 
-- **API**: todos los handlers (factory y custom) envueltos en `withErrorHandling`; bodies parseados con `readJsonBody` (400 "Body inválido"). Errores → JSON con `console.error`, nunca HTML.
-- **API en cliente**: `src/lib/api-client.ts` centraliza todas las peticiones JSON. `apiFetch<T>` valida HTTP y el envelope `{ success, data, error }`; `apiData<T>` devuelve su `data` y `fetchList<T>` acepta listas simples o paginadas. Los fallos lanzan `ApiError` con tipo, estado HTTP y mensaje del servidor; `apiErrorMessage(error, t)` traduce los mensajes de respaldo. No valida los campos de cada dominio en tiempo de ejecución.
+- **API**: los handlers CRUD usan `withErrorHandling` y `readJsonBody` (400 `invalid-body`); el cálculo de tarjetas y health tienen su propio catch JSON. Los errores inesperados devuelven códigos estables y no exponen el mensaje interno de una excepción.
+- **API en cliente**: `src/lib/ui/api-client.ts` centraliza todas las peticiones JSON. `apiFetch<T>` valida HTTP y el envelope `{ success, data, error, params? }`; `apiData<T>` devuelve su `data` y `fetchList<T>` acepta listas simples o paginadas. Los fallos lanzan `ApiError` con `kind`, `status`, `code` y `params`; `apiErrorMessage(error, t)` resuelve `t.error.api[code]` en el idioma activo. Categorías duplicadas usan `category-exists` y `{ name }`, conservando el texto del usuario. Códigos desconocidos usan un mensaje de respaldo traducido. No valida los campos de cada dominio en tiempo de ejecución.
 - **Cancelación y errores**: las consultas aceptan `AbortSignal`, conservan los datos anteriores ante fallos y descartan respuestas canceladas. Historiales, pagos recurrentes, tarjetas, compras y modales muestran errores con `role="alert"`; la moneda solo cambia tras guardar en la API. No convertir fallos en listas vacías ni reintentar mutaciones automáticamente. Si un pago parcial se registra pero falla el cargo del saldo restante, se informa de ambos resultados sin repetir el pago.
 - **Refresco SSR**: el `fetch` de `src/lib/ui/data-refresh.ts` sigue separado porque recibe fragmentos HTML, no el envelope JSON de la API.
 - **Hooks**: `useFilteredData` devuelve `error` (string) que los `*Filterable` muestran como banner `role="alert"`. Nunca silenciar errores de fetch.
@@ -493,7 +503,7 @@ Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={loca
 
 ## Variables de entorno
 
-Declaradas con el schema `envField` de Astro en `astro.config.mjs` (`env.schema`). Valida en build que existan las obligatorias y da tipos para `import.meta.env.*`.
+Declaradas con el schema `envField` de Astro en `astro.config.mjs` (`env.schema`). El cliente Turso y el middleware importan sus secretos desde `astro:env/server`; no acceden a ellos con `import.meta.env`. Las variables secretas se resuelven y validan al usarlas en servidor; las públicas se validan durante el build. Mantenerlas configuradas en el entorno local y en Netlify.
 
 | Variable | Contexto | Acceso | Descripción |
 |---|---|---|---|

@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, requireUserId, withErrorHandling } from "@/lib/api-helpers.ts";
+import { jsonResponse, requireUserId, withErrorHandling } from "@/lib/server/api-helpers.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 
 export const GET: APIRoute = withErrorHandling(async (context) => {

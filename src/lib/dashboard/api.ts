@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api-client.ts";
+import { apiFetch } from "@/lib/ui/api-client.ts";
 import type { PayCardDebtPartialArgs } from "@/lib/types/dashboard.ts";
 import { CARRYOVER_DESCRIPTION_PREFIX } from "@/lib/modules/card-monthly/carryover.ts";
 

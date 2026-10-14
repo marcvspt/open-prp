@@ -1,5 +1,5 @@
-import { createIndexRoutes } from "@/lib/api-routes.ts";
-import { parsePageParams } from "@/lib/api-helpers.ts";
+import { createIndexRoutes } from "@/lib/server/api-routes.ts";
+import { parsePageParams } from "@/lib/server/api-helpers.ts";
 import { EventRepository } from "@/lib/modules/events/repository.ts";
 
 export const { GET, POST } = createIndexRoutes(new EventRepository(), {
@@ -16,6 +16,6 @@ export const { GET, POST } = createIndexRoutes(new EventRepository(), {
   },
   validateCreate: (body) =>
     !body.description || !body.start_date
-      ? "description and start_date are required"
+      ? "event-fields-required"
       : null,
 });

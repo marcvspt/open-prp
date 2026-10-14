@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { scopedFindById, insertRow, applyUpdate, now, type SqlValue } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { scopedFindById, insertRow, applyUpdate, now, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { ShoppingList, ShoppingListInput, ShoppingListUpdate } from "@/lib/types/shopping.ts";
 
 function coerceShoppingList(row: ShoppingList): ShoppingList {

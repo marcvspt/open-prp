@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { now } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { now } from "@/lib/server/db/utils.ts";
 import type { CardMonthly, CardMonthlyInput, CardMonthlyUpdate } from "@/lib/types/card-monthly.ts";
 
 export class CardMonthlyRepository {

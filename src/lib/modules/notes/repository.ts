@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { scopedFindById, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { scopedFindById, insertRow, applyUpdate, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { Note, CreateNoteInput, UpdateNoteInput, NoteFilter } from "@/lib/types/note.ts";
 
 export class NoteRepository {

@@ -1,4 +1,4 @@
-import { apiFetch, apiErrorMessage } from "@/lib/api-client.ts";
+import { apiFetch, apiErrorMessage } from "@/lib/ui/api-client.ts";
 import { useState, useRef } from "react";
 import Select from "@/components/ui/Select.tsx";
 import { saveCurrency, type Currency } from "@/lib/ui/currency.ts";

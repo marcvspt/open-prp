@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/server/db/utils.ts";
 import { lastDayOfMonth } from "@/lib/date.ts";
 import type { Cashback, CashbackInput } from "@/lib/types/cashback.ts";
 

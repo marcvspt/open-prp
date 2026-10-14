@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { Task, TaskInput, TaskFilter } from "@/lib/types/task.ts";
 
 export class TaskRepository {

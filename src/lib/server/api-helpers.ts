@@ -1,5 +1,5 @@
 import type { APIContext, APIRoute } from "astro";
-import type { ApiResponse } from "@/types/general.ts";
+import type { ApiResponse, ApiErrorCode, ApiErrorParams } from "@/lib/types/api.ts";
 import { lastYearWindow, lastDayOfMonth } from "@/lib/date.ts";
 
 /** Wraps an API handler so thrown errors become a JSON 500 instead of Astro's HTML error page. */
@@ -9,7 +9,7 @@ export function withErrorHandling(handler: APIRoute): APIRoute {
       return await handler(context);
     } catch {
       console.error("API request failed");
-      return errorResponse("Error interno del servidor", 500);
+      return errorResponse("internal-error", 500);
     }
   };
 }
@@ -32,8 +32,8 @@ export function jsonResponse<T>(data: T, status = 200): Response {
   });
 }
 
-export function errorResponse(message: string, status = 400): Response {
-  return new Response(JSON.stringify({ success: false, error: message } satisfies ApiResponse<never>), {
+export function errorResponse(code: ApiErrorCode, status = 400, params?: ApiErrorParams): Response {
+  return new Response(JSON.stringify({ success: false, error: code, ...(params ? { params } : {}) } satisfies ApiResponse<never>), {
     status,
     headers: { "Content-Type": "application/json" },
   });
@@ -42,7 +42,7 @@ export function errorResponse(message: string, status = 400): Response {
 export function requireUserId(context: APIContext): string | Response {
   const userId = context.locals.userId;
   if (!userId) {
-    return errorResponse("Unauthorized", 401);
+    return errorResponse("unauthorized", 401);
   }
   return userId;
 }

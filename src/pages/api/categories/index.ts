@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId, readJsonBody, withErrorHandling } from "@/lib/api-helpers.ts";
+import { jsonResponse, errorResponse, requireUserId, readJsonBody, withErrorHandling } from "@/lib/server/api-helpers.ts";
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import type { CreateCategoryInput } from "@/lib/types/category.ts";
 
@@ -19,9 +19,9 @@ export const POST: APIRoute = withErrorHandling(async (context) => {
   if (uid instanceof Response) return uid;
 
   const body = await readJsonBody(context);
-  if (!body) return errorResponse("Body inválido", 400);
+  if (!body) return errorResponse("invalid-body", 400);
   if (!body.name) {
-    return errorResponse("name is required");
+    return errorResponse("name-required");
   }
   if (!body.sections) {
     body.sections = JSON.stringify(["transactions"]);
@@ -29,7 +29,7 @@ export const POST: APIRoute = withErrorHandling(async (context) => {
 
   const existing = await repo.findByName(body.name as string, uid);
   if (existing) {
-    return errorResponse(`Ya existe una categoría "${body.name}". Edítala para agregar más secciones.`, 409);
+    return errorResponse("category-exists", 409, { name: String(body.name) });
   }
 
   const category = await repo.create(body as unknown as CreateCategoryInput, uid);

@@ -1,4 +1,4 @@
-import { apiFetch, apiErrorMessage } from "@/lib/api-client.ts";
+import { apiFetch, apiErrorMessage } from "@/lib/ui/api-client.ts";
 import { useState, useEffect, useRef } from "react";
 import { notifyDataChange } from "@/lib/ui/data-refresh.ts";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";

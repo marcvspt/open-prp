@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId, withErrorHandling } from "@/lib/api-helpers.ts";
+import { jsonResponse, errorResponse, requireUserId, withErrorHandling } from "@/lib/server/api-helpers.ts";
 import { ShoppingListRepository } from "@/lib/modules/shopping/lists.ts";
 
 const repo = new ShoppingListRepository();
@@ -9,7 +9,7 @@ export const POST: APIRoute = withErrorHandling(async (context) => {
   if (uid instanceof Response) return uid;
 
   const list = await repo.complete(context.params.id!, uid);
-  if (!list) return errorResponse("Not found", 404);
+  if (!list) return errorResponse("not-found", 404);
 
   return jsonResponse(list);
 });

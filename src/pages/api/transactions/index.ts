@@ -1,5 +1,5 @@
-import { createIndexRoutes } from "@/lib/api-routes.ts";
-import { getDateRange, parsePageParams } from "@/lib/api-helpers.ts";
+import { createIndexRoutes } from "@/lib/server/api-routes.ts";
+import { getDateRange, parsePageParams } from "@/lib/server/api-helpers.ts";
 import { TransactionRepository } from "@/lib/modules/transactions/repository.ts";
 
 export const { GET, POST } = createIndexRoutes(new TransactionRepository(), {
@@ -14,6 +14,6 @@ export const { GET, POST } = createIndexRoutes(new TransactionRepository(), {
   }),
   validateCreate: (body) =>
     !body.type || body.amount == null || !body.date || !body.payment_method_id
-      ? "type, amount, date, and payment_method_id are required"
+      ? "transaction-fields-required"
       : null,
 });

@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/client.ts";
-import { scopedFindById, scopedDelete, insertRow, applyUpdate, now, type SqlValue } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { scopedFindById, scopedDelete, insertRow, applyUpdate, now, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { Category, CreateCategoryInput, UpdateCategoryInput } from "@/lib/types/category.ts";
 
 const PERSONAL_SCOPE = "(type = 'global' OR (type = 'personal' AND user_id = ?))";

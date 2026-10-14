@@ -1,5 +1,5 @@
-import { createIndexRoutes } from "@/lib/api-routes.ts";
-import { parseBoolParam } from "@/lib/api-helpers.ts";
+import { createIndexRoutes } from "@/lib/server/api-routes.ts";
+import { parseBoolParam } from "@/lib/server/api-helpers.ts";
 import { NoteRepository } from "@/lib/modules/notes/repository.ts";
 
 export const { GET, POST } = createIndexRoutes(new NoteRepository(), {

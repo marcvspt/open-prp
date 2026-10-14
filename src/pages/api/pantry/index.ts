@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse, requireUserId, getSearchParams, readJsonBody, withErrorHandling } from "@/lib/api-helpers.ts";
+import { jsonResponse, errorResponse, requireUserId, getSearchParams, readJsonBody, withErrorHandling } from "@/lib/server/api-helpers.ts";
 import { PantryRepository } from "@/lib/modules/pantry/repository.ts";
 import type { PantryFilter, PantryItemInput } from "@/lib/types/pantry.ts";
 
@@ -23,8 +23,8 @@ export const POST: APIRoute = withErrorHandling(async (context) => {
 
   try {
     const body = await readJsonBody(context);
-    if (!body) return errorResponse("Body inválido", 400);
-    if (!body.description) return errorResponse("description is required");
+    if (!body) return errorResponse("invalid-body", 400);
+    if (!body.description) return errorResponse("description-required");
 
     body.category_id = body.category_id || null;
 
@@ -32,6 +32,6 @@ export const POST: APIRoute = withErrorHandling(async (context) => {
     return jsonResponse(item, 201);
   } catch {
     console.error("Failed to create pantry item");
-    return errorResponse("Error al crear el producto", 500);
+    return errorResponse("pantry-create-failed", 500);
   }
 });

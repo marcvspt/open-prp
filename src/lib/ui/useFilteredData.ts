@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { FilterState, FilterOptions } from "@/lib/types/filters.ts";
 import { registerDataRefresh } from "@/lib/ui/data-refresh.ts";
-import { apiData, apiErrorMessage } from "@/lib/api-client.ts";
-import type { PaginatedResponse } from "@/lib/types/general.ts";
+import { apiData, apiErrorMessage } from "@/lib/ui/api-client.ts";
+import type { PaginatedResponse } from "@/lib/types/api.ts";
 import { isAvailableMonth } from "@/lib/date.ts";
 
 function isPaginated(value: unknown): value is PaginatedResponse<unknown> {

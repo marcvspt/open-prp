@@ -1,10 +1,13 @@
 ---
 import { Show, UserButton } from "@clerk/astro/components";
-import { getRelativeLocaleUrl } from "astro:i18n";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import LocaleSwitcher from "@/components/ui/LocaleSwitcher.tsx";
 import CurrencySelect from "@/components/app/ui/CurrencySelect.tsx";
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
+import { getAppNavigation } from "@/lib/navigation.ts";
+import { SITE_DATA } from "@/lib/site.ts";
+import { SITE_LINKS } from "@/lib/links.ts";
+import type { NavigationIconId } from "@/lib/types/site.ts";
 import HomeIcon from "@/assets/home.svg";
 import DollarIcon from "@/assets/dollar.svg";
 import CardIcon from "@/assets/card.svg";
@@ -27,52 +30,15 @@ const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
 const preferredCurrency = Astro.locals.user?.preferred_currency ?? "MXN";
 
-interface AppLink {
-  url: string;
-  label: string;
-  icon: typeof HomeIcon;
-}
-
-const appUrl = (path: string) => getRelativeLocaleUrl(locale, path);
-
-const APP_LINKS: { title?: string; links: AppLink[] }[] = [
-  {
-    links: [{ url: appUrl("/app/dashboard"), label: t.nav.dashboard, icon: HomeIcon }],
-  },
-  {
-    title: t.nav.groupFinance,
-    links: [
-      { url: appUrl("/app/transactions"), label: t.nav.transactions, icon: DollarIcon },
-      { url: appUrl("/app/cards"), label: t.nav.cards, icon: CardIcon },
-      { url: appUrl("/app/installments"), label: t.nav.installments, icon: ClipboardIcon },
-      {
-        url: appUrl("/app/recurring-payments"),
-        label: t.nav.recurringPayments,
-        icon: RecurringIcon,
-      },
-      { url: appUrl("/app/cashback"), label: t.nav.cashback, icon: DollarIcon },
-      {
-        url: appUrl("/app/payment-methods"),
-        label: t.nav.paymentMethods,
-        icon: WalletIcon,
-      },
-    ],
-  },
-  {
-    title: t.nav.groupOrganization,
-    links: [
-      { url: appUrl("/app/shopping"), label: t.nav.shopping, icon: CartIcon },
-      { url: appUrl("/app/tasks"), label: t.nav.tasks, icon: ClipboardIcon },
-      { url: appUrl("/app/notes"), label: t.nav.notes, icon: PenIcon },
-      { url: appUrl("/app/events"), label: t.nav.events, icon: CalendarIcon },
-      { url: appUrl("/app/pantry"), label: t.nav.pantry, icon: PackageIcon },
-    ],
-  },
-  {
-    title: t.nav.groupGeneral,
-    links: [{ url: appUrl("/app/categories"), label: t.nav.categories, icon: TagIcon }],
-  },
-];
+const NAVIGATION_ICONS: Record<NavigationIconId, typeof HomeIcon> = {
+  home: HomeIcon, dollar: DollarIcon, card: CardIcon, clipboard: ClipboardIcon,
+  recurring: RecurringIcon, wallet: WalletIcon, cart: CartIcon, pen: PenIcon,
+  calendar: CalendarIcon, package: PackageIcon, tag: TagIcon,
+};
+const APP_LINKS = getAppNavigation(locale, t).map((group) => ({
+  ...group,
+  links: group.links.map((link) => ({ ...link, icon: NAVIGATION_ICONS[link.icon] })),
+}));
 ---
 
 <aside
@@ -82,9 +48,9 @@ const APP_LINKS: { title?: string; links: AppLink[] }[] = [
   <div
     class="flex h-16 items-center justify-between px-4 border-b border-border shrink-0"
   >
-    <span class="text-lg font-bold">Open PRP</span>
+    <span class="text-lg font-bold">{SITE_DATA.name}</span>
     <a
-      href="https://github.com/marcvspt/open-prp"
+      href={SITE_LINKS.repository}
       target="_blank"
       rel="noopener"
       class="text-string-muted hover:text-primary transition-colors"

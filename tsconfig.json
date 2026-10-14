@@ -21,9 +21,6 @@
       "@/styles/*": [
         "./src/styles/*"
       ],
-      "@/types/*": [
-        "./src/lib/types/*"
-      ],
       "@/lib/*": [
         "./src/lib/*"
       ],

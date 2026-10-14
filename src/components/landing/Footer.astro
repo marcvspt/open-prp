@@ -1,5 +1,7 @@
 ---
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
+import { SITE_DATA } from "@/lib/site.ts";
+import { SITE_LINKS } from "@/lib/links.ts";
 
 const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
@@ -9,20 +11,20 @@ const t = getLocaleDict(locale);
   <div class="mx-auto max-w-6xl px-6 py-12">
     <div class="flex flex-col items-center justify-between gap-6 sm:flex-row">
       <div class="flex flex-col items-center gap-1 sm:items-start">
-        <span class="text-lg font-bold text-primary">Open PRP</span>
-        <p class="text-sm text-string-muted">Open Personal Resource Planning</p>
+        <span class="text-lg font-bold text-primary">{SITE_DATA.name}</span>
+        <p class="text-sm text-string-muted">{SITE_DATA.fullName}</p>
       </div>
       <div class="flex flex-col items-center gap-2 sm:items-end">
         <p class="text-xs text-string-muted">
           {t.landing.developedWith} <a
-            href="https://opencode.ai"
+            href={SITE_LINKS.developmentTool}
             class="text-primary hover:text-primary-hover transition-colors"
             target="_blank"
-            rel="noopener">OpenCode</a
+            rel="noopener">{SITE_DATA.developmentTool}</a
           >
         </p>
         <p class="text-xs text-string-muted">
-          &copy; {new Date().getFullYear()} Open PRP
+          &copy; {new Date().getFullYear()} {SITE_DATA.name}
         </p>
       </div>
     </div>

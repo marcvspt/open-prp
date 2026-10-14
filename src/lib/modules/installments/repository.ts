@@ -1,8 +1,8 @@
-import { getDb } from "@/lib/db/client.ts";
-import { scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/db/utils.ts";
+import { getDb } from "@/lib/server/db/client.ts";
+import { scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/server/db/utils.ts";
 import { addMonths, currentMonthStr, installmentFirstMonth, installmentRemaining, lastDayOfMonth } from "@/lib/date.ts";
 import type { Installment, InstallmentInput, InstallmentFilter, InstallmentListFilter, InstallmentScheduleRow } from "@/lib/types/installment.ts";
-import type { PaginatedResponse } from "@/lib/types/general.ts";
+import type { PaginatedResponse } from "@/lib/types/api.ts";
 
 const scheduleQuery = `SELECT i.*, CASE WHEN c.type = 'credit' THEN c.cutoff_day ELSE NULL END AS cutoff_day
   FROM installments i
