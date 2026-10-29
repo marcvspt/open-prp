@@ -19,7 +19,7 @@ Guía obligatoria para agentes que exploren o modifiquen este repositorio. Leer 
 - El agente tampoco ejecuta instalaciones, builds, servidores, scripts de proyecto, seeds, migraciones ni despliegues mediante comandos equivalentes de Node, Astro, npm, npx, yarn u otras herramientas. No sustituir `pnpm` por otra herramienta para eludir esta regla. Node se gestiona con fnm y puede no estar en el PATH del shell.
 - El agente puede explorar archivos, buscar referencias, revisar diffs y editar código/documentación. Debe comunicar qué verificó por inspección y qué queda pendiente de ejecución por el usuario.
 - Las pruebas de guardar, editar o eliminar desde modales CRUD las realiza el usuario y comparte el resultado.
-- Si hacen falta dependencias o cambios de producción, preparar los archivos y entregar al usuario los comandos o SQL necesarios; no ejecutarlos.
+- Si hacen falta dependencias o cambios de producción, preparar los archivos del proyecto necesarios y entregar al usuario los comandos; no ejecutarlos. El SQL para actualizar la base de datos de producción se entrega directamente aquí en el chat, en bloques de código SQL listos para copiar, sin generar archivos de migración ni otros archivos separados para entregarlo.
 
 ## Mantenimiento de documentación
 
@@ -101,7 +101,7 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 ## Base de datos y API
 
 - Esquema modular e idempotente en `db/schemas/*.sql`. Semilla existente en `db/seed.js`.
-- Cada cambio de esquema actualiza el SQL final correspondiente y entrega el SQL de migración de producción al usuario para que lo ejecute.
+- Cada cambio de esquema actualiza el SQL final correspondiente en `db/schemas/` y entrega el SQL de migración de producción directamente en el chat para que el usuario lo ejecute, sin crear archivos de migración ni otros archivos separados para entregarlo.
 - Usar `getDb()` de `src/lib/server/db/client.ts`, `db.execute({ sql, args })` y binds `?`; args tipados `(string | number | boolean | null)[]`. Mantener `nextSeq` existente.
 - Cashback no tiene columna `updated_at`: tanto `insertRow` como `applyUpdate` deben recibir `withUpdatedAt: false` en su repositorio.
 - Reutilizar `createIdRoutes` y `createIndexRoutes` de `src/lib/server/api-routes.ts` cuando aplique. Rutas custom también usan `withErrorHandling` y `readJsonBody` de `api-helpers.ts`.
