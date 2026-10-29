@@ -1,0 +1,53 @@
+---
+import { SITE_LINKS } from "@/lib/links.ts";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
+import ChevronIcon from "@/assets/chevron.svg";
+import GithubIcon from "@/assets/github.svg";
+
+interface Props {
+  id: string;
+  locale: LocaleCode;
+}
+
+const { id, locale } = Astro.props;
+const t = getLocaleDict(locale);
+---
+
+<button
+  type="button"
+  popovertarget={id}
+  aria-controls={id}
+  aria-expanded="false"
+  data-support-trigger
+  class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-sm font-medium text-primary-text hover:bg-primary-bg transition-colors cursor-pointer"
+>
+  {t.landing.support}
+  <ChevronIcon class="h-4 w-4" aria-hidden="true" />
+</button>
+<div
+  id={id}
+  popover="auto"
+  data-support-popover
+  aria-labelledby={`${id}-title`}
+  class="fixed inset-auto m-0 w-[min(18rem,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-xl border border-border bg-panel p-4 text-left text-string shadow-xl"
+>
+  <p id={`${id}-title`} class="text-sm font-semibold">{t.landing.support}</p>
+  <p class="mt-1 text-xs text-string-muted">{t.landing.supportDescription}</p>
+  <div class="mt-3 flex flex-col gap-1">
+    <a href={SITE_LINKS.buyMeACoffee} target="_blank" rel="noopener noreferrer" class="rounded-lg px-3 py-2.5 text-sm font-medium text-primary-text hover:bg-primary-bg transition-colors">
+      {t.landing.buyMeACoffee}
+      <span class="sr-only"> — {t.landing.opensNewTab}</span>
+    </a>
+    <a href={SITE_LINKS.githubSponsors} target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-primary-text hover:bg-primary-bg transition-colors">
+      <GithubIcon class="h-4 w-4" aria-hidden="true" />
+      {t.landing.githubSponsors}
+      <span class="sr-only"> — {t.landing.opensNewTab}</span>
+    </a>
+  </div>
+</div>
+
+<script>
+  import { initSupportPopovers } from "@/lib/ui/support-popover.ts";
+
+  document.addEventListener("astro:page-load", initSupportPopovers);
+</script>

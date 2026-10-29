@@ -19,7 +19,7 @@ Guía obligatoria para agentes que exploren o modifiquen este repositorio. Leer 
 - El agente tampoco ejecuta instalaciones, builds, servidores, scripts de proyecto, seeds, migraciones ni despliegues mediante comandos equivalentes de Node, Astro, npm, npx, yarn u otras herramientas. No sustituir `pnpm` por otra herramienta para eludir esta regla. Node se gestiona con fnm y puede no estar en el PATH del shell.
 - El agente puede explorar archivos, buscar referencias, revisar diffs y editar código/documentación. Debe comunicar qué verificó por inspección y qué queda pendiente de ejecución por el usuario.
 - Las pruebas de guardar, editar o eliminar desde modales CRUD las realiza el usuario y comparte el resultado.
-- Si hacen falta dependencias o cambios de producción, preparar los archivos y entregar al usuario los comandos o SQL necesarios; no ejecutarlos.
+- Si hacen falta dependencias o cambios de producción, preparar los archivos del proyecto necesarios y entregar al usuario los comandos; no ejecutarlos. El SQL para actualizar la base de datos de producción se entrega directamente aquí en el chat, en bloques de código SQL listos para copiar, sin generar archivos de migración ni otros archivos separados para entregarlo.
 
 ## Mantenimiento de documentación
 
@@ -101,7 +101,7 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 ## Base de datos y API
 
 - Esquema modular e idempotente en `db/schemas/*.sql`. Semilla existente en `db/seed.js`.
-- Cada cambio de esquema actualiza el SQL final correspondiente y entrega el SQL de migración de producción al usuario para que lo ejecute.
+- Cada cambio de esquema actualiza el SQL final correspondiente en `db/schemas/` y entrega el SQL de migración de producción directamente en el chat para que el usuario lo ejecute, sin crear archivos de migración ni otros archivos separados para entregarlo.
 - Usar `getDb()` de `src/lib/server/db/client.ts`, `db.execute({ sql, args })` y binds `?`; args tipados `(string | number | boolean | null)[]`. Mantener `nextSeq` existente.
 - Cashback no tiene columna `updated_at`: tanto `insertRow` como `applyUpdate` deben recibir `withUpdatedAt: false` en su repositorio.
 - Reutilizar `createIdRoutes` y `createIndexRoutes` de `src/lib/server/api-routes.ts` cuando aplique. Rutas custom también usan `withErrorHandling` y `readJsonBody` de `api-helpers.ts`.
@@ -112,6 +112,8 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 - Plazos: `start_date` es la fecha de compra. En crédito, la primera cuota corresponde al primer corte que incluye esa fecha (compra el día de corte incluida); las siguientes corresponden a meses de corte consecutivos. El día de pago no desplaza el mes del estado de cuenta: corte/pago 7/7 implica pago el mes siguiente. Sin corte de crédito, la primera cuota corresponde al mes de compra. Compartir `installmentFirstMonth`, `installmentRemaining` e `isInstallmentInMonth` de `date.ts` entre Plazos, Tarjetas y Dashboard. La última cuota permanece visible durante su mes con `0/total`; desaparece al siguiente. Las lecturas calculan `remaining_months` al cierre del mes seleccionado (mes actual si no hay filtro) sin escribir en BD; es progreso del calendario, no confirmación de pagos. El campo almacenado no determina la vigencia. `cardStatementPeriod` excluye el corte anterior e incluye el actual, ajustando cortes 29–31 a meses cortos sin solapar periodos.
 
 ## UI, formularios y accesibilidad
+
+- Solo la landing incluye «Apóyame» en el Header de escritorio y móvil: `SupportPopover.astro` renderiza enlaces a Buy Me a Coffee y GitHub Sponsors desde `SITE_LINKS`. Usa Popover API nativa (capa superior, Escape y clic fuera), textos es/en y `support-popover.ts` para posición dentro del viewport, estado accesible y cierre al navegar. No añadirlo al shell de la app.
 
 - Tarjetas: en Resumen, los meses pagados a tiempo usan borde `border-info` y etiqueta `bg-info-bg text-info-text`; los pagos tardíos conservan el indicador `danger`. Historial usa `info` para la etiqueta de pagado. Reutilizar las variantes claro/oscuro existentes; los bordes de meses pendientes siguen indicando proximidad del vencimiento.
 
