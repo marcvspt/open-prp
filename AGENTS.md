@@ -113,6 +113,8 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 
 ## UI, formularios y accesibilidad
 
+- Solo la landing incluye «Apóyame» en el Header de escritorio y móvil: `SupportPopover.astro` renderiza enlaces a Buy Me a Coffee y GitHub Sponsors desde `SITE_LINKS`. Usa Popover API nativa (capa superior, Escape y clic fuera), textos es/en y `support-popover.ts` para posición dentro del viewport, estado accesible y cierre al navegar. No añadirlo al shell de la app.
+
 - Tarjetas: en Resumen, los meses pagados a tiempo usan borde `border-info` y etiqueta `bg-info-bg text-info-text`; los pagos tardíos conservan el indicador `danger`. Historial usa `info` para la etiqueta de pagado. Reutilizar las variantes claro/oscuro existentes; los bordes de meses pendientes siguen indicando proximidad del vencimiento.
 
 - **Coherencia de UI entre secciones de la app**: mantener un diseño y comportamiento homogéneos en títulos, botones, filtros, tabs, tablas, tarjetas, formularios, modales y estados de carga, error y vacío. Reutilizar componentes, tokens y patrones existentes para conservar tamaños, espaciados, tipografía, colores, ubicación de acciones y comportamiento responsive. Antes de añadir o modificar una interfaz, revisar las secciones equivalentes y seguir sus convenciones; cualquier diferencia debe responder a una necesidad funcional concreta.

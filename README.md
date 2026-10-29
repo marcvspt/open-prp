@@ -151,6 +151,8 @@ src/
 
 La identidad del producto se define en `src/lib/site.ts` y las URLs externas en `src/lib/links.ts`. Los textos traducibles permanecen en `es.ts` y `en.ts`; OPRP conserva sus diccionarios en lugar de añadir un `texts.ts` paralelo. `src/lib/navigation.ts` construye los menús con URLs localizadas. La landing une los textos de `landing.features` con `src/lib/catalog/landing.ts` por ID estable, sin emparejar arrays por posición.
 
+Solo la landing muestra «Apóyame» en su navegación de escritorio y móvil. `SupportPopover.astro` abre un desplegable con enlaces a Buy Me a Coffee y GitHub Sponsors en pestañas nuevas; las URLs se centralizan en `links.ts`. Usa Popover API nativa para mostrarse sobre el contenido y cerrarse con Escape o clic fuera, con posición ajustada al viewport por `support-popover.ts`. Incluye textos en español e inglés y los temas claro y oscuro.
+
 Los repositorios y cálculos de dominio permanecen en `src/lib/modules/`. Las utilidades de API y BD viven en `src/lib/server/`, mientras que las peticiones browser usan `src/lib/ui/api-client.ts`. Los tipos se importan del archivo concreto con `@/lib/types/`; no existe el alias `@/types/` ni el barrel `general.ts`.
 
 ## Enrutamiento

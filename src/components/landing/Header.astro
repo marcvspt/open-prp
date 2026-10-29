@@ -2,6 +2,7 @@
 import { getRelativeLocaleUrl } from "astro:i18n";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import LocaleSwitcher from "@/components/ui/LocaleSwitcher.tsx";
+import SupportPopover from "@/components/landing/SupportPopover.astro";
 import GithubIcon from "@/assets/github.svg";
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 import { SITE_DATA } from "@/lib/site.ts";
@@ -56,7 +57,7 @@ const LANDING_LINKS = getLandingNavigation(t);
           d="M6 18L18 6M6 6l12 12"></path>
       </svg>
     </button>
-    <nav id="mobile-menu" class="hidden lg:flex items-center gap-6">
+    <nav id="mobile-menu" class="hidden lg:flex items-center gap-4">
       {
         LANDING_LINKS.map(({ href, label, external }) => (
           <a
@@ -68,6 +69,7 @@ const LANDING_LINKS = getLandingNavigation(t);
           </a>
         ))
       }
+      <SupportPopover id="landing-support-desktop" locale={locale} />
       <a
         href={SITE_LINKS.repository}
         target="_blank"
@@ -106,6 +108,7 @@ const LANDING_LINKS = getLandingNavigation(t);
         ))
       }
       <div class="flex flex-col items-center space-y-3 pt-2">
+        <SupportPopover id="landing-support-mobile" locale={locale} />
         <a
           href={SITE_LINKS.repository}
           target="_blank"
@@ -131,7 +134,8 @@ const LANDING_LINKS = getLandingNavigation(t);
 
 <style>
   #mobile-dropdown.open {
-    max-height: 380px;
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
     border-color: var(--color-border);
   }
 </style>
