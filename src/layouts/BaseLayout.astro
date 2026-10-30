@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from "astro:transitions";
+import faviconUrl from "@/assets/logo-icon.svg?url&no-inline";
 
 import "@/styles/global.css";
 import { resolveLocale } from "@/lib/i18n/locale.ts";
@@ -17,7 +18,7 @@ const locale = resolveLocale(Astro.currentLocale);
 <html lang={locale}>
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href={faviconUrl} />
     <meta name="viewport" content="width=device-width" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <title>{pageTitle}</title>
