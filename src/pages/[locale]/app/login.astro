@@ -5,6 +5,7 @@ import { getRelativeLocaleUrl } from "astro:i18n";
 import { SignInButton, SignUpButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import LocaleSwitcher from "@/components/ui/LocaleSwitcher.tsx";
+import BrandLogo from "@/components/ui/BrandLogo.astro";
 import { BTN_LOGIN, BTN_SIGNUP } from "@/lib/i18n/general-fields.ts";
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 import { SITE_DATA } from "@/lib/site.ts";
@@ -21,7 +22,7 @@ if (userId) return Astro.redirect(dashboardUrl);
 <BaseLayout title={`${t.common.login}`}>
   <div class="flex items-center justify-center min-h-screen bg-surface">
     <div class="text-center space-y-4">
-      <h1 class="text-2xl font-bold text-primary">{SITE_DATA.name}</h1>
+      <h1 class="flex justify-center"><BrandLogo class="h-10" /></h1>
       <p class="text-string-muted">{SITE_DATA.fullName}</p>
       <div class="flex justify-center gap-2">
         <SignInButton mode="modal" fallbackRedirectUrl={dashboardUrl} asChild>

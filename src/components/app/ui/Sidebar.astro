@@ -3,9 +3,9 @@ import { Show, UserButton } from "@clerk/astro/components";
 import ThemeToggle from "@/components/ui/ThemeToggle.tsx";
 import LocaleSwitcher from "@/components/ui/LocaleSwitcher.tsx";
 import CurrencySelect from "@/components/app/ui/CurrencySelect.tsx";
+import BrandLogo from "@/components/ui/BrandLogo.astro";
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 import { getAppNavigation } from "@/lib/navigation.ts";
-import { SITE_DATA } from "@/lib/site.ts";
 import { SITE_LINKS } from "@/lib/links.ts";
 import type { NavigationIconId } from "@/lib/types/site.ts";
 import HomeIcon from "@/assets/home.svg";
@@ -48,7 +48,7 @@ const APP_LINKS = getAppNavigation(locale, t).map((group) => ({
   <div
     class="flex h-16 items-center justify-between px-4 border-b border-border shrink-0"
   >
-    <span class="text-lg font-bold">{SITE_DATA.name}</span>
+    <BrandLogo />
     <a
       href={SITE_LINKS.repository}
       target="_blank"

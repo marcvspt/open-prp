@@ -14,6 +14,7 @@ export function initLandingMenu(): void {
     document.body.style.overflow = "hidden";
   };
   const close = () => {
+    dropdown.querySelectorAll<HTMLDetailsElement>("[data-support-disclosure]").forEach(panel => { panel.open = false; });
     btn.setAttribute("aria-expanded", "false");
     dropdown.classList.remove("open");
     hamburger.classList.remove("hidden");

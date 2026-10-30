@@ -151,7 +151,9 @@ src/
 
 Product identity lives in `src/lib/site.ts`, and external URLs in `src/lib/links.ts`. Translated copy stays in `es.ts` and `en.ts`; OPRP keeps its dictionaries instead of adding a parallel `texts.ts`. `src/lib/navigation.ts` builds menus with localized URLs. The landing joins `landing.features` copy with `src/lib/catalog/landing.ts` by stable ID, without pairing arrays by position.
 
-Only the landing shows “Support me” in its desktop and mobile navigation. `SupportPopover.astro` opens a dropdown with Buy Me a Coffee and GitHub Sponsors links in new tabs; URLs are centralized in `links.ts`. It uses the native Popover API to appear above page content and close with Escape or an outside click, with viewport positioning handled by `support-popover.ts`. It includes Spanish and English copy and light and dark themes.
+The full logo lives in `src/assets/logo.svg`: the icon and “Open PRP” in a single SVG with outlined lettering and no font dependencies. `src/components/ui/BrandLogo.astro` reuses it in the landing header and footer, sidebar and login, with the theme's primary color and an accessible name from `SITE_DATA.name`. `public/favicon.svg` contains the separate icon; `public/favicon.ico` provides the same symbol as a fallback.
+
+Only the landing shows “Support me” in its desktop and mobile navigation. `SupportPopover.astro` uses a native Popover API popup on desktop (Escape, outside click and viewport positioning through `support-popover.ts`). On mobile it uses an expandable `details`/`summary` panel inside the menu, without relying on the floating popup; it closes when the menu closes or a link is selected. Both variants reuse `SupportLinks.astro` to open Buy Me a Coffee and GitHub Sponsors in new tabs, with URLs in `links.ts`, Spanish and English copy and light and dark themes.
 
 Repositories and domain calculations remain in `src/lib/modules/`. API and database utilities live in `src/lib/server/`, while browser requests use `src/lib/ui/api-client.ts`. Types are imported from concrete files using `@/lib/types/`; the `@/types/` alias and `general.ts` barrel have been removed.
 
