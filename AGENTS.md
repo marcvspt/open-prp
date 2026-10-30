@@ -51,6 +51,7 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 - Componentes: `src/components/landing/`, `src/components/app/` y UI compartida en `src/components/ui/`. UI propia de app en `src/components/app/ui/`.
 - Lógica de dominio y repositorios: `src/lib/modules/`; tipos: `src/lib/types/`; comportamiento browser: `src/lib/ui/`; traducciones: `src/lib/i18n/`.
 - Identidad invariable del producto en `src/lib/site.ts`; URLs externas en `src/lib/links.ts`; menús localizados en `src/lib/navigation.ts`; orden e iconos de características en `src/lib/catalog/landing.ts`. Relacionar el catálogo con los textos por ID estable, nunca por posición.
+- Marca visual: `src/assets/logo.svg` contiene el icono y «Open PRP» en trazados, sin fuentes externas. Reutilizar `BrandLogo.astro` en landing, sidebar y login; usa el token primary para ambos temas y el nombre accesible de `SITE_DATA.name`. `public/favicon.svg` contiene solo el mismo icono; mantener también `public/favicon.ico` coherente como respaldo.
 - Utilidades de API y BD en `src/lib/server/`; los repositorios permanecen en `src/lib/modules/` y son de servidor, salvo utilidades puras compartidas como `card-monthly/carryover.ts`. No importar repositorios, BD ni `astro:env/server` desde islas o scripts browser, tampoco indirectamente.
 - Importar tipos desde `@/lib/types/<archivo>.ts`. `types/api.ts` contiene envelopes, paginación y códigos de error; `types/site.ts` contiene contratos de navegación y características. No restaurar `@/types/` ni el barrel `general.ts`.
 - **Imports internos siempre con alias `@/` definido en `tsconfig.json` y extensión explícita** (`.ts`, `.tsx`, `.astro`, `.svg`, `.css`). Nunca usar `./` o `../` para importar código interno. Los paquetes conservan sus nombres de paquete.
@@ -113,7 +114,7 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 
 ## UI, formularios y accesibilidad
 
-- Solo la landing incluye «Apóyame» en el Header de escritorio y móvil: `SupportPopover.astro` renderiza enlaces a Buy Me a Coffee y GitHub Sponsors desde `SITE_LINKS`. Usa Popover API nativa (capa superior, Escape y clic fuera), textos es/en y `support-popover.ts` para posición dentro del viewport, estado accesible y cierre al navegar. No añadirlo al shell de la app.
+- Solo la landing incluye «Apóyame» en el Header: `SupportPopover.astro` usa Popover API nativa en escritorio (capa superior, Escape y clic fuera) y un panel `details`/`summary` dentro del menú móvil, sin depender de Popover API ni de posicionamiento flotante en celular. Ambas variantes comparten `SupportLinks.astro`, con enlaces desde `SITE_LINKS` y textos es/en. `support-popover.ts` posiciona y gestiona el popup de escritorio; `landing-menu.ts` cierra el panel móvil al cerrar el menú o elegir un enlace. No añadirlo al shell de la app.
 
 - Tarjetas: en Resumen, los meses pagados a tiempo usan borde `border-info` y etiqueta `bg-info-bg text-info-text`; los pagos tardíos conservan el indicador `danger`. Historial usa `info` para la etiqueta de pagado. Reutilizar las variantes claro/oscuro existentes; los bordes de meses pendientes siguen indicando proximidad del vencimiento.
 

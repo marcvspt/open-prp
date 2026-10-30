@@ -2,6 +2,7 @@
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
 import { SITE_DATA } from "@/lib/site.ts";
 import { SITE_LINKS } from "@/lib/links.ts";
+import BrandLogo from "@/components/ui/BrandLogo.astro";
 
 const locale = resolveLocale(Astro.currentLocale);
 const t = getLocaleDict(locale);
@@ -11,7 +12,7 @@ const t = getLocaleDict(locale);
   <div class="mx-auto max-w-6xl px-6 py-12">
     <div class="flex flex-col items-center justify-between gap-6 sm:flex-row">
       <div class="flex flex-col items-center gap-1 sm:items-start">
-        <span class="text-lg font-bold text-primary">{SITE_DATA.name}</span>
+        <BrandLogo />
         <p class="text-sm text-string-muted">{SITE_DATA.fullName}</p>
       </div>
       <div class="flex flex-col items-center gap-2 sm:items-end">
