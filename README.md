@@ -474,9 +474,11 @@ Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={loca
 
 - Contenido **100% SSR** en `src/pages/[locale]/app/dashboard.astro` (sin islas React de contenido).
 - `DashboardHeader.tsx` — solo `MonthSelector`, alineado a la derecha del título.
-- Datos desde `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`: mismas queries que la API pero vía repositorios (sin HTTP). No recalcula deudas ni hace `upsert` de `card_monthly` por visita (eso ocurre bajo demanda desde cliente vía `/api/card-monthly/calculate` y desde la página de tarjetas).
+- Datos desde `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`, directamente desde repositorios (sin HTTP). No recalcula deudas ni hace `upsert` de `card_monthly` por visita (eso ocurre bajo demanda desde cliente vía `/api/card-monthly/calculate` y desde la página de tarjetas).
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (mutaciones de pago desde cliente).
 - Cards de métricas: ingresos, gastos, saldo, tarjetas de crédito, cuotas, recurrentes, tareas pendientes, eventos próximos, compras activas.
+- Los gastos con crédito y su cashback se asignan al **mes del corte**, usando `cardStatementPeriod`: se excluye el corte anterior y se incluye el actual, ajustando días 29–31 a meses cortos. Una compra posterior al corte afecta el balance del mes siguiente; el día de pago no desplaza ese mes. Se consultan el mes seleccionado y el anterior para incluir todo el periodo de cada tarjeta, sin sumar nuevamente los snapshots de deuda. Las tarjetas sin corte y los demás métodos usan el mes calendario; los ingresos de transacciones también conservan ese criterio.
+- La fecha original de las transacciones no cambia: la lista del dashboard y los filtros de Transacciones siguen mostrando el mes calendario. Las cuotas conservan su calendario de cortes, los recurrentes su mes asignado y los pagos parciales el descuento del remanente trasladado al siguiente mes.
 
 ## Manejo de errores
 

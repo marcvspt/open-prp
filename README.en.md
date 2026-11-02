@@ -475,9 +475,11 @@ Every island (`client:load`) receives `locale` from the SSR page (`<X locale={lo
 
 - Content **100% SSR** in `src/pages/[locale]/app/dashboard.astro` (no React content islands).
 - `DashboardHeader.tsx` — only `MonthSelector`, aligned to the right of the title.
-- Data from `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`: the same queries as the API but via repositories (no HTTP). It doesn't recalculate debt or `upsert` `card_monthly` per visit (that happens on demand from the client via `/api/card-monthly/calculate` and from the cards page).
+- Data from `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`, directly from repositories (no HTTP). It doesn't recalculate debt or `upsert` `card_monthly` per visit (that happens on demand from the client via `/api/card-monthly/calculate` and from the cards page).
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (payment mutations from the client).
 - Metric cards: income, expenses, balance, credit cards, installments, recurring, pending tasks, upcoming events, active shopping lists.
+- Credit expenses and their cashback are assigned to the **statement closing month**, using `cardStatementPeriod`: the previous cutoff is excluded and the current cutoff is included, clamping days 29–31 to shorter months. A purchase after the cutoff affects the following month's balance; the payment due day does not shift that month. Queries cover the selected and previous months to include each card's full period, without adding debt snapshots again. Cards without a cutoff and other payment methods use the calendar month; transaction income also keeps this behavior.
+- Original transaction dates stay unchanged: the dashboard transaction list and Transactions filters still use calendar months. Installments retain their statement schedule, recurring payments their assigned month, and partial payments the deduction of the remainder carried into the next month.
 
 ## Error handling
 
