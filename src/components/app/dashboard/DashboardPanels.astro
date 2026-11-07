@@ -4,7 +4,6 @@ import CategoryExpensesChart from "@/components/app/dashboard/CategoryExpensesCh
 import DailyActivityChart from "@/components/app/dashboard/DailyActivityChart.tsx";
 import MonthlyMovementCharts from "@/components/app/dashboard/MonthlyMovementCharts.tsx";
 import { loadDashboardMonth } from "@/lib/dashboard/load.ts";
-import { monthLabel } from "@/lib/date.ts";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Props {
@@ -26,24 +25,15 @@ const preferredCurrency = Astro.locals.user?.preferred_currency;
   </div>
   <div data-tab-content="analytics" role="tabpanel" id="panel-analytics" aria-labelledby="tab-analytics" tabindex="0" class:list={["tab-content space-y-4 pt-4", { hidden: initialTab !== "analytics" }]}>
     <section aria-labelledby="dashboard-daily-activity" class="space-y-4 rounded-xl border border-border bg-panel p-4 shadow-sm">
-      <div>
-        <h2 id="dashboard-daily-activity" class="text-base font-semibold text-string">{t.dashboard.dailyActivityTitle}</h2>
-        <p class="mt-1 text-sm text-string-muted capitalize">{monthLabel(month, locale)}</p>
-      </div>
+      <h2 id="dashboard-daily-activity" class="text-base font-semibold text-string">{t.dashboard.dailyActivityTitle}</h2>
       {data.dailyActivity.length ? (
-        <>
-          <p class="text-sm text-string-muted">{t.dashboard.dailyActivityBasis}</p>
-          <DailyActivityChart client:load groups={data.dailyActivity} preferredCurrency={preferredCurrency} locale={locale} />
-        </>
+        <DailyActivityChart client:load groups={data.dailyActivity} preferredCurrency={preferredCurrency} locale={locale} />
       ) : (
         <p class="text-sm text-string-muted">{t.dashboard.noDailyActivity}</p>
       )}
     </section>
     <section aria-labelledby="dashboard-category-expenses" class="space-y-4 rounded-xl border border-border bg-panel p-4 shadow-sm">
-      <div>
-        <h2 id="dashboard-category-expenses" class="text-base font-semibold text-string">{t.dashboard.categoryExpensesTitle}</h2>
-        <p class="mt-1 text-sm text-string-muted capitalize">{monthLabel(month, locale)}</p>
-      </div>
+      <h2 id="dashboard-category-expenses" class="text-base font-semibold text-string">{t.dashboard.categoryExpensesTitle}</h2>
       {data.categoryExpenses.length ? (
         <CategoryExpensesChart client:load groups={data.categoryExpenses} preferredCurrency={preferredCurrency} locale={locale} />
       ) : (

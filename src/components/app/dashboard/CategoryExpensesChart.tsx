@@ -41,7 +41,6 @@ export default function CategoryExpensesChart({ groups, preferredCurrency, local
         <div className="flex flex-wrap items-start justify-between gap-3">
           {top && (
             <div className="min-w-0">
-              <p className="text-xs text-string-muted">{t.dashboard.highestExpenseCategory}</p>
               <p className="font-semibold text-string wrap-anywhere">{top.label}</p>
               <p className="text-xl font-bold tabular-nums text-string">{formatAmount(top.total)}</p>
             </div>
