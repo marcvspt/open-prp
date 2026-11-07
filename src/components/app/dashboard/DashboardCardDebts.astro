@@ -1,0 +1,84 @@
+---
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { currentMonthStr, daysUntilPaymentDue, formatDate, paymentDueDate } from "@/lib/date.ts";
+import { formatCurrency } from "@/lib/format.ts";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
+import type { Card } from "@/lib/types/card.ts";
+import type { CardMonthly } from "@/lib/types/card-monthly.ts";
+
+interface Props {
+  cards: Card[];
+  debts: CardMonthly[];
+  month: string;
+  locale: LocaleCode;
+}
+
+const { cards, debts, month, locale } = Astro.props;
+const t = getLocaleDict(locale);
+const cardsUrl = getRelativeLocaleUrl(locale, "/app/cards") + (month === currentMonthStr() ? "" : `?month=${month}`);
+const debtsByCard = new Map(debts.map(debt => [debt.card_id, debt]));
+const hasStatements = cards.some(card => debtsByCard.has(card.id));
+const pending = cards.flatMap(card => {
+  const debt = debtsByCard.get(card.id);
+  if (!debt || debt.is_paid) return [];
+  const amount = Math.max(0, debt.statement_balance - debt.paid_amount);
+  if (amount === 0) return [];
+
+  const dueDate = card.payment_due_day == null ? null : paymentDueDate(month, card.cutoff_day, card.payment_due_day);
+  const dueIn = card.payment_due_day == null ? null : daysUntilPaymentDue(month, card.cutoff_day, card.payment_due_day);
+  return [{ card, amount, dueDate, dueIn }];
+}).sort((a, b) => (a.dueIn ?? Infinity) - (b.dueIn ?? Infinity) || b.amount - a.amount);
+const total = pending.reduce((sum, entry) => sum + entry.amount, 0);
+
+function dueBadge(days: number | null) {
+  if (days === null) return { label: t.dashboard.noDueDate, color: "bg-surface text-string-muted" };
+  if (days < 0) return { label: t.badge.overdue, color: "bg-danger-bg text-danger-text" };
+  if (days === 0) return { label: t.dashboard.dueToday, color: "bg-danger-bg text-danger-text" };
+  const label = t.dashboard.dueInDays(days);
+  if (days <= 3) return { label, color: "bg-danger-bg text-danger-text" };
+  if (days <= 8) return { label, color: "bg-warning-bg text-warning-text" };
+  return { label, color: "bg-info-bg text-info-text" };
+}
+---
+
+<section aria-labelledby="dashboard-card-debts" class="space-y-4 rounded-xl border border-border bg-panel p-4 shadow-sm">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h2 id="dashboard-card-debts" class="text-base font-semibold text-string">{t.dashboard.statCreditCards}</h2>
+    <a href={cardsUrl} class="text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:underline">
+      {t.dashboard.viewCards}
+    </a>
+  </div>
+  {pending.length > 0 ? (
+    <>
+      <div class="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <p class="text-xs uppercase tracking-wider text-string-muted">{t.dashboard.cardPendingTotal}</p>
+          <p class="mt-1 text-2xl font-bold tabular-nums text-string">{formatCurrency(total)}</p>
+        </div>
+        <p class="text-sm text-string-muted">{t.dashboard.pendingCardCount(pending.length)}</p>
+      </div>
+      <ul class="grid grid-cols-2 gap-3 md:grid-cols-3">
+        {pending.map(({ card, amount, dueDate, dueIn }) => {
+          const badge = dueBadge(dueIn);
+          return (
+            <li class="min-w-0 space-y-2 rounded-lg border border-border bg-surface p-3 max-md:last:odd:col-span-2">
+              <h3 class="flex items-center gap-2 text-sm font-medium text-string">
+                {card.color && <span aria-hidden="true" class="size-2 shrink-0 rounded-full" style={{ backgroundColor: card.color }} />}
+                <span class="wrap-anywhere">{card.name}</span>
+              </h3>
+              <p class="text-base font-semibold tabular-nums text-string wrap-anywhere">{formatCurrency(amount)}</p>
+              <div class="flex flex-wrap items-center gap-2 text-xs">
+                <span class:list={["rounded px-2 py-0.5 font-medium", badge.color]}>{badge.label}</span>
+                {dueDate && <time datetime={dueDate} class="text-string-muted">{formatDate(dueDate, locale, { day: "numeric", month: "short" })}</time>}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </>
+  ) : (
+    <p class="text-sm text-string-muted">
+      {cards.length === 0 ? t.empty.creditCards : hasStatements ? t.dashboard.noPendingCards : t.dashboard.noCardStatements}
+    </p>
+  )}
+</section>

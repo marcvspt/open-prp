@@ -228,6 +228,7 @@ export const en: Locale = {
 
   tabs: {
     summary: "Summary",
+    analytics: "Analytics",
     history: "History",
     adminCards: "Manage cards",
     adminInstallments: "Manage installments",
@@ -403,13 +404,17 @@ export const en: Locale = {
     statActiveShopping: "Active shopping",
     statRecurring: shared.recurringPayments,
     statRecurringExpenses: "Recurring expenses",
-    cardDebtsTitle: "Credit card debts this month",
-    recurringIncomesTitle: "💵 Recurring incomes",
-    recurringExpensesTitle: "💰 Recurring expenses",
-    monthTransactionsTitle: "Month transactions",
-    noDescription: "No description",
+    ariaTabs: "Dashboard sections",
+    analyticsPlaceholder: "Analytics are not available yet.",
+    cardPendingTotal: "Recorded balance due",
+    pendingCardCount: (n: number) => n === 1 ? "1 card with an outstanding balance" : `${n} cards with outstanding balances`,
+    viewCards: "View in Cards",
+    noCardStatements: "No statements have been calculated for this month yet.",
+    noPendingCards: "No outstanding balances are recorded for this month.",
+    noDueDate: "No due date",
+    dueToday: "Due today",
     overdueCount: (n: number) => `${n} overdue`,
-    dueInDays: (n: number) => `${n} days`,
+    dueInDays: (n: number) => n === 1 ? "In 1 day" : `In ${n} days`,
   },
 
   sections: {

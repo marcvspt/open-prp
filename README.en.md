@@ -447,7 +447,7 @@ Sections with SSR tables or summaries retain Astro: they request the current URL
 
 ### Section components (`src/components/app/{module}/`)
 
-- **Dashboard**: `DashboardHeader.tsx` (only `MonthSelector`).
+- **Dashboard**: `TabBarWithMonth.tsx` for the tabs and selector. `DashboardContent.astro` and `DashboardCardDebts.astro` render the summary on the server.
 - **Transactions**: `TransactionsFilterable.tsx`.
 - **Installments**: `InstallmentsFilterable.tsx` + `InstallmentsSummary.tsx`. The summary uses the same monthly selector as cards and recurring payments, alongside the tabs and visible only in Summary. It defaults to the current month; `summary_month` preserves the selection independently of administration filters. Initial data arrives through SSR and updates without reloading through `/api/installments/summary`, with cancellation and visible errors. After hydration, the summary checks the URL to catch month changes made while loading. It shows installments active during the selected month and remaining payments at its end, without modifying the database.
 - **URL months**: `month` and `summary_month` only accept options from `getMonthOptions(12, createdAt)` (available months since registration, limited to the past year, plus next month). Middleware replaces out-of-range values in app URLs with explicit defaults through a 303 redirect, preserving other filters and avoiding loops from query forwarding on Netlify. Direct API requests receive JSON 400. The UI applies the same validation; unavailable months fall back to the default.
@@ -459,7 +459,7 @@ Sections with SSR tables or summaries retain Astro: they request the current URL
 
 ### Locale pattern in React islands
 
-Every island (`client:load`) receives `locale` from the SSR page (`<X locale={locale} />`) and resolves its strings with `getLocaleDict(locale)`. Components using `useLocaleDict()` (Select, MultiSelect, MonthSelector) must be wrapped in `<LocaleProvider locale={locale}>` by their container (`TabBar`, `TabBarWithMonth`, `DashboardHeader`, `*Filterable`, `CrudModal`, `ConfirmDelete`, `ShoppingList`, etc.). `*Filterable` components also receive the SSR initial data as props.
+Every island (`client:load`) receives `locale` from the SSR page (`<X locale={locale} />`) and resolves its strings with `getLocaleDict(locale)`. Components using `useLocaleDict()` (Select, MultiSelect, MonthSelector) must be wrapped in `<LocaleProvider locale={locale}>` by their container (`TabBar`, `TabBarWithMonth`, `*Filterable`, `CrudModal`, `ConfirmDelete`, `ShoppingList`, etc.). `*Filterable` components also receive the SSR initial data as props.
 
 ### Select vs MultiSelect usage rules
 
@@ -473,13 +473,13 @@ Every island (`client:load`) receives `locale` from the SSR page (`<X locale={lo
 
 ## Dashboard
 
-- Content **100% SSR** in `src/pages/[locale]/app/dashboard.astro` (no React content islands).
-- `DashboardHeader.tsx` — only `MonthSelector`, aligned to the right of the title.
+- **Summary** is the default tab and contains the month selector. Changing the month updates just the SSR content through the section refresh coordinator. **Analytics** shows a placeholder at `?tab=analytics`.
 - Data from `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`, directly from repositories (no HTTP). It doesn't recalculate debt or `upsert` `card_monthly` per visit (that happens on demand from the client via `/api/card-monthly/calculate` and from the cards page).
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (payment mutations from the client).
 - Metric cards: income, expenses, balance, credit cards, installments, recurring, pending tasks, upcoming events, active shopping lists.
+- The credit card section totals recorded outstanding balances and lists cards with balances due in order of their due dates. It distinguishes months with no calculated statements from months with no recorded outstanding balances. The link to Cards opens the selected month.
 - Credit expenses and their cashback are assigned to the **statement closing month**, using `cardStatementPeriod`: the previous cutoff is excluded and the current cutoff is included, clamping days 29–31 to shorter months. A purchase after the cutoff affects the following month's balance; the payment due day does not shift that month. Queries cover the selected and previous months to include each card's full period, without adding debt snapshots again. Cards without a cutoff and other payment methods use the calendar month; transaction income also keeps this behavior.
-- Original transaction dates stay unchanged: the dashboard transaction list and Transactions filters still use calendar months. Installments retain their statement schedule, recurring payments their assigned month, and partial payments the deduction of the remainder carried into the next month.
+- Transactions filters use calendar months. Installments retain their statement schedule, recurring payments their assigned month, and partial payments the deduction of the remainder carried into the next month.
 
 ## Error handling
 

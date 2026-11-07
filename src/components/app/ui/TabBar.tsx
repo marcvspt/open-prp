@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Select from "@/components/ui/Select.tsx";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
 import type { LocaleCode } from "@/lib/i18n/locale.ts";
@@ -13,8 +13,8 @@ interface TabBarProps {
   initialTab: string;
   defaultTab: string;
   ariaLabel: string;
-  /** Called when the active tab changes, in addition to DOM/URL management */
-  onChange?: (key: string) => void;
+  /** The second argument is true when restoring the tab from browser history. */
+  onChange?: (key: string, restored?: boolean) => void;
   /** Optional MonthSelector to show alongside tabs */
   monthSelector?: React.ReactNode;
   locale?: LocaleCode;
@@ -24,30 +24,32 @@ export default function TabBar({ tabs, initialTab, defaultTab, ariaLabel, onChan
   const [activeTab, setActiveTab] = useState(initialTab);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  function activate(key: string) {
+  const selectTab = useCallback((key: string) => {
     setActiveTab(key);
-    if (onChange) onChange(key);
     const container = containerRef.current?.closest(".tabs-container");
-    if (!container) return;
-    const buttons = [...container.querySelectorAll<HTMLElement>("[data-tab]")];
-    const contents = container.querySelectorAll<HTMLElement>("[data-tab-content]");
-    buttons.forEach((btn) => {
-      const isActive = btn.dataset.tab === key;
-      btn.classList.toggle("text-primary", isActive);
-      btn.classList.toggle("border-primary", isActive);
-      btn.classList.toggle("text-string-muted", !isActive);
-      btn.classList.toggle("border-transparent", !isActive);
-      btn.setAttribute("aria-selected", String(isActive));
-      btn.tabIndex = isActive ? 0 : -1;
-    });
-    contents.forEach((panel) => {
+    container?.querySelectorAll<HTMLElement>("[data-tab-content]").forEach((panel) => {
       panel.classList.toggle("hidden", panel.dataset.tabContent !== key);
     });
-    const params = new URLSearchParams(location.search);
-    if (key !== defaultTab) params.set("tab", key);
-    else params.delete("tab");
-    const qs = params.toString();
-    history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
+  }, []);
+
+  useEffect(() => {
+    function restoreTab() {
+      const param = new URLSearchParams(location.search).get("tab");
+      const key = tabs.find(tab => tab.key === param)?.key ?? defaultTab;
+      selectTab(key);
+      onChange?.(key, true);
+    }
+    window.addEventListener("popstate", restoreTab);
+    return () => window.removeEventListener("popstate", restoreTab);
+  }, [tabs, defaultTab, onChange, selectTab]);
+
+  function activate(key: string) {
+    selectTab(key);
+    const url = new URL(location.href);
+    if (key !== defaultTab) url.searchParams.set("tab", key);
+    else url.searchParams.delete("tab");
+    history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    onChange?.(key);
   }
 
   function onTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {

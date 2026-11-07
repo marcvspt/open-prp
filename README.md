@@ -446,7 +446,7 @@ Las secciones con tablas o resúmenes SSR conservan Astro: solicitan la URL actu
 
 ### Componentes por sección (`src/components/app/{modulo}/`)
 
-- **Dashboard**: `DashboardHeader.tsx` (solo `MonthSelector`).
+- **Dashboard**: `TabBarWithMonth.tsx` para las pestañas y el selector. `DashboardContent.astro` y `DashboardCardDebts.astro` renderizan el resumen en el servidor.
 - **Transacciones**: `TransactionsFilterable.tsx`.
 - **Plazos**: `InstallmentsFilterable.tsx` + `InstallmentsSummary.tsx`. El resumen usa el mismo selector mensual que tarjetas y pagos recurrentes, junto a las tabs y solo visible en Resumen. Parte del mes actual; `summary_month` conserva la selección sin alterar los filtros de administración. Los datos iniciales llegan por SSR y se actualizan sin recarga desde `/api/installments/summary`, con cancelación y errores visibles. Al terminar de hidratar, el resumen comprueba la URL para recuperar cambios de mes realizados durante la carga. Muestra los plazos vigentes y las cuotas restantes al cierre del mes elegido, sin modificar la BD.
 - **Meses de URL**: `month` y `summary_month` solo aceptan las opciones de `getMonthOptions(12, createdAt)` (meses disponibles desde el alta, máximo último año, más mes siguiente). El middleware sustituye valores fuera de rango de URLs de la app por los predeterminados mediante una redirección 303 explícita, conservando los demás filtros y evitando bucles por el reenvío de parámetros en Netlify. Devuelve JSON 400 si se solicitan directamente a la API. La UI aplica la misma validación; un mes no disponible vuelve al valor predeterminado.
@@ -458,7 +458,7 @@ Las secciones con tablas o resúmenes SSR conservan Astro: solicitan la URL actu
 
 ### Patrón de locale en islas React
 
-Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={locale} />`) y resuelve sus textos con `getLocaleDict(locale)`. Los componentes que usan `useLocaleDict()` (Select, MultiSelect, MonthSelector) deben estar envueltos en `<LocaleProvider locale={locale}>` por su contenedor (`TabBar`, `TabBarWithMonth`, `DashboardHeader`, `*Filterable`, `CrudModal`, `ConfirmDelete`, `ShoppingList`, etc.). Los `*Filterable` reciben además los datos iniciales SSR como props.
+Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={locale} />`) y resuelve sus textos con `getLocaleDict(locale)`. Los componentes que usan `useLocaleDict()` (Select, MultiSelect, MonthSelector) deben estar envueltos en `<LocaleProvider locale={locale}>` por su contenedor (`TabBar`, `TabBarWithMonth`, `*Filterable`, `CrudModal`, `ConfirmDelete`, `ShoppingList`, etc.). Los `*Filterable` reciben además los datos iniciales SSR como props.
 
 ### Reglas de uso Select vs MultiSelect
 
@@ -472,13 +472,13 @@ Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={loca
 
 ## Dashboard
 
-- Contenido **100% SSR** en `src/pages/[locale]/app/dashboard.astro` (sin islas React de contenido).
-- `DashboardHeader.tsx` — solo `MonthSelector`, alineado a la derecha del título.
+- **Resumen** es la pestaña predeterminada y contiene el selector de mes. Cambiar el mes actualiza solo el contenido SSR mediante el coordinador de refresco de secciones. **Analíticas** muestra un marcador de posición en `?tab=analytics`.
 - Datos desde `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`, directamente desde repositorios (sin HTTP). No recalcula deudas ni hace `upsert` de `card_monthly` por visita (eso ocurre bajo demanda desde cliente vía `/api/card-monthly/calculate` y desde la página de tarjetas).
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (mutaciones de pago desde cliente).
 - Cards de métricas: ingresos, gastos, saldo, tarjetas de crédito, cuotas, recurrentes, tareas pendientes, eventos próximos, compras activas.
+- El bloque de tarjetas suma los saldos pendientes registrados y muestra las tarjetas con adeudo por orden de vencimiento. Distingue un mes sin estados de cuenta calculados de uno sin saldos pendientes registrados. El enlace a Tarjetas abre el mes seleccionado.
 - Los gastos con crédito y su cashback se asignan al **mes del corte**, usando `cardStatementPeriod`: se excluye el corte anterior y se incluye el actual, ajustando días 29–31 a meses cortos. Una compra posterior al corte afecta el balance del mes siguiente; el día de pago no desplaza ese mes. Se consultan el mes seleccionado y el anterior para incluir todo el periodo de cada tarjeta, sin sumar nuevamente los snapshots de deuda. Las tarjetas sin corte y los demás métodos usan el mes calendario; los ingresos de transacciones también conservan ese criterio.
-- La fecha original de las transacciones no cambia: la lista del dashboard y los filtros de Transacciones siguen mostrando el mes calendario. Las cuotas conservan su calendario de cortes, los recurrentes su mes asignado y los pagos parciales el descuento del remanente trasladado al siguiente mes.
+- Los filtros de Transacciones usan el mes calendario. Las cuotas conservan su calendario de cortes, los recurrentes su mes asignado y los pagos parciales el descuento del remanente trasladado al siguiente mes.
 
 ## Manejo de errores
 

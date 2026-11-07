@@ -71,7 +71,7 @@ async function refreshSsrRegion(region: HTMLElement, signal: AbortSignal) {
   return true;
 }
 
-async function refreshCurrentSection(module: string) {
+export async function refreshCurrentSection(module: string) {
   const region = document.querySelector<HTMLElement>("[data-module]");
   const section = region?.dataset.module;
   if (!region || !section || !(dependencies[section] ?? [section]).includes(module)) return;

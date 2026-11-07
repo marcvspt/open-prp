@@ -229,6 +229,7 @@ export const es = {
 
   tabs: {
     summary: "Resumen",
+    analytics: "Analíticas",
     history: "Historial",
     adminCards: "Administrar tarjetas",
     adminInstallments: "Administrar plazos",
@@ -404,13 +405,17 @@ export const es = {
     statActiveShopping: "Compras activas",
     statRecurring: shared.recurringPayments,
     statRecurringExpenses: "Gastos recurrentes",
-    cardDebtsTitle: "Deudas de tarjetas de crédito del mes",
-    recurringIncomesTitle: "💵 Ingresos recurrentes",
-    recurringExpensesTitle: "💰 Gastos recurrentes",
-    monthTransactionsTitle: "Transacciones del mes",
-    noDescription: "Sin descripción",
+    ariaTabs: "Secciones del dashboard",
+    analyticsPlaceholder: "Las analíticas aún no están disponibles.",
+    cardPendingTotal: "Total pendiente registrado",
+    pendingCardCount: (n: number) => n === 1 ? "1 tarjeta con saldo pendiente" : `${n} tarjetas con saldo pendiente`,
+    viewCards: "Ver en Tarjetas",
+    noCardStatements: "Aún no hay estados de cuenta calculados para este mes.",
+    noPendingCards: "No hay saldos pendientes registrados para este mes.",
+    noDueDate: "Sin fecha de pago",
+    dueToday: "Vence hoy",
     overdueCount: (n: number) => `${n} vencidas`,
-    dueInDays: (n: number) => `${n} días`,
+    dueInDays: (n: number) => n === 1 ? "En 1 día" : `En ${n} días`,
   },
 
   sections: {
