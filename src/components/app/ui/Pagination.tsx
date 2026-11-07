@@ -1,3 +1,4 @@
+import ArrowRightIcon from "@/assets/arrow-right.svg?react";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Props {
@@ -19,7 +20,7 @@ export default function Pagination({ page, total, pageSize, loading, onPageChang
         type="button"
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1 || loading}
-        className="rounded border border-border px-3 py-2 text-string-muted hover:bg-nav-hover disabled:cursor-not-allowed disabled:opacity-50"
+        className="min-h-11 rounded-lg border border-border px-3 py-2 text-string-muted enabled:cursor-pointer enabled:hover:bg-nav-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         {t.common.pagination.previous}
       </button>
@@ -30,9 +31,10 @@ export default function Pagination({ page, total, pageSize, loading, onPageChang
         type="button"
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages || loading}
-        className="rounded border border-border px-3 py-2 text-string-muted hover:bg-nav-hover disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-primary bg-primary-bg px-3 py-2 font-medium text-primary-text enabled:cursor-pointer enabled:hover:bg-primary-border disabled:cursor-not-allowed disabled:opacity-50"
       >
         {t.common.pagination.next}
+        <ArrowRightIcon aria-hidden="true" className="size-4 shrink-0" />
       </button>
     </div>
   );

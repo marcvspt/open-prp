@@ -21,9 +21,10 @@ interface Props {
   locale?: LocaleCode;
   monthParam?: string;
   monthTabs?: readonly string[];
+  omitCurrentMonth?: boolean;
 }
 
-export default function TabBarWithMonth({ tabs, initialTab, defaultTab, ariaLabel, initialMonth, createdAt, allLabel, locale = "es", monthParam = "month", monthTabs }: Props) {
+export default function TabBarWithMonth({ tabs, initialTab, defaultTab, ariaLabel, initialMonth, createdAt, allLabel, locale = "es", monthParam = "month", monthTabs, omitCurrentMonth = monthParam !== "month" }: Props) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [month, setMonth] = useState(initialMonth);
 
@@ -48,16 +49,16 @@ export default function TabBarWithMonth({ tabs, initialTab, defaultTab, ariaLabe
     if (newMonth && !isAvailableMonth(newMonth, createdAt)) return;
     setMonth(newMonth);
     const params = new URLSearchParams(location.search);
-    if (newMonth && !(monthParam !== "month" && newMonth === currentMonthStr())) params.set(monthParam, newMonth);
+    if (newMonth && !(omitCurrentMonth && newMonth === currentMonthStr())) params.set(monthParam, newMonth);
     else params.delete(monthParam);
     const qs = params.toString();
     history.replaceState(history.state, "", `${location.pathname}${qs ? `?${qs}` : ""}${location.hash}`);
     window.dispatchEvent(new CustomEvent("monthchange", { detail: { month: newMonth } }));
   }
 
-  function handleTabChange(key: string) {
+  function handleTabChange(key: string, restored = false) {
     setActiveTab(key);
-    if ((!monthTabs || monthTabs.includes(key)) && key !== "history" && !month) {
+    if (!restored && (!monthTabs || monthTabs.includes(key)) && key !== "history" && !month) {
       handleMonthChange(currentMonthStr());
     }
   }

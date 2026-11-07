@@ -31,7 +31,7 @@ export function resolvePaymentDueDate(month: string, cutoffDay: number, paymentD
 }
 
 /** Same as `resolvePaymentDueDate` but tolerates a null cutoff (falls back to the last day of the month). */
-function paymentDueDate(month: string, cutoffDay: number | null, paymentDueDay: number): string {
+export function paymentDueDate(month: string, cutoffDay: number | null, paymentDueDay: number): string {
   const [y, m] = month.split("-").map(Number);
   const cutoff = cutoffDay ?? new Date(y, m, 0).getDate();
   return resolvePaymentDueDate(month, cutoff, paymentDueDay);
