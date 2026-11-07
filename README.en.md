@@ -90,7 +90,8 @@ There is currently no RSS feed or `@astrojs/rss` integration.
 14. [PWA](#pwa)
 15. [Accessibility](#accessibility)
 16. [Environment variables](#environment-variables)
-17. [Deployment](#deployment)
+17. [Tests](#tests)
+18. [Deployment](#deployment)
 
 ## Architecture
 
@@ -501,7 +502,7 @@ When there are more than ten movements, each pie chart shows the nine largest an
 
 - Transaction expenses and cashback for a credit card with a statement cutoff belong to the period from the day after the previous cutoff through the current cutoff, inclusive. With a cutoff on the 7th, a November 7 expense belongs to November and a November 8 expense belongs to December. The area chart plots these amounts on the corresponding cutoff day. Transaction income and dated movements without that cutoff use their recorded month and day.
 - Each installment plan contributes the **monthly installment** when scheduled. Credit installments appear on the cutoff day. Other installments use the purchase day, clamped to the last day of shorter months.
-- Active recurring payments, including unpaid ones, count in their assigned month. For the area chart, credit card recurring expenses appear on the cutoff day. Other recurring payments use their payment date if it falls within that month. Amounts without an assigned day appear under **Monthly amounts without an assigned day** and still count in the applicable monthly charts.
+- Active recurring payments, including unpaid ones, count in their assigned month. For the area chart, credit card recurring expenses appear on the cutoff day. Other recurring payments use their payment date if it falls within that month. Amounts without an assigned day count only in the applicable monthly breakdowns.
 - Analytics excludes generated card balance carryovers to avoid counting the original purchase twice. Cashback counts as income.
 
 ## Error handling
@@ -541,6 +542,10 @@ Declared with Astro's `envField` schema in `astro.config.mjs` (`env.schema`). Th
 | `TURSO_DB_TOKEN` | server | secret | Turso auth token |
 | `PUBLIC_CLERK_PUBLISHABLE_KEY` | client | public | Clerk publishable key |
 | `CLERK_SECRET_KEY` | server | secret | Clerk secret key |
+
+## Tests
+
+Run `pnpm test` from the project root with Node.js 24 or later. The unit tests in `tests/` use `node:test` and `node:assert/strict`. They cover card statement periods and due dates, installment schedules, and available months. They run without starting Astro or configuring Clerk or Turso.
 
 ## Deployment
 

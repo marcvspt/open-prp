@@ -7,12 +7,12 @@ Gracias por contribuir a Open PRP, la aplicación de finanzas personales y organ
 1. Consulta [README.md](README.md) para configurar el proyecto, [package.json](package.json) para los requisitos de Node.js y scripts disponibles y [AGENTS.md](AGENTS.md) para conocer sus convenciones técnicas.
 2. Si colaboras desde un fork, crea una rama para tu cambio y mantén cada contribución enfocada en un objetivo.
 3. Implementa el cambio siguiendo la estructura, los componentes y los estilos existentes.
-4. Para cambios de código, configuración o contenido publicado, ejecuta `pnpm build`. Si modificas la interfaz o el contenido, revisa también el resultado con `pnpm preview` en móvil y escritorio, incluyendo navegación por teclado. Los cambios únicamente de documentación no requieren una compilación.
+4. Ejecuta `pnpm test` cuando cambies las pruebas o la lógica que cubren. Para cambios de código, configuración o contenido publicado, ejecuta `pnpm build`. Si modificas la interfaz o el contenido, revisa también el resultado con `pnpm preview` en móvil y escritorio, incluyendo navegación por teclado. Los cambios únicamente de documentación no requieren una compilación.
 5. Abre un pull request que explique qué cambia, por qué y cómo lo verificaste. Incluye capturas si modificas la interfaz y enlaza el issue relacionado cuando exista.
 
 Usa pnpm y conserva `pnpm-lock.yaml` y `pnpm-workspace.yaml` coherentes con las dependencias. No edites salidas generadas en `dist/`, `.astro/`, `.netlify/` ni dependencias en `node_modules/`. No incluyas archivos `.env`, credenciales ni datos personales en commits, capturas o registros.
 
-Cuando trabajes con un agente, el propietario ejecuta las instalaciones y los comandos del proyecto; el agente prepara los cambios e indica los comandos necesarios, según [AGENTS.md](AGENTS.md). Indica siempre qué comprobaste y qué quedó pendiente. Actualmente no hay scripts de test, lint ni check en `package.json`; la compilación no sustituye esas comprobaciones.
+Cuando trabajes con un agente, el propietario ejecuta las instalaciones y los comandos del proyecto; el agente prepara los cambios e indica los comandos necesarios, según [AGENTS.md](AGENTS.md). Indica siempre qué comprobaste y qué quedó pendiente. Actualmente no hay scripts de lint ni check en `package.json`.
 
 ## Convenciones del proyecto
 

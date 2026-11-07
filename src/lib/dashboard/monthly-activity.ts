@@ -66,15 +66,13 @@ export function summarizeMonthlyActivity(month: string, activity: MonthlyActivit
       group = {
         currency: code,
         days: dates.map(date => ({ date, income: 0, expense: 0 })),
-        undated: { income: 0, expense: 0 },
         rankings: { income: [], expense: [] },
         paymentMethods: new Map(),
       };
       groups.set(code, group);
     }
     const day = date ? group.days[Number(date.slice(8, 10)) - 1] : undefined;
-    const bucket = day && day.date === date ? day : group.undated;
-    bucket[type] += amount;
+    if (day && day.date === date) day[type] += amount;
 
     const method = methods.get(row.payment_method_id ?? "");
     const card = cards.get(row.card_id ?? method?.card_id ?? "");
@@ -125,7 +123,7 @@ export function summarizeMonthlyActivity(month: string, activity: MonthlyActivit
 
   const ordered = [...groups.values()].sort((a, b) => a.currency.localeCompare(b.currency));
   return {
-    dailyActivity: ordered.map(({ currency, days, undated }) => ({ currency, days, undated })),
+    dailyActivity: ordered.map(({ currency, days }) => ({ currency, days })),
     movementBreakdown: ordered.map(({ currency, rankings, paymentMethods }) => ({
       currency,
       income: rankMovements(rankings.income),

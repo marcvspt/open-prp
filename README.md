@@ -90,7 +90,8 @@ Actualmente no hay feed RSS ni integración `@astrojs/rss`.
 14. [PWA](#pwa)
 15. [Accesibilidad](#accesibilidad)
 16. [Variables de entorno](#variables-de-entorno)
-17. [Despliegue](#despliegue)
+17. [Pruebas](#pruebas)
+18. [Despliegue](#despliegue)
 
 ## Arquitectura
 
@@ -500,7 +501,7 @@ Si hay más de diez movimientos, cada pastel muestra los nueve mayores y una úl
 
 - Los gastos de transacciones y el cashback de una tarjeta con corte de crédito pertenecen al periodo que va del día posterior al corte anterior al corte actual, inclusive. Con corte el 7, un gasto del 7 de noviembre entra en noviembre y uno del 8 entra en diciembre. En las áreas se reflejan el día del corte correspondiente. Las transacciones de ingreso y los movimientos fechados sin ese corte usan el mes y el día de su fecha registrada.
 - Cada plazo aporta la **cuota mensual** cuando corresponde. Las cuotas de crédito aparecen en el día de corte. Las demás usan el día de la compra, ajustado al último día en meses más cortos.
-- Los recurrentes activos, incluidos los pendientes, cuentan en el mes que tienen asignado. Para las áreas, un gasto recurrente de crédito se refleja en el corte. Los demás recurrentes usan su fecha de pago si cae en ese mes. Si falta un día atribuible, sus importes se muestran en **Importes del mes sin día asignado** y siguen contando en las gráficas mensuales que correspondan.
+- Los recurrentes activos, incluidos los pendientes, cuentan en el mes que tienen asignado. Para las áreas, un gasto recurrente de crédito se refleja en el corte. Los demás recurrentes usan su fecha de pago si cae en ese mes. Los importes sin día atribuible solo cuentan en los desgloses mensuales que correspondan.
 - Analíticas excluye los cargos generados al trasladar un saldo de tarjeta para evitar contar dos veces la compra original. El cashback cuenta como ingreso.
 
 ## Manejo de errores
@@ -540,6 +541,10 @@ Declaradas con el schema `envField` de Astro en `astro.config.mjs` (`env.schema`
 | `TURSO_DB_TOKEN` | server | secret | Token de autenticación Turso |
 | `PUBLIC_CLERK_PUBLISHABLE_KEY` | client | public | Publishable key de Clerk |
 | `CLERK_SECRET_KEY` | server | secret | Secret key de Clerk |
+
+## Pruebas
+
+Ejecuta `pnpm test` desde la raíz del proyecto con Node.js 24 o superior. Las pruebas unitarias en `tests/` usan `node:test` y `node:assert/strict`. Cubren cortes y vencimientos de tarjetas, cuotas a plazos y meses disponibles. Se ejecutan sin levantar Astro ni configurar Clerk o Turso.
 
 ## Despliegue
 

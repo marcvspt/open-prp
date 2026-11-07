@@ -26,7 +26,6 @@ export default function DailyActivityChart({ groups, preferredCurrency, locale }
     { key: "income", label: t.dashboard.statIncomes, color: "var(--color-success)", dashed: false },
     { key: "expense", label: t.dashboard.statExpenses, color: "var(--color-danger)", dashed: true },
   ] as const;
-  const undated = series.filter(({ key }) => group.undated[key] !== 0);
 
   return (
     <LocaleProvider locale={locale}>
@@ -80,19 +79,6 @@ export default function DailyActivityChart({ groups, preferredCurrency, locale }
             ))}
           </AreaChart>
         </ResponsiveContainer>
-        {undated.length > 0 && (
-          <div className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">
-            <p className="font-medium text-string">{t.dashboard.undatedActivity}</p>
-            <dl className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-string-muted">
-              {undated.map(({ key, label }) => (
-                <div key={key} className="flex gap-2">
-                  <dt>{label}</dt>
-                  <dd className="font-medium tabular-nums text-string">{formatAmount(group.undated[key])}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        )}
       </div>
     </LocaleProvider>
   );
