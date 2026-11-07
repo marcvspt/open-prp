@@ -412,7 +412,6 @@ export const es = {
     dailyActivityTitle: "Ingresos y gastos por día",
     dailyActivityBasis: "Los gastos y el cashback de tarjetas de crédito con corte se muestran en su día de corte.",
     noDailyActivity: "No hay ingresos ni gastos para este mes.",
-    undatedActivity: "Importes del mes sin día asignado",
     topExpenses: "Mayores gastos",
     topIncomes: "Mayores ingresos",
     otherMovements: "Otros",

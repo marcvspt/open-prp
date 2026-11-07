@@ -29,7 +29,6 @@ export interface DailyAmounts {
 export interface DailyActivityGroup {
   currency: string;
   days: Array<DailyAmounts & { date: string }>;
-  undated: DailyAmounts;
 }
 
 export interface RankedMovement {

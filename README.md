@@ -500,7 +500,7 @@ Si hay más de diez movimientos, cada pastel muestra los nueve mayores y una úl
 
 - Los gastos de transacciones y el cashback de una tarjeta con corte de crédito pertenecen al periodo que va del día posterior al corte anterior al corte actual, inclusive. Con corte el 7, un gasto del 7 de noviembre entra en noviembre y uno del 8 entra en diciembre. En las áreas se reflejan el día del corte correspondiente. Las transacciones de ingreso y los movimientos fechados sin ese corte usan el mes y el día de su fecha registrada.
 - Cada plazo aporta la **cuota mensual** cuando corresponde. Las cuotas de crédito aparecen en el día de corte. Las demás usan el día de la compra, ajustado al último día en meses más cortos.
-- Los recurrentes activos, incluidos los pendientes, cuentan en el mes que tienen asignado. Para las áreas, un gasto recurrente de crédito se refleja en el corte. Los demás recurrentes usan su fecha de pago si cae en ese mes. Si falta un día atribuible, sus importes se muestran en **Importes del mes sin día asignado** y siguen contando en las gráficas mensuales que correspondan.
+- Los recurrentes activos, incluidos los pendientes, cuentan en el mes que tienen asignado. Para las áreas, un gasto recurrente de crédito se refleja en el corte. Los demás recurrentes usan su fecha de pago si cae en ese mes. Los importes sin día atribuible solo cuentan en los desgloses mensuales que correspondan.
 - Analíticas excluye los cargos generados al trasladar un saldo de tarjeta para evitar contar dos veces la compra original. El cashback cuenta como ingreso.
 
 ## Manejo de errores

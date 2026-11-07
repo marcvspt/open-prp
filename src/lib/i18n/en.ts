@@ -411,7 +411,6 @@ export const en: Locale = {
     dailyActivityTitle: "Daily income and expenses",
     dailyActivityBasis: "Expenses and cashback for credit cards with a statement cutoff appear on their cutoff day.",
     noDailyActivity: "There is no income or expense activity for this month.",
-    undatedActivity: "Monthly amounts without an assigned day",
     topExpenses: "Largest expenses",
     topIncomes: "Largest income movements",
     otherMovements: "Other",
