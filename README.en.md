@@ -90,7 +90,8 @@ There is currently no RSS feed or `@astrojs/rss` integration.
 14. [PWA](#pwa)
 15. [Accessibility](#accessibility)
 16. [Environment variables](#environment-variables)
-17. [Deployment](#deployment)
+17. [Tests](#tests)
+18. [Deployment](#deployment)
 
 ## Architecture
 
@@ -541,6 +542,10 @@ Declared with Astro's `envField` schema in `astro.config.mjs` (`env.schema`). Th
 | `TURSO_DB_TOKEN` | server | secret | Turso auth token |
 | `PUBLIC_CLERK_PUBLISHABLE_KEY` | client | public | Clerk publishable key |
 | `CLERK_SECRET_KEY` | server | secret | Clerk secret key |
+
+## Tests
+
+Run `pnpm test` from the project root with Node.js 24 or later. The unit tests in `tests/` use `node:test` and `node:assert/strict`. They cover card statement periods and due dates, installment schedules, and available months. They run without starting Astro or configuring Clerk or Turso.
 
 ## Deployment
 

@@ -176,6 +176,7 @@ No introducir otra arquitectura, ORM, sistema de estilos o proveedor por conveni
 
 ## Entrega y validación
 
+- `pnpm test` ejecuta las pruebas unitarias `tests/**/*.test.ts` con `node:test` y `node:assert/strict`. `tests/register-alias.mjs` resuelve `@/` hacia `src/` solo durante las pruebas. Las suites cubren cortes, vencimientos, plazos y meses disponibles con fechas controladas y sin servicios externos.
 - Revisar archivos afectados y diff, respetando cambios previos del usuario. No revertir modificaciones ajenas.
 - Explicar qué cambió y cualquier limitación real. Para validaciones de ejecución, dar al usuario el comando exacto y esperar su salida para corregir errores.
 - No afirmar que un build, instalación, prueba CRUD o despliegue pasó si el usuario no proporcionó el resultado.

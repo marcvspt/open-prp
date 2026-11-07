@@ -10,6 +10,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "test": "node --import ./tests/register-alias.mjs --test \"tests/**/*.test.ts\"",
     "astro": "astro",
     "db:seed:dev": "node --env-file=.env.development db/seed.js",
     "db:seed:prod": "node --env-file=.env.production db/seed.js"

@@ -90,7 +90,8 @@ Actualmente no hay feed RSS ni integración `@astrojs/rss`.
 14. [PWA](#pwa)
 15. [Accesibilidad](#accesibilidad)
 16. [Variables de entorno](#variables-de-entorno)
-17. [Despliegue](#despliegue)
+17. [Pruebas](#pruebas)
+18. [Despliegue](#despliegue)
 
 ## Arquitectura
 
@@ -540,6 +541,10 @@ Declaradas con el schema `envField` de Astro en `astro.config.mjs` (`env.schema`
 | `TURSO_DB_TOKEN` | server | secret | Token de autenticación Turso |
 | `PUBLIC_CLERK_PUBLISHABLE_KEY` | client | public | Publishable key de Clerk |
 | `CLERK_SECRET_KEY` | server | secret | Secret key de Clerk |
+
+## Pruebas
+
+Ejecuta `pnpm test` desde la raíz del proyecto con Node.js 24 o superior. Las pruebas unitarias en `tests/` usan `node:test` y `node:assert/strict`. Cubren cortes y vencimientos de tarjetas, cuotas a plazos y meses disponibles. Se ejecutan sin levantar Astro ni configurar Clerk o Turso.
 
 ## Despliegue
 
