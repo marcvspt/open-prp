@@ -70,7 +70,7 @@ export default function DailyActivityChart({ groups, preferredCurrency, locale }
                 key={key}
                 dataKey={key}
                 name={label}
-                type="linear"
+                type="monotoneX"
                 stroke={color}
                 strokeWidth={2}
                 strokeDasharray={dashed ? "5 3" : undefined}
