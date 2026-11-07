@@ -25,13 +25,14 @@ interface ActivityGroup extends DailyActivityGroup {
   paymentMethods: Map<string, PaymentMethodActivity>;
 }
 
-const TOP_MOVEMENT_COUNT = 5;
+const MAX_RANKING_SLICES = 10;
 
 function rankMovements(movements: RankedMovement[]): MovementRanking {
   const sorted = movements.sort((a, b) => b.amount - a.amount);
-  const rest = sorted.slice(TOP_MOVEMENT_COUNT);
+  const individualCount = sorted.length > MAX_RANKING_SLICES ? MAX_RANKING_SLICES - 1 : MAX_RANKING_SLICES;
+  const rest = sorted.slice(individualCount);
   return {
-    movements: sorted.slice(0, TOP_MOVEMENT_COUNT),
+    movements: sorted.slice(0, individualCount),
     remainder: { count: rest.length, amount: rest.reduce((sum, row) => sum + row.amount, 0) },
   };
 }
@@ -76,14 +77,16 @@ export function summarizeMonthlyActivity(month: string, activity: MonthlyActivit
     bucket[type] += amount;
 
     const method = methods.get(row.payment_method_id ?? "");
-    const cardType = cards.get(row.card_id ?? method?.card_id ?? "")?.type;
-    const methodKey = cardType ? `card:${cardType}` : method?.id ?? "unassigned";
+    const card = cards.get(row.card_id ?? method?.card_id ?? "");
+    const cardKey = card && (type === "expense" ? `card-id:${card.id}` : `card:${card.type}`);
+    const methodKey = cardKey ?? method?.id ?? "unassigned";
     let methodActivity = group.paymentMethods.get(methodKey);
     if (!methodActivity) {
       methodActivity = {
         key: methodKey,
-        cardType,
-        method: method && !cardType ? { name: method.name, type: method.type } : undefined,
+        cardName: type === "expense" ? card?.name : undefined,
+        cardType: card?.type,
+        method: method && !card ? { name: method.name, type: method.type } : undefined,
         income: 0,
         expense: 0,
       };

@@ -46,6 +46,7 @@ export interface MovementRanking {
 
 export interface PaymentMethodActivity extends DailyAmounts {
   key: string;
+  cardName?: string;
   cardType?: Card["type"];
   method?: Pick<PaymentMethod, "name" | "type">;
 }

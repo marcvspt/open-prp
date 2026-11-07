@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Select from "@/components/ui/Select.tsx";
 import { formatDate } from "@/lib/date.ts";
+import { chartAmountFormatters } from "@/lib/format.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 import type { DailyActivityGroup } from "@/lib/types/dashboard.ts";
@@ -20,9 +21,7 @@ export default function DailyActivityChart({ groups, preferredCurrency, locale }
   const group = groups.find(group => group.currency === currency);
   if (!group) return null;
 
-  const amounts = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const axisAmounts = new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 });
-  const formatAmount = (value: number) => `${amounts.format(value)} ${currency}`;
+  const { formatAmount, axisAmount } = chartAmountFormatters(locale, currency);
   const series = [
     { key: "income", label: t.dashboard.statIncomes, color: "var(--color-success)", dashed: false },
     { key: "expense", label: t.dashboard.statExpenses, color: "var(--color-danger)", dashed: true },
@@ -57,7 +56,7 @@ export default function DailyActivityChart({ groups, preferredCurrency, locale }
           <AreaChart data={group.days} accessibilityLayer title={t.dashboard.dailyActivityTitle}>
             <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" />
             <XAxis dataKey="date" interval="preserveStartEnd" minTickGap={14} tickFormatter={(date: string) => String(Number(date.slice(8)))} tick={{ fill: "var(--color-string-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis width={48} tickFormatter={value => axisAmounts.format(Number(value))} tick={{ fill: "var(--color-string-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
+            <YAxis width={48} tickFormatter={value => axisAmount.format(Number(value))} tick={{ fill: "var(--color-string-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{ background: "var(--color-panel)", borderColor: "var(--color-border)", borderRadius: "0.5rem" }}
               labelStyle={{ color: "var(--color-string)" }}

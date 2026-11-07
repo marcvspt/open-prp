@@ -85,6 +85,7 @@ Actualmente no hay feed RSS ni integración `@astrojs/rss`.
 10. [Filtros y estado en URL](#filtros-y-estado-en-url)
 11. [Componentes](#componentes)
 12. [Dashboard](#dashboard)
+    - [Gráficas de Analíticas](#gráficas-de-analíticas)
 13. [Manejo de errores](#manejo-de-errores)
 14. [PWA](#pwa)
 15. [Accesibilidad](#accesibilidad)
@@ -473,15 +474,34 @@ Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={loca
 ## Dashboard
 
 - **Resumen** es la pestaña predeterminada. Comparte el selector de mes con **Analíticas** (`?tab=analytics`). Cambiar el mes refresca ambos paneles a partir de un fragmento SSR.
-- **Gastos por categoría** ordena las categorías por importe y desglosa transacciones, cuotas y recurrentes en barras apiladas. Las transacciones con crédito siguen el corte, las cuotas cuentan una vez en el mes en que corresponden y los recurrentes activos siguen el mes de su registro, incluidos los pendientes de pago. Se omiten ingresos, cashback y cargos generados al trasladar saldos de tarjetas. Los gastos sin categoría tienen su propio grupo y las monedas se consultan por separado.
-- **Ingresos y gastos por día** superpone dos áreas con las transacciones, cuotas, recurrentes activos y cashback del mes. Los gastos y el cashback asociados a crédito con corte se reflejan en el día de corte. Los demás movimientos fechados mantienen su día. Las cuotas sin corte usan el día de compra, ajustado al último día de meses cortos. Los recurrentes sin corte usan la fecha de pago del mes si existe. Los importes sin día asignado se muestran aparte.
-- **Movimientos del mes** muestra dos pasteles, con los cinco mayores gastos e ingresos por moneda y los demás importes positivos agrupados en «Otros». Cada movimiento muestra su descripción, categoría e importe. Las dos gráficas de barras clasifican por importe los gastos e ingresos por método de pago, agrupando tarjetas en crédito, débito y vales. El cashback se atribuye al tipo de su tarjeta.
 - Datos desde `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`, directamente desde repositorios (sin HTTP). No recalcula deudas ni hace `upsert` de `card_monthly` por visita (eso ocurre bajo demanda desde cliente vía `/api/card-monthly/calculate` y desde la página de tarjetas).
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (mutaciones de pago desde cliente).
 - Cards de métricas: ingresos, gastos, saldo, tarjetas de crédito, cuotas, recurrentes, tareas pendientes, eventos próximos, compras activas.
 - El bloque de tarjetas suma los saldos pendientes registrados y muestra las tarjetas con adeudo por orden de vencimiento. Distingue un mes sin estados de cuenta calculados de uno sin saldos pendientes registrados. El enlace a Tarjetas abre el mes seleccionado.
 - Los gastos con crédito y su cashback se asignan al **mes del corte**, usando `cardStatementPeriod`: se excluye el corte anterior y se incluye el actual, ajustando días 29–31 a meses cortos. Una compra posterior al corte afecta el balance del mes siguiente; el día de pago no desplaza ese mes. Se consultan el mes seleccionado y el anterior para incluir todo el periodo de cada tarjeta, sin sumar nuevamente los snapshots de deuda. Las tarjetas sin corte y los demás métodos usan el mes calendario; los ingresos de transacciones también conservan ese criterio.
 - Los filtros de Transacciones usan el mes calendario. Las cuotas conservan su calendario de cortes, los recurrentes su mes asignado y los pagos parciales el descuento del remanente trasladado al siguiente mes.
+
+### Gráficas de Analíticas
+
+Abre **Dashboard → Analíticas** y elige un mes. El selector actualiza todas las gráficas. Cada bloque ofrece un selector de moneda si tiene importes en varias y parte de la moneda preferida cuando hay datos para ella. Los importes se muestran por separado, sin conversiones. En español se usa el formato de México (`es-MX`), con coma para miles y punto para decimales, por ejemplo `12,345.67 MXN`. En inglés se usa `en-US`. Los ejes muestran importes abreviados y los tooltips muestran el importe con dos decimales y el código de moneda.
+
+| Gráfica | Qué muestra |
+| --- | --- |
+| **Ingresos y gastos por día** | Dos áreas superpuestas con curvas suaves. El tooltip muestra ambos importes del día. Los días sin actividad tienen valor cero. |
+| **Gastos por categoría** | Barras apiladas de transacciones, cuotas y recurrentes, ordenadas de mayor a menor. Destaca la categoría de mayor gasto y agrupa los registros sin categoría en «Sin categoría». |
+| **Mayores gastos** | Pastel de hasta diez porciones para los gastos con importe positivo. El tooltip y la lista muestran descripción, categoría e importe. |
+| **Mayores ingresos** | Pastel de hasta diez porciones para los ingresos con importe positivo, incluido el cashback cuando corresponde. Presenta el mismo detalle que el pastel de gastos. |
+| **Gastos por método de pago** | Barras ordenadas por importe. Cada tarjeta de crédito, débito o vales con gasto aparece por su nombre. Efectivo, transferencia y los demás métodos aparecen por separado. |
+| **Ingresos por método de pago** | Barras ordenadas por importe. Las tarjetas se agrupan en crédito, débito y vales. El cashback cuenta en el tipo de la tarjeta asociada. Los demás métodos aparecen por separado. |
+
+Si hay más de diez movimientos, cada pastel muestra los nueve mayores y una última porción **Otros** con la suma y el conteo de todos los restantes.
+
+**Cómo se asignan los importes al mes y al día**
+
+- Los gastos de transacciones y el cashback de una tarjeta con corte de crédito pertenecen al periodo que va del día posterior al corte anterior al corte actual, inclusive. Con corte el 7, un gasto del 7 de noviembre entra en noviembre y uno del 8 entra en diciembre. En las áreas se reflejan el día del corte correspondiente. Las transacciones de ingreso y los movimientos fechados sin ese corte usan el mes y el día de su fecha registrada.
+- Cada plazo aporta la **cuota mensual** cuando corresponde. Las cuotas de crédito aparecen en el día de corte. Las demás usan el día de la compra, ajustado al último día en meses más cortos.
+- Los recurrentes activos, incluidos los pendientes, cuentan en el mes que tienen asignado. Para las áreas, un gasto recurrente de crédito se refleja en el corte. Los demás recurrentes usan su fecha de pago si cae en ese mes. Si falta un día atribuible, sus importes se muestran en **Importes del mes sin día asignado** y siguen contando en las gráficas mensuales que correspondan.
+- Analíticas excluye los cargos generados al trasladar un saldo de tarjeta para evitar contar dos veces la compra original. El cashback cuenta como ingreso.
 
 ## Manejo de errores
 

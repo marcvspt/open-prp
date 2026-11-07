@@ -412,8 +412,6 @@ export const en: Locale = {
     dailyActivityBasis: "Expenses and cashback for credit cards with a statement cutoff appear on their cutoff day.",
     noDailyActivity: "There is no income or expense activity for this month.",
     undatedActivity: "Monthly amounts without an assigned day",
-    monthlyMovementTitle: "Monthly activity",
-    movementRankingBasis: "Each pie shows the five largest movements of its type and groups the rest under Other.",
     topExpenses: "Largest expenses",
     topIncomes: "Largest income movements",
     otherMovements: "Other",

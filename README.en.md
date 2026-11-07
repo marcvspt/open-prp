@@ -85,6 +85,7 @@ There is currently no RSS feed or `@astrojs/rss` integration.
 10. [Filters and URL state](#filters-and-url-state)
 11. [Components](#components)
 12. [Dashboard](#dashboard)
+    - [Analytics charts](#analytics-charts)
 13. [Error handling](#error-handling)
 14. [PWA](#pwa)
 15. [Accessibility](#accessibility)
@@ -474,15 +475,34 @@ Every island (`client:load`) receives `locale` from the SSR page (`<X locale={lo
 ## Dashboard
 
 - **Summary** is the default tab. It shares the month selector with **Analytics** (`?tab=analytics`). Changing the month refreshes both panels from an SSR fragment.
-- **Expenses by category** ranks categories by amount and breaks down transactions, installments and recurring payments in stacked bars. Credit transactions follow the statement cutoff, each installment counts once in its scheduled month, and active recurring payments follow their recorded month, including unpaid payments. Income, cashback and generated card balance carryovers are excluded. Uncategorized expenses have their own group, and currencies are displayed separately.
-- **Daily income and expenses** overlays two areas with the month's transactions, installments, active recurring payments and cashback. Expenses and cashback tied to a credit card with a cutoff appear on the cutoff day. Other dated movements keep their day. Installments without a cutoff use the purchase day, clamped to the last day of shorter months. Recurring payments without a cutoff use the payment date when it falls within the month. Amounts without an assigned day appear separately.
-- **Monthly activity** shows two pie charts with the five largest expenses and income movements per currency, grouping remaining positive amounts under Other. Each ranked movement shows its description, category and amount. Two bar charts rank expenses and income by payment method, grouping cards as credit, debit or vouchers. Cashback is attributed to its card type.
 - Data from `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`, directly from repositories (no HTTP). It doesn't recalculate debt or `upsert` `card_monthly` per visit (that happens on demand from the client via `/api/card-monthly/calculate` and from the cards page).
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (payment mutations from the client).
 - Metric cards: income, expenses, balance, credit cards, installments, recurring, pending tasks, upcoming events, active shopping lists.
 - The credit card section totals recorded outstanding balances and lists cards with balances due in order of their due dates. It distinguishes months with no calculated statements from months with no recorded outstanding balances. The link to Cards opens the selected month.
 - Credit expenses and their cashback are assigned to the **statement closing month**, using `cardStatementPeriod`: the previous cutoff is excluded and the current cutoff is included, clamping days 29–31 to shorter months. A purchase after the cutoff affects the following month's balance; the payment due day does not shift that month. Queries cover the selected and previous months to include each card's full period, without adding debt snapshots again. Cards without a cutoff and other payment methods use the calendar month; transaction income also keeps this behavior.
 - Transactions filters use calendar months. Installments retain their statement schedule, recurring payments their assigned month, and partial payments the deduction of the remainder carried into the next month.
+
+### Analytics charts
+
+Open **Dashboard → Analytics** and choose a month. The month selector updates every chart. Each chart section offers a currency selector when it has amounts in more than one currency and starts with the preferred currency when it has data for it. Amounts are displayed separately without currency conversion. Spanish uses the Mexican format (`es-MX`), with a comma for thousands and a period for decimals, as in `12,345.67 MXN`. English uses `en-US`. Axes use compact amounts, while tooltips show two decimal places and the currency code.
+
+| Chart | What it shows |
+| --- | --- |
+| **Daily income and expenses** | Two overlapping areas with smooth curves. The tooltip shows both amounts for the day. Days without activity have a value of zero. |
+| **Expenses by category** | Stacked bars for transactions, installments and recurring payments, sorted by amount. The chart highlights the largest category and groups uncategorized records under “No category.” |
+| **Largest expenses** | Pie chart of up to ten slices for expenses with positive amounts. The tooltip and list show the description, category and amount. |
+| **Largest income movements** | Pie chart of up to ten slices for income with positive amounts, including cashback when applicable. It shows the same details as the expenses pie. |
+| **Expenses by payment method** | Bars ranked by amount. Each credit, debit or voucher card with expenses appears by name. Cash, bank transfer and other methods appear separately. |
+| **Income by payment method** | Bars ranked by amount. Cards are grouped as credit, debit or vouchers. Cashback counts toward the associated card type. Other methods appear separately. |
+
+When there are more than ten movements, each pie chart shows the nine largest and a final **Other** slice with the total and count of all remaining movements.
+
+**How amounts are assigned to a month and day**
+
+- Transaction expenses and cashback for a credit card with a statement cutoff belong to the period from the day after the previous cutoff through the current cutoff, inclusive. With a cutoff on the 7th, a November 7 expense belongs to November and a November 8 expense belongs to December. The area chart plots these amounts on the corresponding cutoff day. Transaction income and dated movements without that cutoff use their recorded month and day.
+- Each installment plan contributes the **monthly installment** when scheduled. Credit installments appear on the cutoff day. Other installments use the purchase day, clamped to the last day of shorter months.
+- Active recurring payments, including unpaid ones, count in their assigned month. For the area chart, credit card recurring expenses appear on the cutoff day. Other recurring payments use their payment date if it falls within that month. Amounts without an assigned day appear under **Monthly amounts without an assigned day** and still count in the applicable monthly charts.
+- Analytics excludes generated card balance carryovers to avoid counting the original purchase twice. Cashback counts as income.
 
 ## Error handling
 
