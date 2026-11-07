@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Select from "@/components/ui/Select.tsx";
+import { chartAmountFormatters } from "@/lib/format.ts";
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 import type { Locale } from "@/lib/i18n/es.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
@@ -8,7 +9,18 @@ import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
 import type { MovementBreakdownGroup, MovementRanking, PaymentMethodActivity } from "@/lib/types/dashboard.ts";
 
-const pieColors = ["primary", "success", "warning", "info", "danger"].map(color => `var(--color-${color})`);
+const pieColors = [
+  "var(--color-primary)",
+  "var(--color-success)",
+  "var(--color-warning)",
+  "var(--color-info)",
+  "var(--color-danger)",
+  "color-mix(in oklab, var(--color-primary), var(--color-danger))",
+  "color-mix(in oklab, var(--color-success), var(--color-info))",
+  "color-mix(in oklab, var(--color-warning), var(--color-danger))",
+  "color-mix(in oklab, var(--color-warning), var(--color-success))",
+  "color-mix(in oklab, var(--color-primary), var(--color-info))",
+];
 const axisTick = { fill: "var(--color-string-muted)", fontSize: 12 };
 
 function RankedMovementPie({ ranking, title, t, formatAmount }: {
@@ -137,15 +149,14 @@ export default function MonthlyMovementCharts({ groups, preferredCurrency, local
   const group = groups.find(group => group.currency === currency);
   if (!group) return null;
 
-  const amounts = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const axisAmount = new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 });
-  const formatAmount = (value: number) => `${amounts.format(value)} ${currency}`;
+  const { formatAmount, axisAmount } = chartAmountFormatters(locale, currency);
   const cardLabels = {
     credit: t.dashboard.statCreditCards,
     debit: t.dashboard.debitCards,
     voucher: t.badge.voucherFull,
   };
   const labels = (row: PaymentMethodActivity) => {
+    if (row.cardName !== undefined) return row.cardName;
     if (row.cardType) return cardLabels[row.cardType];
     return row.method ? displayPaymentMethodName(row.method, t) : t.dashboard.unassignedPaymentMethod;
   };
@@ -157,8 +168,7 @@ export default function MonthlyMovementCharts({ groups, preferredCurrency, local
   return (
     <LocaleProvider locale={locale}>
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-string-muted">{t.dashboard.movementRankingBasis}</p>
+        <div className="flex justify-end">
           {groups.length > 1 ? (
             <Select value={currency} onChange={setCurrency}
               options={groups.map(({ currency: code }) => ({ value: code, label: code }))}

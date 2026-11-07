@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Select from "@/components/ui/Select.tsx";
+import { chartAmountFormatters } from "@/lib/format.ts";
 import { displayCategoryName } from "@/lib/i18n/category-labels.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
@@ -27,9 +28,7 @@ export default function CategoryExpensesChart({ groups, preferredCurrency, local
   }));
   const rowsByKey = new Map(rows.map(row => [row.key, row]));
   const top = rows[0];
-  const amount = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const axisAmount = new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 });
-  const formatAmount = (value: number) => `${amount.format(value)} ${currency}`;
+  const { formatAmount, axisAmount } = chartAmountFormatters(locale, currency);
   const series = [
     { key: "transactions", label: t.nav.transactions, color: "var(--color-primary)" },
     { key: "installments", label: t.nav.installments, color: "var(--color-success)" },

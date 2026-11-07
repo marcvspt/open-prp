@@ -51,13 +51,7 @@ const preferredCurrency = Astro.locals.user?.preferred_currency;
       )}
     </section>
     {data.movementBreakdown.length > 0 && (
-      <section aria-labelledby="dashboard-movements" class="space-y-3">
-        <div>
-          <h2 id="dashboard-movements" class="text-base font-semibold text-string">{t.dashboard.monthlyMovementTitle}</h2>
-          <p class="mt-1 text-sm text-string-muted capitalize">{monthLabel(month, locale)}</p>
-        </div>
-        <MonthlyMovementCharts client:load groups={data.movementBreakdown} preferredCurrency={preferredCurrency} locale={locale} />
-      </section>
+      <MonthlyMovementCharts client:load groups={data.movementBreakdown} preferredCurrency={preferredCurrency} locale={locale} />
     )}
   </div>
 </div>
