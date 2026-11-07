@@ -10,6 +10,10 @@ import { TaskRepository } from "@/lib/modules/tasks/repository.ts";
 import { ShoppingRepository } from "@/lib/modules/shopping/repository.ts";
 import { CashbackRepository } from "@/lib/modules/cashback/repository.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
+import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
+import { groupCategoryExpenses } from "@/lib/dashboard/category-expenses.ts";
+import { summarizeMonthlyActivity } from "@/lib/dashboard/monthly-activity.ts";
+import { isCardCarryover } from "@/lib/modules/card-monthly/carryover.ts";
 import type { DashboardMonthData } from "@/lib/types/dashboard.ts";
 
 /** Loads calendar activity and statement-based credit expenses directly from repositories. */
@@ -23,7 +27,7 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
 
   const cardMonthlyRepo = new CardMonthlyRepository();
 
-  const [cards, services, cardDebts, servicePayments, txDataResult, installments, eventsResult, tasksData, shoppingData, cbData, paymentMethods] =
+  const [cards, services, cardDebts, servicePayments, txDataResult, installments, eventsResult, tasksData, shoppingData, cbData, paymentMethods, categories] =
     await Promise.all([
       new CardRepository().findAll(userId),
       new RecurringPaymentRepository().findAll(userId),
@@ -36,10 +40,11 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
       new ShoppingRepository().findAll(userId, { is_completed: false }),
       new CashbackRepository().findAll(userId, { date_from: dateFrom, date_to: monthEnd }),
       new PaymentMethodRepository().findAll(userId),
+      new CategoryRepository().findAll(userId),
     ]);
 
   const pmToCard = new Map(paymentMethods.filter(pm => pm.card_id).map(pm => [pm.id, pm.card_id]));
-  const creditPeriods = new Map(cards.filter(card => card.type === "credit")
+  const creditPeriods = new Map(cards.filter(card => card.type === "credit" && card.cutoff_day != null)
     .map(card => [card.id, cardStatementPeriod(month, card.cutoff_day)]));
 
   function isInCalendarMonth(date: string): boolean {
@@ -59,8 +64,14 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
     .reduce((sum, i) => sum + Number(i.monthly_amount), 0);
 
   const incomeSvcs = servicePayments.filter((sp) => sp.type === "income");
-  const recurringExpensesTotal = servicePayments.filter((sp) => sp.type === "expense")
-    .reduce((sum, sp) => sum + Number(sp.amount), 0);
+  const recurringExpenses = servicePayments.filter((sp) => sp.type === "expense");
+  const recurringExpensesTotal = recurringExpenses.reduce((sum, sp) => sum + Number(sp.amount), 0);
+  const transactionExpenses = balanceTx.filter((tx) => tx.type === "expense");
+  const analyticsTransactions = balanceTx.filter(tx => {
+    if (tx.type !== "expense" || !isCardCarryover(tx.description)) return true;
+    const category = categories.find(category => category.id === tx.category_id);
+    return !!category && category.name !== "card-balance";
+  });
 
   const carriedOut = cardDebts
     .filter((d) => d.is_paid)
@@ -71,7 +82,7 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
     balanceCashback.reduce((sum, cb) => sum + Number(cb.amount), 0) +
     incomeSvcs.reduce((sum, sp) => sum + Number(sp.amount), 0);
   const expenses =
-    balanceTx.filter((t) => t.type === "expense").reduce((sum, t) => sum + Number(t.amount), 0) +
+    transactionExpenses.reduce((sum, tx) => sum + Number(tx.amount), 0) +
     installmentTotal +
     recurringExpensesTotal -
     carriedOut;
@@ -88,5 +99,19 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
     expenses,
     installmentTotal,
     recurringExpensesTotal,
+    categoryExpenses: groupCategoryExpenses(
+      categories, analyticsTransactions.filter(tx => tx.type === "expense"), installments, recurringExpenses,
+    ),
+    ...summarizeMonthlyActivity(month, {
+      categories,
+      cards,
+      paymentMethods,
+      transactions: analyticsTransactions,
+      installments,
+      recurring: servicePayments,
+      cashback: balanceCashback,
+      cutoffForCard: id => creditPeriods.get(id)?.end,
+      cutoffForMethod: id => creditPeriods.get(pmToCard.get(id) ?? "")?.end,
+    }),
   };
 }

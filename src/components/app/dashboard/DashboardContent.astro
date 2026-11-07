@@ -1,27 +1,27 @@
 ---
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
-import { loadDashboardMonth } from "@/lib/dashboard/load.ts";
+import type { DashboardMonthData } from "@/lib/types/dashboard.ts";
 import { formatCurrency } from "@/lib/format.ts";
 import DashboardCardDebts from "@/components/app/dashboard/DashboardCardDebts.astro";
 
 interface Props {
-  userId: string;
+  data: DashboardMonthData;
   month: string;
   locale: LocaleCode;
 }
 
-const { userId, month: selectedMonth, locale } = Astro.props;
+const { data, month: selectedMonth, locale } = Astro.props;
 const t = getLocaleDict(locale);
 
 const {
   cards, services, cardDebts, upcomingEvents, pendingTasks, overdueTasks,
   activeShopping, incomes, expenses, installmentTotal, recurringExpensesTotal,
-} = await loadDashboardMonth(userId, selectedMonth);
+} = data;
 
 const creditCards = cards.filter(c => c.type === "credit");
 ---
 
-<div data-module="dashboard" class="space-y-6">
+<div class="space-y-6">
   <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
     <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
       <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statIncomes}</p>

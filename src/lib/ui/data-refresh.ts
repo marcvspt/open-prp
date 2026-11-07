@@ -3,6 +3,10 @@ import type { DataChangeDetail, DataRefreshHandler, DataRefreshState } from "@/l
 
 const handlers = new Map<string, Set<DataRefreshHandler>>();
 const dependencies: Record<string, readonly string[]> = {
+  dashboard: [
+    "dashboard", "transactions", "installments", "recurring-payments", "recurring-payment-monthly",
+    "categories", "payment-methods", "cards", "card-monthly", "cashback", "events", "tasks", "shopping",
+  ],
   cards: ["cards", "payment-methods", "transactions", "installments", "cashback", "card-monthly"],
   "payment-methods": ["payment-methods", "cards"],
   transactions: ["transactions", "categories", "payment-methods", "cards"],

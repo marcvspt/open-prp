@@ -100,7 +100,7 @@ cliente (navegador) → Astro SSR → API Routes → Repositorios → Turso (lib
 ```
 
 - **SSR-first**: Astro renderiza en servidor; los datos se obtienen vía repositorios en el frontmatter de la `.astro` y la página llega renderizada al cliente.
-- **React 19** se hidrata con `client:load` únicamente donde hay interactividad en cliente (islas). El contenido del dashboard es 100% SSR, sin islas.
+- **React 19** se hidrata con `client:load` donde hay interactividad en cliente. En el Dashboard, las pestañas, el selector de mes y las gráficas de Recharts son islas con datos preparados en el servidor.
 - **API REST**: endpoints en `src/pages/api/*` construidos con factories en `src/lib/server/api-routes.ts` y helpers en `src/lib/server/api-helpers.ts`.
 - **Sin ORM**: queries SQL directas con `@libsql/client/web` y bind params `?`.
 - **Prefetch deshabilitado**: `prefetch: false` en `astro.config.mjs` (el `ClientRouter` por defecto precarga todo en hover, duplicando el fetch SSR por navegación).
@@ -176,7 +176,7 @@ const t = getLocaleDict(locale);
 /es/app                    → Redirige a /es/app/dashboard (logueado) o /es/app/login
 /en/app                    → Ídem localizado
 /es/app/login              → Pública
-/es/app/dashboard          → Resumen mensual (SSR completo)
+/es/app/dashboard          → Resumen mensual y Analíticas
 /es/app/{transactions, cards, installments, recurring-payments, cashback,
      shopping, pantry, tasks, notes, events, payment-methods, categories}
 /en/app/...                → Mismas rutas en inglés
@@ -446,7 +446,7 @@ Las secciones con tablas o resúmenes SSR conservan Astro: solicitan la URL actu
 
 ### Componentes por sección (`src/components/app/{modulo}/`)
 
-- **Dashboard**: `TabBarWithMonth.tsx` para las pestañas y el selector. `DashboardContent.astro` y `DashboardCardDebts.astro` renderizan el resumen en el servidor.
+- **Dashboard**: `TabBarWithMonth.tsx` para las pestañas y el selector compartido. `DashboardPanels.astro` carga ambos paneles. `CategoryExpensesChart.tsx`, `DailyActivityChart.tsx` y `MonthlyMovementCharts.tsx` renderizan las gráficas de Recharts.
 - **Transacciones**: `TransactionsFilterable.tsx`.
 - **Plazos**: `InstallmentsFilterable.tsx` + `InstallmentsSummary.tsx`. El resumen usa el mismo selector mensual que tarjetas y pagos recurrentes, junto a las tabs y solo visible en Resumen. Parte del mes actual; `summary_month` conserva la selección sin alterar los filtros de administración. Los datos iniciales llegan por SSR y se actualizan sin recarga desde `/api/installments/summary`, con cancelación y errores visibles. Al terminar de hidratar, el resumen comprueba la URL para recuperar cambios de mes realizados durante la carga. Muestra los plazos vigentes y las cuotas restantes al cierre del mes elegido, sin modificar la BD.
 - **Meses de URL**: `month` y `summary_month` solo aceptan las opciones de `getMonthOptions(12, createdAt)` (meses disponibles desde el alta, máximo último año, más mes siguiente). El middleware sustituye valores fuera de rango de URLs de la app por los predeterminados mediante una redirección 303 explícita, conservando los demás filtros y evitando bucles por el reenvío de parámetros en Netlify. Devuelve JSON 400 si se solicitan directamente a la API. La UI aplica la misma validación; un mes no disponible vuelve al valor predeterminado.
@@ -472,7 +472,10 @@ Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={loca
 
 ## Dashboard
 
-- **Resumen** es la pestaña predeterminada y contiene el selector de mes. Cambiar el mes actualiza solo el contenido SSR mediante el coordinador de refresco de secciones. **Analíticas** muestra un marcador de posición en `?tab=analytics`.
+- **Resumen** es la pestaña predeterminada. Comparte el selector de mes con **Analíticas** (`?tab=analytics`). Cambiar el mes refresca ambos paneles a partir de un fragmento SSR.
+- **Gastos por categoría** ordena las categorías por importe y desglosa transacciones, cuotas y recurrentes en barras apiladas. Las transacciones con crédito siguen el corte, las cuotas cuentan una vez en el mes en que corresponden y los recurrentes activos siguen el mes de su registro, incluidos los pendientes de pago. Se omiten ingresos, cashback y cargos generados al trasladar saldos de tarjetas. Los gastos sin categoría tienen su propio grupo y las monedas se consultan por separado.
+- **Ingresos y gastos por día** superpone dos áreas con las transacciones, cuotas, recurrentes activos y cashback del mes. Los gastos y el cashback asociados a crédito con corte se reflejan en el día de corte. Los demás movimientos fechados mantienen su día. Las cuotas sin corte usan el día de compra, ajustado al último día de meses cortos. Los recurrentes sin corte usan la fecha de pago del mes si existe. Los importes sin día asignado se muestran aparte.
+- **Movimientos del mes** muestra dos pasteles, con los cinco mayores gastos e ingresos por moneda y los demás importes positivos agrupados en «Otros». Cada movimiento muestra su descripción, categoría e importe. Las dos gráficas de barras clasifican por importe los gastos e ingresos por método de pago, agrupando tarjetas en crédito, débito y vales. El cashback se atribuye al tipo de su tarjeta.
 - Datos desde `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`, directamente desde repositorios (sin HTTP). No recalcula deudas ni hace `upsert` de `card_monthly` por visita (eso ocurre bajo demanda desde cliente vía `/api/card-monthly/calculate` y desde la página de tarjetas).
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (mutaciones de pago desde cliente).
 - Cards de métricas: ingresos, gastos, saldo, tarjetas de crédito, cuotas, recurrentes, tareas pendientes, eventos próximos, compras activas.

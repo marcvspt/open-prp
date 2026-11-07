@@ -1,6 +1,6 @@
 ﻿---
 import AppLayout from "@/layouts/AppLayout.astro";
-import DashboardContent from "@/components/app/dashboard/DashboardContent.astro";
+import DashboardPanels from "@/components/app/dashboard/DashboardPanels.astro";
 import PageHeader from "@/components/app/ui/PageHeader.astro";
 import TabBarWithMonth from "@/components/app/ui/TabBarWithMonth.tsx";
 import { getLocaleDict, resolveLocale } from "@/lib/i18n/locale.ts";
@@ -27,16 +27,10 @@ const initialTab = Astro.url.searchParams.get("tab") === "analytics" ? "analytic
         ariaLabel={t.dashboard.ariaTabs}
         initialMonth={selectedMonth}
         createdAt={createdAt}
-        monthTabs={["summary"]}
         omitCurrentMonth
         locale={locale}
       />
-      <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "summary" }]}>
-        <DashboardContent userId={userId} month={selectedMonth} locale={locale} />
-      </div>
-      <div data-tab-content="analytics" role="tabpanel" id="panel-analytics" aria-labelledby="tab-analytics" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "analytics" }]}>
-        <p class="rounded-xl border border-border bg-panel p-4 text-sm text-string-muted">{t.dashboard.analyticsPlaceholder}</p>
-      </div>
+      <DashboardPanels userId={userId} month={selectedMonth} locale={locale} initialTab={initialTab} />
     </div>
   </div>
 </AppLayout>

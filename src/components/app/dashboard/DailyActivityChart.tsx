@@ -1,0 +1,100 @@
+import { useState } from "react";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import Select from "@/components/ui/Select.tsx";
+import { formatDate } from "@/lib/date.ts";
+import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
+import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
+import type { DailyActivityGroup } from "@/lib/types/dashboard.ts";
+
+interface Props {
+  groups: DailyActivityGroup[];
+  preferredCurrency?: string;
+  locale: LocaleCode;
+}
+
+export default function DailyActivityChart({ groups, preferredCurrency, locale }: Props) {
+  const t = getLocaleDict(locale);
+  const [currency, setCurrency] = useState(() =>
+    groups.find(group => group.currency === preferredCurrency)?.currency ?? groups[0]?.currency ?? ""
+  );
+  const group = groups.find(group => group.currency === currency);
+  if (!group) return null;
+
+  const amounts = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const axisAmounts = new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 });
+  const formatAmount = (value: number) => `${amounts.format(value)} ${currency}`;
+  const series = [
+    { key: "income", label: t.dashboard.statIncomes, color: "var(--color-success)", dashed: false },
+    { key: "expense", label: t.dashboard.statExpenses, color: "var(--color-danger)", dashed: true },
+  ] as const;
+  const undated = series.filter(({ key }) => group.undated[key] !== 0);
+
+  return (
+    <LocaleProvider locale={locale}>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-string-muted">
+            {series.map(({ key, label, color, dashed }) => (
+              <li key={key} className="flex items-center gap-2">
+                <span aria-hidden="true" className="w-4 border-t-2" style={{ borderColor: color, borderTopStyle: dashed ? "dashed" : "solid" }} />
+                {label}
+              </li>
+            ))}
+          </ul>
+          {groups.length > 1 ? (
+            <Select
+              value={currency}
+              onChange={setCurrency}
+              options={groups.map(({ currency: code }) => ({ value: code, label: code }))}
+              ariaLabel={t.select.ariaCurrency}
+              className="w-28"
+            />
+          ) : (
+            <span className="text-xs font-medium text-string-muted">{currency}</span>
+          )}
+        </div>
+        <ResponsiveContainer width="100%" height={260}>
+          <AreaChart data={group.days} accessibilityLayer title={t.dashboard.dailyActivityTitle}>
+            <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" />
+            <XAxis dataKey="date" interval="preserveStartEnd" minTickGap={14} tickFormatter={(date: string) => String(Number(date.slice(8)))} tick={{ fill: "var(--color-string-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
+            <YAxis width={48} tickFormatter={value => axisAmounts.format(Number(value))} tick={{ fill: "var(--color-string-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
+            <Tooltip
+              contentStyle={{ background: "var(--color-panel)", borderColor: "var(--color-border)", borderRadius: "0.5rem" }}
+              labelStyle={{ color: "var(--color-string)" }}
+              itemStyle={{ color: "var(--color-string-muted)" }}
+              labelFormatter={date => typeof date === "string" ? formatDate(date, locale, { day: "numeric", month: "long" }) : ""}
+              formatter={value => formatAmount(Number(value))}
+            />
+            {series.map(({ key, label, color, dashed }) => (
+              <Area
+                key={key}
+                dataKey={key}
+                name={label}
+                type="linear"
+                stroke={color}
+                strokeWidth={2}
+                strokeDasharray={dashed ? "5 3" : undefined}
+                fill={color}
+                fillOpacity={0.18}
+                isAnimationActive={false}
+              />
+            ))}
+          </AreaChart>
+        </ResponsiveContainer>
+        {undated.length > 0 && (
+          <div className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+            <p className="font-medium text-string">{t.dashboard.undatedActivity}</p>
+            <dl className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-string-muted">
+              {undated.map(({ key, label }) => (
+                <div key={key} className="flex gap-2">
+                  <dt>{label}</dt>
+                  <dd className="font-medium tabular-nums text-string">{formatAmount(group.undated[key])}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
+      </div>
+    </LocaleProvider>
+  );
+}

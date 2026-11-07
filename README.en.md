@@ -100,7 +100,7 @@ client (browser) → Astro SSR → API Routes → Repositories → Turso (libSQL
 ```
 
 - **SSR-first**: Astro renders on the server; data is fetched via repositories in the `.astro` frontmatter and the page arrives pre-rendered to the client.
-- **React 19** hydrates with `client:load` only where client-side interactivity is needed (islands). The dashboard content is 100% SSR, no islands.
+- **React 19** hydrates with `client:load` where client-side interactivity is needed. On the Dashboard, the tabs, month selector and Recharts charts are islands with data prepared on the server.
 - **REST API**: endpoints in `src/pages/api/*` built with factories in `src/lib/server/api-routes.ts` and helpers in `src/lib/server/api-helpers.ts`.
 - **No ORM**: direct SQL queries with `@libsql/client/web` and `?` bind params.
 - **Prefetch disabled**: `prefetch: false` in `astro.config.mjs` (the `ClientRouter` prefetches everything on hover by default, duplicating the SSR fetch on each navigation).
@@ -176,7 +176,7 @@ const t = getLocaleDict(locale);
 /es/app                    → Redirects to /es/app/dashboard (signed in) or /es/app/login
 /en/app                    → Same, localized
 /es/app/login              → Public
-/es/app/dashboard          → Monthly summary (full SSR)
+/es/app/dashboard          → Monthly summary and Analytics
 /es/app/{transactions, cards, installments, recurring-payments, cashback,
      shopping, pantry, tasks, notes, events, payment-methods, categories}
 /en/app/...                → Same routes in English
@@ -447,7 +447,7 @@ Sections with SSR tables or summaries retain Astro: they request the current URL
 
 ### Section components (`src/components/app/{module}/`)
 
-- **Dashboard**: `TabBarWithMonth.tsx` for the tabs and selector. `DashboardContent.astro` and `DashboardCardDebts.astro` render the summary on the server.
+- **Dashboard**: `TabBarWithMonth.tsx` for the tabs and shared selector. `DashboardPanels.astro` loads both panels. `CategoryExpensesChart.tsx`, `DailyActivityChart.tsx` and `MonthlyMovementCharts.tsx` render the Recharts charts.
 - **Transactions**: `TransactionsFilterable.tsx`.
 - **Installments**: `InstallmentsFilterable.tsx` + `InstallmentsSummary.tsx`. The summary uses the same monthly selector as cards and recurring payments, alongside the tabs and visible only in Summary. It defaults to the current month; `summary_month` preserves the selection independently of administration filters. Initial data arrives through SSR and updates without reloading through `/api/installments/summary`, with cancellation and visible errors. After hydration, the summary checks the URL to catch month changes made while loading. It shows installments active during the selected month and remaining payments at its end, without modifying the database.
 - **URL months**: `month` and `summary_month` only accept options from `getMonthOptions(12, createdAt)` (available months since registration, limited to the past year, plus next month). Middleware replaces out-of-range values in app URLs with explicit defaults through a 303 redirect, preserving other filters and avoiding loops from query forwarding on Netlify. Direct API requests receive JSON 400. The UI applies the same validation; unavailable months fall back to the default.
@@ -473,7 +473,10 @@ Every island (`client:load`) receives `locale` from the SSR page (`<X locale={lo
 
 ## Dashboard
 
-- **Summary** is the default tab and contains the month selector. Changing the month updates just the SSR content through the section refresh coordinator. **Analytics** shows a placeholder at `?tab=analytics`.
+- **Summary** is the default tab. It shares the month selector with **Analytics** (`?tab=analytics`). Changing the month refreshes both panels from an SSR fragment.
+- **Expenses by category** ranks categories by amount and breaks down transactions, installments and recurring payments in stacked bars. Credit transactions follow the statement cutoff, each installment counts once in its scheduled month, and active recurring payments follow their recorded month, including unpaid payments. Income, cashback and generated card balance carryovers are excluded. Uncategorized expenses have their own group, and currencies are displayed separately.
+- **Daily income and expenses** overlays two areas with the month's transactions, installments, active recurring payments and cashback. Expenses and cashback tied to a credit card with a cutoff appear on the cutoff day. Other dated movements keep their day. Installments without a cutoff use the purchase day, clamped to the last day of shorter months. Recurring payments without a cutoff use the payment date when it falls within the month. Amounts without an assigned day appear separately.
+- **Monthly activity** shows two pie charts with the five largest expenses and income movements per currency, grouping remaining positive amounts under Other. Each ranked movement shows its description, category and amount. Two bar charts rank expenses and income by payment method, grouping cards as credit, debit or vouchers. Cashback is attributed to its card type.
 - Data from `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`, directly from repositories (no HTTP). It doesn't recalculate debt or `upsert` `card_monthly` per visit (that happens on demand from the client via `/api/card-monthly/calculate` and from the cards page).
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (payment mutations from the client).
 - Metric cards: income, expenses, balance, credit cards, installments, recurring, pending tasks, upcoming events, active shopping lists.
