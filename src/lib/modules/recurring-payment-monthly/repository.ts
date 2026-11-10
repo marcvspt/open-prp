@@ -4,10 +4,11 @@ import type { RecurringPaymentMonthly, RecurringPaymentMonthlyUpdate } from "@/l
 export class RecurringPaymentMonthlyRepository {
   async findByMonth(month: string, userId: string): Promise<RecurringPaymentMonthly[]> {
     const result = await getDb().execute({
-      sql: `SELECT sm.*, rs.name, rs.default_amount, rs.currency,
+      sql: `SELECT sm.*, rs.name, rs.default_amount, rs.currency, c.name AS category_name,
             pm.name AS payment_method_name, pm.icon AS payment_method_icon, pm.type AS payment_method_type
             FROM recurring_payment_monthly sm
             INNER JOIN recurring_payments rs ON rs.id = sm.payment_id
+            LEFT JOIN categories c ON c.id = sm.category_id
             LEFT JOIN payment_methods pm ON pm.id = sm.payment_method_id
             WHERE sm.month = ? AND rs.user_id = ? AND sm.is_active = 1
             ORDER BY rs.name ASC`,

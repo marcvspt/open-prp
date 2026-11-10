@@ -10,11 +10,12 @@ import type { LocaleCode } from "@/lib/i18n/locale.ts";
 interface Props {
   module: string;
   label?: string;
+  description?: string;
   locale?: LocaleCode;
 }
 
 /** Styled confirmation dialog for `[data-delete-{module}]` triggers (replaces native confirm()). */
-export default function ConfirmDelete({ module, label, locale = "es" }: Props) {
+export default function ConfirmDelete({ module, label, description, locale = "es" }: Props) {
   const t = getLocaleDict(locale);
   const deleteLabel = label ?? t.common.element;
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -58,7 +59,7 @@ export default function ConfirmDelete({ module, label, locale = "es" }: Props) {
     <LocaleProvider locale={locale}>
       <FormModal open={deleteId !== null} onClose={() => { if (!deletingRef.current) setDeleteId(null); }} title={t.common.deleteTitle(deleteLabel)}>
         <p className="text-sm text-string-muted">
-          {t.common.deleteConfirm(deleteLabel)}
+          {description ?? t.common.deleteConfirm(deleteLabel)}
         </p>
         {error && (
           <p role="alert" className="mt-3 rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-sm text-danger-text">

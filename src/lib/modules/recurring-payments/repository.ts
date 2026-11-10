@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/server/db/client.ts";
-import { nextSeq, scopedFindById, scopedDelete, insertRow, applyUpdate, now, type SqlValue } from "@/lib/server/db/utils.ts";
+import { nextSeq, scopedFindById, insertRow, applyUpdate, now, type SqlValue } from "@/lib/server/db/utils.ts";
+import { currentMonthStr } from "@/lib/date.ts";
 import type { RecurringPayment, RecurringPaymentInput, RecurringPaymentMonthly, RecurringPaymentMonthlyUpdate } from "@/lib/types/recurring-payment.ts";
 
 export class RecurringPaymentRepository {
@@ -10,7 +11,7 @@ export class RecurringPaymentRepository {
             FROM recurring_payments rp
             LEFT JOIN categories c ON c.id = rp.category_id
             LEFT JOIN payment_methods pm ON pm.id = rp.payment_method_id
-            WHERE rp.user_id = ?
+            WHERE rp.user_id = ? AND rp.archived_at IS NULL
             ORDER BY rp.name ASC`,
       args: [userId],
     });
@@ -18,7 +19,7 @@ export class RecurringPaymentRepository {
   }
 
   async findById(id: string, userId: string): Promise<RecurringPayment | null> {
-    return scopedFindById<RecurringPayment>("recurring_payments", id, userId);
+    return scopedFindById<RecurringPayment>("recurring_payments", id, userId, "user_id = ? AND archived_at IS NULL");
   }
 
   async create(data: RecurringPaymentInput, userId: string): Promise<RecurringPayment> {
@@ -43,70 +44,66 @@ export class RecurringPaymentRepository {
     if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id); }
     if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }
 
-    return applyUpdate<RecurringPayment>("recurring_payments", id, userId, sets, args, { existing });
+    const updated = await applyUpdate<RecurringPayment>("recurring_payments", id, userId, sets, args, {
+      existing,
+      where: "user_id = ? AND archived_at IS NULL",
+    });
+    return updated?.archived_at === null ? updated : null;
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
-    return scopedDelete("recurring_payments", id, userId);
+    const [, archived] = await getDb().batch([
+      {
+        sql: `DELETE FROM recurring_payment_monthly
+              WHERE user_id = ? AND month > ? AND is_paid = 0
+                AND payment_id IN (
+                  SELECT id FROM recurring_payments WHERE id = ? AND user_id = ? AND archived_at IS NULL
+                )`,
+        args: [userId, currentMonthStr(), id, userId],
+      },
+      {
+        sql: "UPDATE recurring_payments SET archived_at = ? WHERE id = ? AND user_id = ? AND archived_at IS NULL",
+        args: [now(), id, userId],
+      },
+      {
+        sql: `DELETE FROM recurring_payments
+              WHERE id = ? AND user_id = ? AND archived_at IS NOT NULL
+                AND NOT EXISTS (SELECT 1 FROM recurring_payment_monthly WHERE payment_id = recurring_payments.id)`,
+        args: [id, userId],
+      },
+    ], "write");
+    return archived.rowsAffected > 0;
   }
 
-  async getMonthly(paymentId: string, month: string): Promise<RecurringPaymentMonthly | null> {
+  async upsertMonthly(
+    paymentId: string,
+    month: string,
+    data: RecurringPaymentMonthlyUpdate & { amount: number },
+    userId: string,
+  ): Promise<RecurringPaymentMonthly | null> {
+    const sets = ["amount = excluded.amount"];
+    const updateArgs: SqlValue[] = [];
+    if (data.category_id !== undefined) { sets.push("category_id = ?"); updateArgs.push(data.category_id || null); }
+    if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); updateArgs.push(data.payment_method_id || null); }
+    if (data.is_active !== undefined) sets.push("is_active = excluded.is_active");
+    if (data.is_paid !== undefined) sets.push("is_paid = excluded.is_paid");
+    const seq = await nextSeq("recurring_payment_monthly");
     const result = await getDb().execute({
-      sql: "SELECT * FROM recurring_payment_monthly WHERE payment_id = ? AND month = ?",
-      args: [paymentId, month],
+      sql: `INSERT INTO recurring_payment_monthly (id, user_id, payment_id, month, amount, type, category_id, payment_method_id, is_active, is_paid, seq, created_at)
+            SELECT ?, rp.user_id, rp.id, ?, COALESCE(?, rp.default_amount), rp.type,
+                   NULLIF(COALESCE(?, rp.category_id), ''), COALESCE(?, rp.payment_method_id), ?, ?, ?, ?
+            FROM recurring_payments rp
+            WHERE rp.id = ? AND rp.user_id = ? AND rp.archived_at IS NULL
+            ON CONFLICT(payment_id, month) DO UPDATE SET ${sets.join(", ")}
+            RETURNING *`,
+      args: [
+        crypto.randomUUID(), month, data.amount, data.category_id ?? null, data.payment_method_id ?? null,
+        data.is_active !== false ? 1 : 0, data.is_paid ? 1 : 0, seq, now(), paymentId, userId, ...updateArgs,
+      ],
     });
     const row = result.rows[0] as unknown as RecurringPaymentMonthly | undefined;
     if (!row) return null;
     return { ...row, amount: Number(row.amount), is_active: Boolean(row.is_active), is_paid: Boolean(row.is_paid) };
-  }
-
-  async upsertMonthly(paymentId: string, month: string, data: RecurringPaymentMonthlyUpdate, userId: string): Promise<RecurringPaymentMonthly> {
-    const db = getDb();
-    const existing = await this.getMonthly(paymentId, month);
-
-    if (existing) {
-      const sets: string[] = [];
-      const args: (string | number | boolean | null)[] = [];
-      if (data.amount !== undefined) { sets.push("amount = ?"); args.push(data.amount); }
-      if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id || null); }
-      if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id || null); }
-      if (data.is_active !== undefined) { sets.push("is_active = ?"); args.push(data.is_active ? 1 : 0); }
-      if (data.is_paid !== undefined) { sets.push("is_paid = ?"); args.push(data.is_paid ? 1 : 0); }
-      if (sets.length > 0) {
-        args.push(paymentId, month);
-        await db.execute({
-          sql: `UPDATE recurring_payment_monthly SET ${sets.join(", ")} WHERE payment_id = ? AND month = ?`,
-          args,
-        });
-      }
-      return (await this.getMonthly(paymentId, month))!;
-    }
-
-    const id = crypto.randomUUID();
-    const svcRes = await db.execute({
-      sql: "SELECT default_amount, category_id, payment_method_id, type FROM recurring_payments WHERE id = ?",
-      args: [paymentId],
-    });
-    const row = svcRes.rows[0] as unknown as {
-      default_amount?: number | string | null;
-      category_id?: string | null;
-      payment_method_id?: string | null;
-      type?: string | null;
-    } | undefined;
-    const defaultAmount = Number(row?.default_amount ?? data.amount ?? 0);
-    const categoryId: string | null = data.category_id ?? row?.category_id ?? null;
-    const paymentMethodId: string | null = data.payment_method_id ?? row?.payment_method_id ?? null;
-    const paymentType: string = row?.type ?? "expense";
-    const seq = await nextSeq("recurring_payment_monthly");
-    const timestamp = now();
-
-    await db.execute({
-      sql: `INSERT INTO recurring_payment_monthly (id, user_id, payment_id, month, amount, type, category_id, payment_method_id, is_active, is_paid, seq, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, userId, paymentId, month, data.amount ?? defaultAmount, paymentType, categoryId, paymentMethodId, data.is_active !== false ? 1 : 0, data.is_paid ? 1 : 0, seq, timestamp],
-    });
-
-    return (await this.getMonthly(paymentId, month))!;
   }
 
   async getHistory(userId: string, fromMonth: string, toMonth: string): Promise<RecurringPaymentMonthly[]> {

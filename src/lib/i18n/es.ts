@@ -390,6 +390,7 @@ export const es = {
   recurring: {
     historyTitle: "Historial de pagos recurrentes",
     allRegistered: "Todos tus pagos recurrentes registrados",
+    deleteConfirm: "Se eliminará el pago recurrente de Administración y se quitarán sus registros pendientes de meses futuros. Se conservarán los registros agregados hasta el mes actual y todos los pagos marcados como pagados.",
     noCategory: shared.noCategory,
     ariaTabs: "Secciones de pagos recurrentes",
   },

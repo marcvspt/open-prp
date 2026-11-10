@@ -16,9 +16,6 @@ export const POST: APIRoute = withErrorHandling(async (context) => {
   }
 
   const repo = new RecurringPaymentRepository();
-  const existing = await repo.findById(id, uid);
-  if (!existing) return errorResponse("not-found", 404);
-
   const result = await repo.upsertMonthly(
     id,
     body.month as string,
@@ -31,5 +28,6 @@ export const POST: APIRoute = withErrorHandling(async (context) => {
     },
     uid,
   );
+  if (!result) return errorResponse("not-found", 404);
   return jsonResponse(result);
 });

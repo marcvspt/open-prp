@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS recurring_payments (
   payment_method_id TEXT NOT NULL REFERENCES payment_methods(id),
   seq INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  archived_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_recurring_payments_user_id ON recurring_payments(user_id);

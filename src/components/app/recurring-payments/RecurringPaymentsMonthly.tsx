@@ -9,6 +9,10 @@ import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recu
 import { formatCurrency } from "@/lib/format.ts";
 
 type PaymentType = "income" | "expense";
+type PaymentCard = Pick<RecurringPayment,
+  "id" | "name" | "type" | "default_amount" | "category_name" |
+  "payment_method_name" | "payment_method_icon" | "payment_method_type"
+>;
 
 interface Props {
   initialMonth: string;
@@ -88,7 +92,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
       ? { method: "PATCH", body: JSON.stringify({ is_paid: false }) } : { method: "DELETE" });
   }
 
-  async function handleAddToMonth(payment: RecurringPayment) {
+  async function handleAddToMonth(payment: PaymentCard) {
     await mutate(payment.id, `/api/recurring-payments/${payment.id}/monthly`, {
       method: "POST", body: JSON.stringify({ month: loadedMonthRef.current, amount: payment.default_amount }),
     });
@@ -103,16 +107,30 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
   }
 
   const monthlyMap = new Map(monthly.map(sm => [sm.payment_id, sm]));
+  const paymentCards: PaymentCard[] = [
+    ...payments.filter(payment => !monthlyMap.has(payment.id)),
+    ...monthly.map(entry => ({
+      id: entry.payment_id,
+      name: entry.name ?? t.singular.recurringPayment,
+      type: entry.type,
+      default_amount: entry.amount,
+      category_name: entry.category_name,
+      payment_method_name: entry.payment_method_name,
+      payment_method_icon: entry.payment_method_icon,
+      payment_method_type: entry.payment_method_type,
+    })),
+  ];
+  paymentCards.sort((a, b) => a.name.localeCompare(b.name, locale));
 
-  function renderPaymentCard(payment: RecurringPayment) {
+  function renderPaymentCard(payment: PaymentCard) {
     const entry = monthlyMap.get(payment.id);
     const isAdded = !!entry;
     const isPaid = entry?.is_paid ?? false;
     const isIncome = payment.type === "income";
-    const amount = entry?.amount ?? payment.default_amount;
-    const methodName = entry?.payment_method_name ?? payment.payment_method_name ?? "";
-    const methodIcon = entry?.payment_method_icon ?? payment.payment_method_icon ?? "💳";
-    const methodType = entry?.payment_method_type ?? payment.payment_method_type ?? "";
+    const amount = payment.default_amount;
+    const methodName = payment.payment_method_name ?? "";
+    const methodIcon = payment.payment_method_icon ?? "💳";
+    const methodType = payment.payment_method_type ?? "";
     const textColor = isIncome ? "text-success" : "text-danger";
 
     return (
@@ -204,7 +222,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
   }
 
   function renderCategoryGroup(type: PaymentType) {
-    const filtered = payments.filter(p => p.type === type);
+    const filtered = paymentCards.filter(p => p.type === type);
     const categories = [...new Set(filtered.map(p => p.category_name ?? t.recurring.noCategory))];
     if (categories.length === 0) return null;
 
@@ -279,7 +297,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
 
         {renderTypeStats("income", t.stat.incomes, "text-success", "📥")}
         {renderTypeStats("expense", t.stat.expenses, "text-danger", "💸")}
-        {payments.length === 0 ? (
+        {paymentCards.length === 0 ? (
           <div className="text-string-muted text-sm">{t.empty.recurringMonthly}</div>
         ) : (
           <>

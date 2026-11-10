@@ -9,6 +9,7 @@ export interface RecurringPayment {
   payment_method_id: string;
   created_at: string;
   updated_at: string;
+  archived_at: string | null;
   /** Joined from payment_methods via findAll() */
   payment_method_name?: string;
   payment_method_icon?: string | null;
@@ -45,6 +46,7 @@ export interface RecurringPaymentMonthly {
   payment_method_name?: string;
   payment_method_icon?: string | null;
   payment_method_type?: string;
+  category_name?: string | null;
 }
 
 export interface RecurringPaymentMonthlyUpdate {

@@ -12,7 +12,7 @@ Manage your income and expenses, credit cards, recurring payments, installment p
 | **Transactions** | Record your income and expenses with category, currency and payment method. Search and filter them by month, type or category. |
 | **Cards** | Keep track of your credit cards: limit, statement date, payment date and debt automatically calculated per month. Mark your payments so you don't miss them. |
 | **Installments** | Installment purchases with tracking of paid and remaining installments. |
-| **Recurring payments** | Subscriptions and fixed services (Netflix, electricity, internet…). See how much you pay each month and mark them as paid. |
+| **Recurring payments** | Subscriptions and fixed services (Netflix, electricity, internet…). Add them to a month and mark them as paid. Deleting a recurring payment from Manage keeps entries added through the current month and all entries marked as paid. |
 | **Cashback** | Record the refunds your cards give you back. |
 | **Shopping list** | Create lists, add items from your pantry or by hand, mark what you already bought and finish the list. |
 | **Pantry** | Inventory of your pantry with its own categories to know what you have and what you're missing. |
@@ -318,7 +318,7 @@ Each module in `src/lib/modules/{name}/` contains `repository.ts` (CRUD + specif
 - Queries with `db.execute({ sql, args })` and `?` bind params.
 - `nextSeq("table")` for `seq`.
 - **Categories**: `create()` checks for duplicate names (the API responds 409). No separate repo.
-- **Recurring Payments**: `upsertMonthly()` snapshots `category_id` and `payment_method_id`.
+- **Recurring payments**. `upsertMonthly()` stores the month's amount, type, category and payment method. Deleting the template removes unpaid entries for future months. If any monthly entries remain, `archived_at` hides the template from Manage and prevents new monthly entries. Preserved entries remain available in Summary and History.
 - **Cards**: creating/updating/deleting a card syncs the associated `PaymentMethod`.
 - **Shopping**: `ShoppingRepository` (items) + `ShoppingListRepository` (lists). `complete()` finishes the list and its items; `delete()` removes list + items. The list name is optional (the UI shows local date+time by default).
 

@@ -5,10 +5,11 @@ import { resolveLocale, type LocaleCode } from "@/lib/i18n/locale.ts";
 export interface Props {
   module: string;
   label?: string;
+  description?: string;
   locale?: LocaleCode;
 }
 
-const { module, label, locale = resolveLocale(Astro.currentLocale) } = Astro.props;
+const { module, label, description, locale = resolveLocale(Astro.currentLocale) } = Astro.props;
 ---
 
-<ConfirmDelete client:load module={module} label={label} locale={locale} />
+<ConfirmDelete client:load module={module} label={label} description={description} locale={locale} />
