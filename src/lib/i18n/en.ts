@@ -389,6 +389,7 @@ export const en: Locale = {
   recurring: {
     historyTitle: "Recurring payments history",
     allRegistered: "All your registered recurring payments",
+    deleteConfirm: "This recurring payment will be removed from Manage and its unpaid entries for future months will be deleted. Entries added through the current month and all entries marked as paid will be kept.",
     noCategory: shared.noCategory,
     ariaTabs: "Recurring payments sections",
   },

@@ -12,7 +12,7 @@ Gestiona tus ingresos y gastos, tarjetas de crédito, pagos recurrentes, compras
 | **Transacciones** | Registra tus ingresos y gastos con categoría, moneda y método de pago. Búscalos y fíltralos por mes, tipo o categoría. |
 | **Tarjetas** | Lleva el control de tus tarjetas de crédito: límite, corte, fecha de pago y deuda calculada automáticamente por mes. Marca tus pagos para no perderte. |
 | **Plazos / Cuotas** | Compras a plazos con seguimiento de cuotas pagadas y restantes. |
-| **Pagos recurrentes** | Suscripciones y servicios fijos (Netflix, luz, internet…). Ve cuánto pagas cada mes y márcalos como pagados. |
+| **Pagos recurrentes** | Suscripciones y servicios fijos (Netflix, luz, internet…). Agrégalos al mes y márcalos como pagados. Al eliminar un recurrente desde Administración se conservan los registros agregados hasta el mes actual y todos los pagos marcados como pagados. |
 | **Cashback** | Registra los reembolsos que te devuelven tus tarjetas. |
 | **Lista de compras** | Crea listas, agrega artículos desde tu despensa o a mano, marca lo que ya compraste y finaliza la lista. |
 | **Despensa** | Inventario de tu despensa con categorías propias para saber qué tienes y qué falta. |
@@ -318,7 +318,7 @@ Cada módulo en `src/lib/modules/{name}/` contiene `repository.ts` (CRUD + queri
 - Queries con `db.execute({ sql, args })` y bind params `?`.
 - `nextSeq("table")` para `seq`.
 - **Categories**: `create()` verifica duplicado por nombre (la API responde 409). No hay repo separado.
-- **Recurring Payments**: `upsertMonthly()` hace snapshot de `category_id` y `payment_method_id`.
+- **Pagos recurrentes**. `upsertMonthly()` guarda el importe, tipo, categoría y método de pago del mes. Al eliminar la plantilla, se quitan los registros futuros pendientes. Si quedan registros mensuales, `archived_at` oculta la plantilla de Administración y bloquea nuevas altas mensuales. Los registros conservados siguen disponibles en Resumen e Historial.
 - **Cards**: al crear/actualizar/eliminar una tarjeta, sincroniza el `PaymentMethod` asociado.
 - **Shopping**: `ShoppingRepository` (artículos) + `ShoppingListRepository` (listas). `complete()` finaliza la lista y sus artículos; `delete()` borra lista + artículos. El nombre de lista es opcional (la UI muestra fecha+hora local por defecto).
 
