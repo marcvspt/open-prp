@@ -14,6 +14,7 @@ interface IdRouteOptions {
   put?: boolean;
   delete?: boolean;
   notFoundCode?: ApiErrorCode;
+  validateUpdate?: (body: Record<string, unknown>) => ApiErrorCode | null;
 }
 
 /** Handlers GET/PATCH/PUT/DELETE for a "/api/[id]" CRUD route. */
@@ -41,6 +42,9 @@ export function createIdRoutes<T, U>(repo: IdCrudRepo<T, U>, options: IdRouteOpt
 
     const body = await readJsonBody(context);
     if (!body) return errorResponse("invalid-body", 400);
+
+    const error = options.validateUpdate?.(body);
+    if (error) return errorResponse(error);
 
     const row = await repo.update(context.params.id!, body as unknown as U, uid);
     if (!row) return notFound();

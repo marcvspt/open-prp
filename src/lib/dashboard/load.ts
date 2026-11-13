@@ -110,8 +110,7 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
       installments,
       recurring: servicePayments,
       cashback: balanceCashback,
-      cutoffForCard: id => creditPeriods.get(id)?.end,
-      cutoffForMethod: id => creditPeriods.get(pmToCard.get(id) ?? "")?.end,
+      statementForMethod: id => creditPeriods.get(pmToCard.get(id) ?? ""),
     }),
   };
 }

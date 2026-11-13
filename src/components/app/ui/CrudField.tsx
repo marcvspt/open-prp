@@ -22,7 +22,7 @@ export default function CrudField({ field, id, value, onChange }: CrudFieldProps
       input = <input id={id} type="color" value={value ? String(value) : "#6366f1"} onChange={e => onChange(e.target.value)} className={COLOR_CLASS} />;
       break;
     case "number":
-      input = <input id={id} type="number" value={String(value ?? "")} onChange={e => onChange(e.target.value)} step={field.step} min={field.min} className={INPUT_CLASS} placeholder={field.placeholder} required={field.required} />;
+      input = <input id={id} type="number" value={String(value ?? "")} onChange={e => onChange(e.target.value)} step={field.step} min={field.min} max={field.max} className={INPUT_CLASS} placeholder={field.placeholder} required={field.required} />;
       break;
     default:
       input = <input id={id} type={field.type} value={String(value ?? "")} onChange={e => onChange(e.target.value)} className={INPUT_CLASS} placeholder={field.placeholder} required={field.required} />;

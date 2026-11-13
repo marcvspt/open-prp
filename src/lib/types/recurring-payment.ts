@@ -7,6 +7,7 @@ export interface RecurringPayment {
   type: "income" | "expense";
   category_id: string | null;
   payment_method_id: string;
+  scheduled_day: number | null;
   created_at: string;
   updated_at: string;
   archived_at: string | null;
@@ -25,6 +26,7 @@ export interface RecurringPaymentInput {
   type?: "income" | "expense";
   category_id?: string;
   payment_method_id: string;
+  scheduled_day?: number | null;
 }
 
 export interface RecurringPaymentMonthly {
@@ -36,6 +38,7 @@ export interface RecurringPaymentMonthly {
   type: "income" | "expense";
   category_id: string | null;
   payment_method_id: string;
+  scheduled_day: number | null;
   is_active: boolean;
   is_paid: boolean;
   paid_at: string | null;

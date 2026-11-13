@@ -40,10 +40,7 @@ export default function CategoryExpensesChart({ groups, preferredCurrency, local
       <div className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           {top && (
-            <div className="min-w-0">
-              <p className="font-semibold text-string wrap-anywhere">{top.label}</p>
-              <p className="text-xl font-bold tabular-nums text-string">{formatAmount(top.total)}</p>
-            </div>
+            <p className="min-w-0 font-semibold text-string wrap-anywhere">{top.label}</p>
           )}
           {groups.length > 1 && (
             <Select

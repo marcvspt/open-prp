@@ -1,9 +1,9 @@
 import { createIndexRoutes } from "@/lib/server/api-routes.ts";
-import { RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
+import { isValidRecurringPaymentDay, RecurringPaymentRepository } from "@/lib/modules/recurring-payments/repository.ts";
 
 export const { GET, POST } = createIndexRoutes(new RecurringPaymentRepository(), {
-  validateCreate: (body) =>
-    !body.name || !body.default_amount || !body.payment_method_id
-      ? "recurring-payment-fields-required"
-      : null,
+  validateCreate: (body) => {
+    if (!body.name || !body.default_amount || !body.payment_method_id) return "recurring-payment-fields-required";
+    return isValidRecurringPaymentDay(body.scheduled_day) ? null : "invalid-recurring-payment-day";
+  },
 });

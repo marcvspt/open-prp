@@ -54,13 +54,21 @@ export default function DailyActivityChart({ groups, preferredCurrency, locale }
         <ResponsiveContainer width="100%" height={260}>
           <AreaChart data={group.days} accessibilityLayer title={t.dashboard.dailyActivityTitle}>
             <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 3" />
-            <XAxis dataKey="date" interval="preserveStartEnd" minTickGap={14} tickFormatter={(date: string) => String(Number(date.slice(8)))} tick={{ fill: "var(--color-string-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
+            <XAxis
+              dataKey="date"
+              interval="preserveStartEnd"
+              minTickGap={14}
+              tickFormatter={(date: string) => formatDate(date, locale, { day: "numeric", month: "short" })}
+              tick={{ fill: "var(--color-string-muted)", fontSize: 12 }}
+              axisLine={false}
+              tickLine={false}
+            />
             <YAxis width={48} tickFormatter={value => axisAmount.format(Number(value))} tick={{ fill: "var(--color-string-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{ background: "var(--color-panel)", borderColor: "var(--color-border)", borderRadius: "0.5rem" }}
               labelStyle={{ color: "var(--color-string)" }}
               itemStyle={{ color: "var(--color-string-muted)" }}
-              labelFormatter={date => typeof date === "string" ? formatDate(date, locale, { day: "numeric", month: "long" }) : ""}
+              labelFormatter={date => typeof date === "string" ? formatDate(date, locale, { day: "numeric", month: "long", year: "numeric" }) : ""}
               formatter={value => formatAmount(Number(value))}
             />
             {series.map(({ key, label, color, dashed }) => (

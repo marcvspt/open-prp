@@ -455,7 +455,7 @@ Las secciones con tablas o resúmenes SSR conservan Astro: solicitan la URL actu
 - **Cashback**: `CashbackFilterable.tsx`.
 - **Despensa**: `PantryFilterable.tsx`.
 - **Tarjetas**: `CreditCardSummary.tsx` + `CardsHistory.tsx`.
-- **Pagos recurrentes**: `RecurringPaymentsMonthly.tsx` + `RecurringPaymentsHistory.tsx`.
+- **Pagos recurrentes**: `RecurringPaymentsMonthly.tsx` + `RecurringPaymentsHistory.tsx`. En **Administrar pagos recurrentes** puedes configurar un día del mes opcional (1–31). Al agregar un pago a un mes se guarda ese día en el registro mensual. Editarlo también actualiza los registros del mes actual y de meses futuros.
 - **Compras**: `ShoppingList.tsx`.
 
 ### Patrón de locale en islas React
@@ -488,8 +488,8 @@ Abre **Dashboard → Analíticas** y elige un mes. El selector actualiza todas l
 
 | Gráfica | Qué muestra |
 | --- | --- |
-| **Ingresos y gastos por día** | Dos áreas superpuestas con curvas suaves. El tooltip muestra ambos importes del día. Los días sin actividad tienen valor cero. |
-| **Gastos por categoría** | Barras apiladas de transacciones, cuotas y recurrentes, ordenadas de mayor a menor. Destaca la categoría de mayor gasto y agrupa los registros sin categoría en «Sin categoría». |
+| **Ingresos y gastos por día** | Dos áreas superpuestas con curvas suaves. El eje incluye el mes seleccionado y se amplía si algún movimiento de ese periodo tiene fecha en el mes anterior. Las etiquetas muestran día y mes. El tooltip muestra ambos importes del día. Los días sin actividad tienen valor cero. |
+| **Gastos por categoría** | Barras apiladas de transacciones, cuotas y recurrentes, ordenadas de mayor a menor. Destaca el nombre de la categoría de mayor gasto y muestra el total de cada categoría en el tooltip. Agrupa los registros sin categoría en «Sin categoría». |
 | **Mayores gastos** | Pastel de hasta diez porciones para los gastos con importe positivo. El tooltip y la lista muestran descripción, categoría e importe. |
 | **Mayores ingresos** | Pastel de hasta diez porciones para los ingresos con importe positivo, incluido el cashback cuando corresponde. Presenta el mismo detalle que el pastel de gastos. |
 | **Gastos por método de pago** | Barras ordenadas por importe. Cada tarjeta de crédito, débito o vales con gasto aparece por su nombre. Efectivo, transferencia y los demás métodos aparecen por separado. |
@@ -499,9 +499,9 @@ Si hay más de diez movimientos, cada pastel muestra los nueve mayores y una úl
 
 **Cómo se asignan los importes al mes y al día**
 
-- Los gastos de transacciones y el cashback de una tarjeta con corte de crédito pertenecen al periodo que va del día posterior al corte anterior al corte actual, inclusive. Con corte el 7, un gasto del 7 de noviembre entra en noviembre y uno del 8 entra en diciembre. En las áreas se reflejan el día del corte correspondiente. Las transacciones de ingreso y los movimientos fechados sin ese corte usan el mes y el día de su fecha registrada.
-- Cada plazo aporta la **cuota mensual** cuando corresponde. Las cuotas de crédito aparecen en el día de corte. Las demás usan el día de la compra, ajustado al último día en meses más cortos.
-- Los recurrentes activos, incluidos los pendientes, cuentan en el mes que tienen asignado. Para las áreas, un gasto recurrente de crédito se refleja en el corte. Los demás recurrentes usan su fecha de pago si cae en ese mes. Los importes sin día atribuible solo cuentan en los desgloses mensuales que correspondan.
+- Los gastos de transacciones y el cashback de una tarjeta con corte de crédito pertenecen al periodo que va del día posterior al corte anterior al corte actual, inclusive. Con corte el 7, una compra del 25 de octubre entra en noviembre y aparece el 25 de octubre. La gráfica diaria usa la fecha registrada de cada transacción y cashback.
+- Cada plazo aporta la **cuota mensual** en el día de compra que corresponda a ese periodo. Si la primera cuota pasó al siguiente corte, el día de compra se proyecta sobre el mes anterior al corte seleccionado. El día se ajusta al último de los meses más cortos o al inicio del periodo si el ajuste cae antes de ese inicio.
+- Los recurrentes activos, incluidos los pendientes, cuentan en el mes que tienen asignado. Los gastos recurrentes con tarjeta de crédito y corte aparecen el día de corte. Los demás usan el día programado, ajustado al último del mes si hace falta. Marcar como pagado o recibido no cambia esa fecha. Los recurrentes sin corte ni día programado cuentan en los desgloses mensuales.
 - Analíticas excluye los cargos generados al trasladar un saldo de tarjeta para evitar contar dos veces la compra original. El cashback cuenta como ingreso.
 
 ## Manejo de errores
