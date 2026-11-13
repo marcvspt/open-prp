@@ -13,6 +13,7 @@ import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repositor
 import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { groupCategoryExpenses } from "@/lib/dashboard/category-expenses.ts";
 import { summarizeMonthlyActivity } from "@/lib/dashboard/monthly-activity.ts";
+import { summarizeDashboardCardDebts } from "@/lib/dashboard/card-debts.ts";
 import { isCardCarryover } from "@/lib/modules/card-monthly/carryover.ts";
 import type { DashboardMonthData } from "@/lib/types/dashboard.ts";
 
@@ -27,12 +28,12 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
 
   const cardMonthlyRepo = new CardMonthlyRepository();
 
-  const [cards, services, cardDebts, servicePayments, txDataResult, installments, eventsResult, tasksData, shoppingData, cbData, paymentMethods, categories] =
+  const [cards, services, cardStatements, monthlyPayments, txDataResult, installments, eventsResult, tasksData, shoppingData, cbData, paymentMethods, categories] =
     await Promise.all([
       new CardRepository().findAll(userId),
       new RecurringPaymentRepository().findAll(userId),
       cardMonthlyRepo.findByMonth(month, userId),
-      new RecurringPaymentMonthlyRepository().findByMonth(month, userId),
+      new RecurringPaymentMonthlyRepository().findByMonth(month, userId, { includeInactivePaid: true }),
       new TransactionRepository().findAll(userId, { date_from: dateFrom, date_to: monthEnd, pageSize: null }),
       new InstallmentRepository().findSummaryByMonth(userId, month),
       new EventRepository().findAll(userId, { status: "pending,confirmed", date_from: today, date_to: thirtyLater, page: 1, pageSize: 20 }),
@@ -63,17 +64,27 @@ export async function loadDashboardMonth(userId: string, month: string): Promise
   const installmentTotal = installments
     .reduce((sum, i) => sum + Number(i.monthly_amount), 0);
 
+  const servicePayments = monthlyPayments.filter(payment => payment.is_active);
   const incomeSvcs = servicePayments.filter((sp) => sp.type === "income");
   const recurringExpenses = servicePayments.filter((sp) => sp.type === "expense");
   const recurringExpensesTotal = recurringExpenses.reduce((sum, sp) => sum + Number(sp.amount), 0);
   const transactionExpenses = balanceTx.filter((tx) => tx.type === "expense");
+  const cardDebts = summarizeDashboardCardDebts({
+    cards,
+    statements: cardStatements,
+    paymentMethodCards: pmToCard,
+    expenses: transactionExpenses,
+    installments,
+    recurring: monthlyPayments,
+    cashback: balanceCashback,
+  });
   const analyticsTransactions = balanceTx.filter(tx => {
     if (tx.type !== "expense" || !isCardCarryover(tx.description)) return true;
     const category = categories.find(category => category.id === tx.category_id);
     return !!category && category.name !== "card-balance";
   });
 
-  const carriedOut = cardDebts
+  const carriedOut = cardStatements
     .filter((d) => d.is_paid)
     .reduce((sum, d) => sum + Math.max(0, d.statement_balance - d.paid_amount), 0);
 

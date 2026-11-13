@@ -1,4 +1,5 @@
 import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
+import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import type { Cashback } from "@/lib/types/cashback.ts";
@@ -66,7 +67,7 @@ export default function CashbackFilterable({ initialMonth, cards, initialData, c
 
         <div className="overflow-x-auto rounded-xl border border-border">
           {loading ? (
-            <div className="p-4 text-center text-string-muted text-sm">{t.common.loading}</div>
+            <LoadingSpinner label={t.common.loading} className="p-4 text-center" />
           ) : items.length === 0 ? (
             <div className="p-4 text-center text-string-muted text-sm">{t.empty.cashback}</div>
           ) : (

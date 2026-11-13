@@ -4,11 +4,11 @@ import { currentMonthStr, daysUntilPaymentDue, formatDate, paymentDueDate } from
 import { formatCurrency } from "@/lib/format.ts";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 import type { Card } from "@/lib/types/card.ts";
-import type { CardMonthly } from "@/lib/types/card-monthly.ts";
+import type { DashboardCardDebt } from "@/lib/types/dashboard.ts";
 
 interface Props {
   cards: Card[];
-  debts: CardMonthly[];
+  debts: DashboardCardDebt[];
   month: string;
   locale: LocaleCode;
 }

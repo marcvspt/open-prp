@@ -6,6 +6,7 @@ import type { Card } from "@/lib/types/card.ts";
 import type { PaymentMethod } from "@/lib/types/payment-method.ts";
 import { formatCurrency } from "@/lib/format.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
+import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
@@ -60,7 +61,7 @@ export default function InstallmentsSummary({ initialData, initialMonth, created
   return (
     <LocaleProvider locale={locale}>
       <div className="space-y-4">
-        {loading && <p role="status" className="text-sm text-string-muted">{t.common.loading}</p>}
+        {loading && <LoadingSpinner label={t.common.loading} />}
         {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="p-4 rounded-xl bg-panel border border-border shadow-sm text-center">

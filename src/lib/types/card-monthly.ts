@@ -24,11 +24,14 @@ export interface CardMonthlyUpdate {
   paid_amount?: number;
 }
 
-export interface CalculatedDebt {
+export interface StatementAmounts {
   total_purchases: number;
   total_installments: number;
   total_recurring: number;
   total_cashback: number;
+}
+
+export interface CalculatedDebt extends StatementAmounts {
   statement_balance: number;
   committed_installments: number;
   total_committed: number;

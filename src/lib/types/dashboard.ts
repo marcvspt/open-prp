@@ -57,10 +57,12 @@ export interface MovementBreakdownGroup {
   paymentMethods: PaymentMethodActivity[];
 }
 
+export type DashboardCardDebt = Pick<CardMonthly, "card_id" | "statement_balance" | "paid_amount" | "is_paid" | "paid_at">;
+
 export interface DashboardMonthData {
   cards: Card[];
   services: RecurringPayment[];
-  cardDebts: CardMonthly[];
+  cardDebts: DashboardCardDebt[];
   upcomingEvents: Event[];
   pendingTasks: Task[];
   overdueTasks: Task[];

@@ -445,7 +445,7 @@ The shared `datachange` event identifies the modified module. `src/lib/ui/data-r
 
 Sections with SSR tables or summaries retain Astro: they request the current URL with the `X-Open-PRP-Refresh: content` header. `AppLayout` returns content only, avoiding shell rendering and sidebar queries. The response is private and uncached; `Vary` distinguishes partial HTML from the full document. The client replaces only the `[data-module]` block using [Astro swap utilities](https://docs.astro.build/en/guides/view-transitions/#building-a-custom-swap-function), cleans up removed islands and allows new ones to hydrate. URL, tab, month and scroll are preserved; the sidebar and session remain mounted.
 
-`RefreshStatus.astro` displays progress and offers a retry when the mutation succeeded but the visual update failed. Retrying only queries data again; it never repeats saving or deleting. Previous refreshes are cancelled when starting another or navigating away. Task toggles use a single delegated listener and the same update mechanism.
+Filter, pagination, and month queries show a spinner with an accessible label. During coordinated refreshes, `RefreshStatus.astro` shows it in the bottom-right corner and offers a retry if the visual update fails. Retrying only queries data again. Previous refreshes are cancelled when starting another or navigating away. Task toggles use a single delegated listener and the same update mechanism.
 
 ### Section components (`src/components/app/{module}/`)
 
@@ -476,10 +476,10 @@ Every island (`client:load`) receives `locale` from the SSR page (`<X locale={lo
 ## Dashboard
 
 - **Summary** is the default tab. It shares the month selector with **Analytics** (`?tab=analytics`). Changing the month refreshes both panels from an SSR fragment.
-- Data from `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`, directly from repositories (no HTTP). It doesn't recalculate debt or `upsert` `card_monthly` per visit (that happens on demand from the client via `/api/card-monthly/calculate` and from the cards page).
+- `src/lib/dashboard/load.ts` reads the month's movements directly from repositories. Summary and Analytics reflect changes when opening the Dashboard or switching months. This load is read-only. The Cards page saves statements through `/api/card-monthly/calculate` for the payment flow.
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (payment mutations from the client).
 - Metric cards: income, expenses, balance, credit cards, installments, recurring, pending tasks, upcoming events, active shopping lists.
-- The credit card section totals recorded outstanding balances and lists cards with balances due in order of their due dates. Cards paid for the selected month appear at the end with subdued styling, their payment status, and the amount and date when available. If all cards are paid, the outstanding total is zero and the cards stay visible. The link to Cards opens the selected month.
+- The credit card section calculates outstanding balances from statement-period charges and cashback, monthly installments, and recurring expenses marked as paid. It lists cards with balances due in due date order. Paid cards appear at the end with subdued styling and retain their recorded status, amount, and payment date when available. If all cards are paid, the outstanding total is zero and the cards stay visible. The link to Cards opens the selected month.
 - Credit expenses and their cashback are assigned to the **statement closing month**, using `cardStatementPeriod`: the previous cutoff is excluded and the current cutoff is included, clamping days 29–31 to shorter months. A purchase after the cutoff affects the following month's balance; the payment due day does not shift that month. Queries cover the selected and previous months to include each card's full period, without adding debt snapshots again. Cards without a cutoff and other payment methods use the calendar month; transaction income also keeps this behavior.
 - Transactions filters use calendar months. Installments retain their statement schedule, recurring payments their assigned month, and partial payments the deduction of the remainder carried into the next month.
 
@@ -545,7 +545,7 @@ Declared with Astro's `envField` schema in `astro.config.mjs` (`env.schema`). Th
 
 ## Tests
 
-Run `pnpm test` from the project root with Node.js 24 or later. The unit tests in `tests/` use `node:test` and `node:assert/strict`. They cover card statement periods and due dates, installment schedules, and available months. They run without starting Astro or configuring Clerk or Turso.
+Run `pnpm test` from the project root with Node.js 24 or later. The unit tests in `tests/` use `node:test` and `node:assert/strict`. They cover card statement periods and due dates, installment schedules, available months, monthly activity, and Dashboard card balances. They run without starting Astro or configuring Clerk or Turso.
 
 ## Deployment
 

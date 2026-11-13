@@ -1,6 +1,7 @@
 import { useMemo, useId } from "react";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
 import CrudField from "@/components/app/ui/CrudField.tsx";
+import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import { BTN_CANCEL, BTN_SAVE, BTN_CREATE, BTN_SAVING } from "@/lib/i18n/general-fields.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
@@ -19,7 +20,7 @@ export default function CrudModal({ module, fields: fieldsJson, defaultForm: def
     <LocaleProvider locale={locale}>
       <FormModal open={open} onClose={close} title={editingId ? t.common.editSingular(titleSingular) : t.common.newSingular(titleSingular)}>
         <form onSubmit={handleSubmit} className="space-y-4" aria-busy={loading || saving}>
-          {loading && <p role="status" className="text-sm text-string-muted">{t.common.loading}</p>}
+          {loading && <LoadingSpinner label={t.common.loading} />}
           {loaded && <fieldset disabled={saving} className="space-y-4">
             {fields.filter(field => isFieldVisible(field, form)).map(field => (
               <CrudField key={field.name} field={field} id={`${id}-${field.name}`} value={form[field.name]} onChange={value => setVal(field.name, value)} />

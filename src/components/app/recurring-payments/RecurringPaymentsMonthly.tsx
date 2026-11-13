@@ -3,6 +3,7 @@ import { apiData, apiFetch, apiErrorMessage, isAbortError } from "@/lib/ui/api-c
 import { currentMonthStr } from "@/lib/date.ts";
 import { displayPaymentMethodName } from "@/lib/i18n/payment-method-labels.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
+import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { LocaleCode } from "@/lib/i18n/locale.ts";
 import type { RecurringPaymentMonthly, RecurringPayment } from "@/lib/types/recurring-payment.ts";
@@ -268,11 +269,7 @@ export default function RecurringPaymentsMonthly({ initialMonth, initialPayments
     <LocaleProvider locale={locale}>
       {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
       <div className="space-y-6 relative">
-        {loading && (
-          <div className="absolute top-0 right-0">
-            <span className="text-xs text-string-muted">{t.common.loading}</span>
-          </div>
-        )}
+        {loading && <LoadingSpinner label={t.common.loading} className="absolute top-0 right-0" />}
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="p-3 rounded-lg bg-panel border border-border text-center">
