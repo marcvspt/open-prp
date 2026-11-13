@@ -9,6 +9,7 @@ import { apiData, fetchList, apiErrorMessage, isAbortError } from "@/lib/ui/api-
 import { payCardDebtFull, payCardDebtPartial, CarryoverError } from "@/lib/dashboard/api.ts";
 import { BTN_CANCEL } from "@/lib/i18n/general-fields.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
+import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
@@ -56,6 +57,7 @@ export default function CreditCardSummary({
   const [payDate, setPayDate] = useState("");
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const paying = useRef(false);
   const [isPaying, setIsPaying] = useState(false);
   const requestController = useRef<AbortController | null>(null);
@@ -64,6 +66,7 @@ export default function CreditCardSummary({
     requestController.current?.abort();
     const controller = new AbortController();
     requestController.current = controller;
+    setLoading(true);
     setError("");
     try {
       const options = { signal: controller.signal };
@@ -79,6 +82,8 @@ export default function CreditCardSummary({
       loadedMonthRef.current = month;
     } catch (err: unknown) {
       if (!controller.signal.aborted && !isAbortError(err)) setError(apiErrorMessage(err, t));
+    } finally {
+      if (requestController.current === controller) setLoading(false);
     }
   }, [cards, t]);
 
@@ -144,6 +149,7 @@ export default function CreditCardSummary({
   return (
     <LocaleProvider locale={locale}>
       <div className="space-y-4">
+        {loading && <LoadingSpinner label={t.common.loading} />}
         {error && !payDialog && <p role="alert" className="text-sm text-danger-text">{error}</p>}
         {visibleCards.length === 0 ? (
           <p className="text-string-muted text-sm">{t.empty.creditCards}</p>

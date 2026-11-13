@@ -36,8 +36,6 @@ export function registerDataRefresh(module: string, handler: DataRefreshHandler)
 function showStatus(state: DataRefreshState) {
   const status = document.querySelector<HTMLElement>("[data-refresh-status]");
   if (!status) return;
-  status.hidden = state === "idle";
-  status.setAttribute("role", state === "error" ? "alert" : "status");
   for (const element of status.querySelectorAll<HTMLElement>("[data-refresh-state]")) {
     element.hidden = element.dataset.refreshState !== state;
   }

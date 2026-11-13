@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
+import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import Select from "@/components/ui/Select.tsx";
 import MonthSelector from "@/components/app/ui/MonthSelector.tsx";
 import Pagination from "@/components/app/ui/Pagination.tsx";
@@ -102,7 +103,7 @@ export default function InstallmentsFilterable({ initialMonth, activeOnly: initi
 
         <div className="overflow-x-auto rounded-xl border border-border">
           {loading ? (
-            <div className="p-4 text-center text-string-muted text-sm">{t.common.loading}</div>
+            <LoadingSpinner label={t.common.loading} className="p-4 text-center" />
           ) : items.length === 0 ? (
             <div className="p-4 text-center text-string-muted text-sm">{t.empty.installments}</div>
           ) : (

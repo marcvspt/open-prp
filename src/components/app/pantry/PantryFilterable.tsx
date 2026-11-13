@@ -1,4 +1,5 @@
 import { useFilteredData } from "@/lib/ui/useFilteredData.ts";
+import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import Select from "@/components/ui/Select.tsx";
 import type { PantryItem } from "@/lib/types/pantry.ts";
 import { FILTER_WRAP_CLASS, FILTER_INPUT_CLASS, FILTER_LIMPIAR_CLASS, FILTER_GRID_CLASS, FILTER_CTA_CLASS, BTN_CLEAR, FILTER_ALL_CATEGORIES, FILTER_SEARCH_PANTRY, FILTER_LABEL_CATEGORY } from "@/lib/i18n/filter-fields.ts";
@@ -54,7 +55,7 @@ export default function PantryFilterable({ categories, initialData, locale = "es
 
         <div className="overflow-x-auto rounded-xl border border-border">
           {loading ? (
-            <div className="p-4 text-center text-string-muted text-sm">{t.common.loading}</div>
+            <LoadingSpinner label={t.common.loading} className="p-4 text-center" />
           ) : items.length === 0 ? (
             <div className="p-4 text-center text-string-muted text-sm">{t.empty.pantry}</div>
           ) : (

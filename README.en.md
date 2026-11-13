@@ -445,7 +445,7 @@ The shared `datachange` event identifies the modified module. `src/lib/ui/data-r
 
 Sections with SSR tables or summaries retain Astro: they request the current URL with the `X-Open-PRP-Refresh: content` header. `AppLayout` returns content only, avoiding shell rendering and sidebar queries. The response is private and uncached; `Vary` distinguishes partial HTML from the full document. The client replaces only the `[data-module]` block using [Astro swap utilities](https://docs.astro.build/en/guides/view-transitions/#building-a-custom-swap-function), cleans up removed islands and allows new ones to hydrate. URL, tab, month and scroll are preserved; the sidebar and session remain mounted.
 
-`RefreshStatus.astro` displays progress and offers a retry when the mutation succeeded but the visual update failed. Retrying only queries data again; it never repeats saving or deleting. Previous refreshes are cancelled when starting another or navigating away. Task toggles use a single delegated listener and the same update mechanism.
+Filter, pagination, and month queries show a spinner with an accessible label. During coordinated refreshes, `RefreshStatus.astro` shows it in the bottom-right corner and offers a retry if the visual update fails. Retrying only queries data again. Previous refreshes are cancelled when starting another or navigating away. Task toggles use a single delegated listener and the same update mechanism.
 
 ### Section components (`src/components/app/{module}/`)
 

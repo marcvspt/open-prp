@@ -3,6 +3,7 @@ import { fetchList, apiErrorMessage, isAbortError } from "@/lib/ui/api-client.ts
 import { monthLabel } from "@/lib/date.ts";
 import { formatCurrency } from "@/lib/format.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
+import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { LocaleCode } from "@/lib/i18n/locale.ts";
 import type { CardMonthly } from "@/lib/types/card-monthly.ts";
@@ -58,7 +59,7 @@ export default function CardsHistory({ initialData, initialCards, locale = "es" 
         <h2 className="text-base font-semibold text-string mb-3">{t.cards.historyTitle}</h2>
         {error && <p role="alert" className="text-sm text-danger-text mb-3">{error}</p>}
         {loading ? (
-          <p className="text-sm text-string-muted">{t.common.loading}</p>
+          <LoadingSpinner label={t.common.loading} />
         ) : items.length === 0 ? (
           <p className="text-sm text-string-muted">{t.empty.history}</p>
         ) : (
