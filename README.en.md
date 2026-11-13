@@ -490,7 +490,7 @@ Open **Dashboard → Analytics** and choose a month. The month selector updates 
 | Chart | What it shows |
 | --- | --- |
 | **Daily income and expenses** | Two overlapping areas with smooth curves. The tooltip shows both amounts for the day. Days without activity have a value of zero. |
-| **Expenses by category** | Stacked bars for transactions, installments and recurring payments, sorted by amount. The chart highlights the largest category and groups uncategorized records under “No category.” |
+| **Expenses by category** | Stacked bars for transactions, installments and recurring payments, sorted by amount. The chart highlights the name of the largest category and shows each category's total in the tooltip. It groups uncategorized records under “No category.” |
 | **Largest expenses** | Pie chart of up to ten slices for expenses with positive amounts. The tooltip and list show the description, category and amount. |
 | **Largest income movements** | Pie chart of up to ten slices for income with positive amounts, including cashback when applicable. It shows the same details as the expenses pie. |
 | **Expenses by payment method** | Bars ranked by amount. Each credit, debit or voucher card with expenses appears by name. Cash, bank transfer and other methods appear separately. |

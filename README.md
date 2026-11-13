@@ -489,7 +489,7 @@ Abre **Dashboard → Analíticas** y elige un mes. El selector actualiza todas l
 | Gráfica | Qué muestra |
 | --- | --- |
 | **Ingresos y gastos por día** | Dos áreas superpuestas con curvas suaves. El tooltip muestra ambos importes del día. Los días sin actividad tienen valor cero. |
-| **Gastos por categoría** | Barras apiladas de transacciones, cuotas y recurrentes, ordenadas de mayor a menor. Destaca la categoría de mayor gasto y agrupa los registros sin categoría en «Sin categoría». |
+| **Gastos por categoría** | Barras apiladas de transacciones, cuotas y recurrentes, ordenadas de mayor a menor. Destaca el nombre de la categoría de mayor gasto y muestra el total de cada categoría en el tooltip. Agrupa los registros sin categoría en «Sin categoría». |
 | **Mayores gastos** | Pastel de hasta diez porciones para los gastos con importe positivo. El tooltip y la lista muestran descripción, categoría e importe. |
 | **Mayores ingresos** | Pastel de hasta diez porciones para los ingresos con importe positivo, incluido el cashback cuando corresponde. Presenta el mismo detalle que el pastel de gastos. |
 | **Gastos por método de pago** | Barras ordenadas por importe. Cada tarjeta de crédito, débito o vales con gasto aparece por su nombre. Efectivo, transferencia y los demás métodos aparecen por separado. |
