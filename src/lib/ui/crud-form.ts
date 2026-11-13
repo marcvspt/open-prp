@@ -29,6 +29,7 @@ export function createCrudPayload(fields: readonly Field[], form: CrudForm, t: L
       const value = Number(raw);
       if (!raw || !Number.isFinite(value)) throw new Error(t.error.invalidNumber(field.label));
       if (field.min !== undefined && value < field.min) throw new Error(t.error.numberMinimum(field.label, field.min));
+      if (field.max !== undefined && value > field.max) throw new Error(t.error.numberMaximum(field.label, field.max));
       payload[field.name] = value;
     }
   }

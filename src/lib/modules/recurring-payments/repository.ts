@@ -1,7 +1,11 @@
 import { getDb } from "@/lib/server/db/client.ts";
-import { nextSeq, scopedFindById, insertRow, applyUpdate, now, type SqlValue } from "@/lib/server/db/utils.ts";
+import { nextSeq, scopedFindById, insertRow, now, type SqlValue } from "@/lib/server/db/utils.ts";
 import { currentMonthStr } from "@/lib/date.ts";
 import type { RecurringPayment, RecurringPaymentInput, RecurringPaymentMonthly, RecurringPaymentMonthlyUpdate } from "@/lib/types/recurring-payment.ts";
+
+export function isValidRecurringPaymentDay(value: unknown): boolean {
+  return value == null || (typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 31);
+}
 
 export class RecurringPaymentRepository {
   async findAll(userId: string): Promise<RecurringPayment[]> {
@@ -24,16 +28,13 @@ export class RecurringPaymentRepository {
 
   async create(data: RecurringPaymentInput, userId: string): Promise<RecurringPayment> {
     return insertRow<RecurringPayment>("recurring_payments", userId, [
-      "name", "default_amount", "currency", "type", "category_id", "payment_method_id",
+      "name", "default_amount", "currency", "type", "category_id", "payment_method_id", "scheduled_day",
     ], [
-      data.name, data.default_amount, data.currency ?? "MXN", data.type ?? "expense", data.category_id || null, data.payment_method_id,
+      data.name, data.default_amount, data.currency ?? "MXN", data.type ?? "expense", data.category_id || null, data.payment_method_id, data.scheduled_day ?? null,
     ]);
   }
 
   async update(id: string, data: Partial<RecurringPaymentInput>, userId: string): Promise<RecurringPayment | null> {
-    const existing = await this.findById(id, userId);
-    if (!existing) return null;
-
     const sets: string[] = [];
     const args: SqlValue[] = [];
 
@@ -42,13 +43,32 @@ export class RecurringPaymentRepository {
     if (data.currency !== undefined) { sets.push("currency = ?"); args.push(data.currency); }
     if (data.category_id !== undefined) { sets.push("category_id = ?"); args.push(data.category_id || null); }
     if (data.payment_method_id !== undefined) { sets.push("payment_method_id = ?"); args.push(data.payment_method_id); }
+    if (data.scheduled_day !== undefined) { sets.push("scheduled_day = ?"); args.push(data.scheduled_day); }
     if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }
 
-    const updated = await applyUpdate<RecurringPayment>("recurring_payments", id, userId, sets, args, {
-      existing,
-      where: "user_id = ? AND archived_at IS NULL",
-    });
-    return updated?.archived_at === null ? updated : null;
+    if (sets.length === 0) return this.findById(id, userId);
+
+    const updateTemplate = {
+      sql: `UPDATE recurring_payments SET ${sets.join(", ")}, updated_at = ?
+            WHERE id = ? AND user_id = ? AND archived_at IS NULL RETURNING *`,
+      args: [...args, now(), id, userId],
+    };
+    const db = getDb();
+    const result = data.scheduled_day === undefined
+      ? await db.execute(updateTemplate)
+      : (await db.batch([
+          updateTemplate,
+          {
+            sql: `UPDATE recurring_payment_monthly SET scheduled_day = ?
+                  WHERE payment_id = ? AND user_id = ? AND month >= ?
+                    AND EXISTS (
+                      SELECT 1 FROM recurring_payments
+                      WHERE id = ? AND user_id = ? AND archived_at IS NULL
+                    )`,
+            args: [data.scheduled_day, id, userId, currentMonthStr(), id, userId],
+          },
+        ], "write"))[0];
+    return (result.rows[0] as unknown as RecurringPayment | undefined) ?? null;
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
@@ -89,9 +109,9 @@ export class RecurringPaymentRepository {
     if (data.is_paid !== undefined) sets.push("is_paid = excluded.is_paid");
     const seq = await nextSeq("recurring_payment_monthly");
     const result = await getDb().execute({
-      sql: `INSERT INTO recurring_payment_monthly (id, user_id, payment_id, month, amount, type, category_id, payment_method_id, is_active, is_paid, seq, created_at)
+      sql: `INSERT INTO recurring_payment_monthly (id, user_id, payment_id, month, amount, type, category_id, payment_method_id, scheduled_day, is_active, is_paid, seq, created_at)
             SELECT ?, rp.user_id, rp.id, ?, COALESCE(?, rp.default_amount), rp.type,
-                   NULLIF(COALESCE(?, rp.category_id), ''), COALESCE(?, rp.payment_method_id), ?, ?, ?, ?
+                   NULLIF(COALESCE(?, rp.category_id), ''), COALESCE(?, rp.payment_method_id), rp.scheduled_day, ?, ?, ?, ?
             FROM recurring_payments rp
             WHERE rp.id = ? AND rp.user_id = ? AND rp.archived_at IS NULL
             ON CONFLICT(payment_id, month) DO UPDATE SET ${sets.join(", ")}

@@ -2,7 +2,7 @@ export const API_ERROR_CODES = [
   "internal-error", "unauthorized", "invalid-body", "not-found",
   "name-required", "description-required", "card-fields-required", "invalid-card-type",
   "transaction-fields-required", "event-fields-required", "cashback-fields-required",
-  "installment-fields-required", "recurring-payment-fields-required", "month-required",
+  "installment-fields-required", "recurring-payment-fields-required", "invalid-recurring-payment-day", "month-required",
   "id-required", "card-month-required", "month-amount-required", "invalid-currency",
   "category-exists", "predefined-category-readonly", "database-unavailable",
   "pantry-create-failed", "card-calculation-failed", "month-unavailable",

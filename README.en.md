@@ -456,7 +456,7 @@ Sections with SSR tables or summaries retain Astro: they request the current URL
 - **Cashback**: `CashbackFilterable.tsx`.
 - **Pantry**: `PantryFilterable.tsx`.
 - **Cards**: `CreditCardSummary.tsx` + `CardsHistory.tsx`.
-- **Recurring payments**: `RecurringPaymentsMonthly.tsx` + `RecurringPaymentsHistory.tsx`.
+- **Recurring payments**: `RecurringPaymentsMonthly.tsx` + `RecurringPaymentsHistory.tsx`. In **Manage recurring payments**, you can set an optional day of the month (1–31). Adding a payment to a month stores that day in its monthly entry. Editing the day also updates entries for the current month and future months.
 - **Shopping**: `ShoppingList.tsx`.
 
 ### Locale pattern in React islands
@@ -489,7 +489,7 @@ Open **Dashboard → Analytics** and choose a month. The month selector updates 
 
 | Chart | What it shows |
 | --- | --- |
-| **Daily income and expenses** | Two overlapping areas with smooth curves. The tooltip shows both amounts for the day. Days without activity have a value of zero. |
+| **Daily income and expenses** | Two overlapping areas with smooth curves. The axis covers the selected month and extends into the previous month when an included movement has a date there. Labels show the day and month. The tooltip shows both amounts for the day. Days without activity have a value of zero. |
 | **Expenses by category** | Stacked bars for transactions, installments and recurring payments, sorted by amount. The chart highlights the name of the largest category and shows each category's total in the tooltip. It groups uncategorized records under “No category.” |
 | **Largest expenses** | Pie chart of up to ten slices for expenses with positive amounts. The tooltip and list show the description, category and amount. |
 | **Largest income movements** | Pie chart of up to ten slices for income with positive amounts, including cashback when applicable. It shows the same details as the expenses pie. |
@@ -500,9 +500,9 @@ When there are more than ten movements, each pie chart shows the nine largest an
 
 **How amounts are assigned to a month and day**
 
-- Transaction expenses and cashback for a credit card with a statement cutoff belong to the period from the day after the previous cutoff through the current cutoff, inclusive. With a cutoff on the 7th, a November 7 expense belongs to November and a November 8 expense belongs to December. The area chart plots these amounts on the corresponding cutoff day. Transaction income and dated movements without that cutoff use their recorded month and day.
-- Each installment plan contributes the **monthly installment** when scheduled. Credit installments appear on the cutoff day. Other installments use the purchase day, clamped to the last day of shorter months.
-- Active recurring payments, including unpaid ones, count in their assigned month. For the area chart, credit card recurring expenses appear on the cutoff day. Other recurring payments use their payment date if it falls within that month. Amounts without an assigned day count only in the applicable monthly breakdowns.
+- Transaction expenses and cashback for a credit card with a statement cutoff belong to the period from the day after the previous cutoff through the current cutoff, inclusive. With a cutoff on the 7th, an October 25 purchase belongs to November and appears on October 25. The daily chart uses the recorded dates for transactions and cashback.
+- Each plan contributes its **monthly installment** on the purchase day for that period. If the first installment rolled into the next statement, the chart uses the purchase day in the month before the selected statement. The date moves to the last day of shorter months, or to the start of the statement period if the adjusted date falls before it.
+- Active recurring payments, including unpaid ones, count in their assigned month. Recurring credit card expenses with a cutoff appear on that day. Other recurring entries use their scheduled day, clamped to the last day of the month when needed. Marking an entry as paid or received does not change this date. Entries without a cutoff or scheduled day count in the monthly breakdowns.
 - Analytics excludes generated card balance carryovers to avoid counting the original purchase twice. Cashback counts as income.
 
 ## Error handling

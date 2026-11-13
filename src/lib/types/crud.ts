@@ -14,7 +14,7 @@ interface FieldBase {
 
 export type Field = FieldBase & (
   | { type: "select" | "multiselect"; options: readonly FieldOption[]; placeholder?: string }
-  | { type: "number"; step?: string; min?: number; placeholder?: string }
+  | { type: "number"; step?: string; min?: number; max?: number; placeholder?: string }
   | { type: "text" | "textarea" | "date" | "month"; placeholder?: string }
   | { type: "checkbox" | "color" }
 );

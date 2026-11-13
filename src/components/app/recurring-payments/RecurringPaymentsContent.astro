@@ -74,6 +74,7 @@ const fields: Field[] = [
   fieldTypeCurrency(t),
   paymentMethodField(t, paymentMethods),
   categoryField(t, allRecurringCategories),
+  { name: "scheduled_day", label: t.field.recurringScheduledDay, type: "number", min: 1, max: 31, step: "1" },
 ];
 const defaultForm = {
   name: "",
@@ -82,6 +83,7 @@ const defaultForm = {
   type: "expense",
   payment_method_id: paymentMethods[0]?.id ?? "",
   category_id: "",
+  scheduled_day: null,
 };
 ---
 
@@ -145,9 +147,11 @@ const defaultForm = {
           t.table.currency,
           t.table.method,
           t.table.category,
+          t.field.recurringScheduledDay,
           { label: t.table.actions, align: "right" },
         ]}
         emptyMessage={t.empty.recurring}
+        ariaLabel={t.tabs.adminRecurring}
       >
         {
           items.map((s) => (
@@ -190,6 +194,7 @@ const defaultForm = {
                   "-"
                 )}
               </td>
+              <td class="px-4 py-3 tabular-nums">{s.scheduled_day ?? "—"}</td>
               <td class="px-4 py-3 text-right space-x-2">
                 <button
                   data-edit-recurring-payments={s.id}
