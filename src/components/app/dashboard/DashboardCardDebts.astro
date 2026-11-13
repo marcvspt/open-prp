@@ -18,17 +18,21 @@ const t = getLocaleDict(locale);
 const cardsUrl = getRelativeLocaleUrl(locale, "/app/cards") + (month === currentMonthStr() ? "" : `?month=${month}`);
 const debtsByCard = new Map(debts.map(debt => [debt.card_id, debt]));
 const hasStatements = cards.some(card => debtsByCard.has(card.id));
-const pending = cards.flatMap(card => {
+const entries = cards.flatMap(card => {
   const debt = debtsByCard.get(card.id);
-  if (!debt || debt.is_paid) return [];
-  const amount = Math.max(0, debt.statement_balance - debt.paid_amount);
-  if (amount === 0) return [];
+  if (!debt) return [];
+  const pendingAmount = debt.is_paid ? 0 : Math.max(0, debt.statement_balance - debt.paid_amount);
+  if (!debt.is_paid && pendingAmount === 0) return [];
 
-  const dueDate = card.payment_due_day == null ? null : paymentDueDate(month, card.cutoff_day, card.payment_due_day);
-  const dueIn = card.payment_due_day == null ? null : daysUntilPaymentDue(month, card.cutoff_day, card.payment_due_day);
-  return [{ card, amount, dueDate, dueIn }];
-}).sort((a, b) => (a.dueIn ?? Infinity) - (b.dueIn ?? Infinity) || b.amount - a.amount);
-const total = pending.reduce((sum, entry) => sum + entry.amount, 0);
+  const dueDay = debt.is_paid ? null : card.payment_due_day;
+  const dueDate = dueDay == null ? null : paymentDueDate(month, card.cutoff_day, dueDay);
+  const dueIn = dueDay == null ? null : daysUntilPaymentDue(month, card.cutoff_day, dueDay);
+  return [{ card, debt, pendingAmount, dueDate, dueIn }];
+}).sort((a, b) => Number(a.debt.is_paid) - Number(b.debt.is_paid)
+  || (a.dueIn ?? Infinity) - (b.dueIn ?? Infinity)
+  || b.pendingAmount - a.pendingAmount);
+const pending = entries.filter(entry => !entry.debt.is_paid);
+const total = pending.reduce((sum, entry) => sum + entry.pendingAmount, 0);
 
 function dueBadge(days: number | null) {
   if (days === null) return { label: t.dashboard.noDueDate, color: "bg-surface text-string-muted" };
@@ -48,7 +52,7 @@ function dueBadge(days: number | null) {
       {t.dashboard.viewCards}
     </a>
   </div>
-  {pending.length > 0 ? (
+  {entries.length > 0 ? (
     <>
       <div class="flex flex-wrap items-end justify-between gap-2">
         <div>
@@ -58,18 +62,30 @@ function dueBadge(days: number | null) {
         <p class="text-sm text-string-muted">{t.dashboard.pendingCardCount(pending.length)}</p>
       </div>
       <ul class="grid grid-cols-2 gap-3 md:grid-cols-3">
-        {pending.map(({ card, amount, dueDate, dueIn }) => {
-          const badge = dueBadge(dueIn);
+        {entries.map(({ card, debt, pendingAmount, dueDate, dueIn }) => {
+          const paid = debt.is_paid;
+          const amount = paid ? debt.paid_amount : pendingAmount;
+          const date = paid ? debt.paid_at?.slice(0, 10) : dueDate;
+          const partialPayment = paid && amount > 0 && amount < debt.statement_balance;
+          const badge = paid
+            ? { label: partialPayment ? t.field.partialPayment : t.badge.paidF, color: "bg-info-bg text-info-text" }
+            : dueBadge(dueIn);
+          const textColor = paid ? "text-string-muted" : "text-string";
           return (
-            <li class="min-w-0 space-y-2 rounded-lg border border-border bg-surface p-3 max-md:last:odd:col-span-2">
-              <h3 class="flex items-center gap-2 text-sm font-medium text-string">
-                {card.color && <span aria-hidden="true" class="size-2 shrink-0 rounded-full" style={{ backgroundColor: card.color }} />}
+            <li class:list={[
+              "min-w-0 space-y-2 rounded-lg border border-border p-3 max-md:last:odd:col-span-2",
+              paid ? "bg-surface/40" : "bg-surface",
+            ]}>
+              <h3 class:list={["flex items-center gap-2 text-sm font-medium", textColor]}>
+                {card.color && <span aria-hidden="true" class:list={["size-2 shrink-0 rounded-full", { "opacity-50": paid }]} style={{ backgroundColor: card.color }} />}
                 <span class="wrap-anywhere">{card.name}</span>
               </h3>
-              <p class="text-base font-semibold tabular-nums text-string wrap-anywhere">{formatCurrency(amount)}</p>
+              {amount > 0 && (
+                <p class:list={["text-base font-semibold tabular-nums wrap-anywhere", textColor]}>{formatCurrency(amount)}</p>
+              )}
               <div class="flex flex-wrap items-center gap-2 text-xs">
                 <span class:list={["rounded px-2 py-0.5 font-medium", badge.color]}>{badge.label}</span>
-                {dueDate && <time datetime={dueDate} class="text-string-muted">{formatDate(dueDate, locale, { day: "numeric", month: "short" })}</time>}
+                {date && <time datetime={date} class="text-string-muted">{formatDate(date, locale, { day: "numeric", month: "short" })}</time>}
               </div>
             </li>
           );
