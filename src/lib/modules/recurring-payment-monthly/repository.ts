@@ -2,7 +2,7 @@ import { getDb } from "@/lib/server/db/client.ts";
 import type { RecurringPaymentMonthly, RecurringPaymentMonthlyUpdate } from "@/lib/types/recurring-payment.ts";
 
 export class RecurringPaymentMonthlyRepository {
-  async findByMonth(month: string, userId: string): Promise<RecurringPaymentMonthly[]> {
+  async findByMonth(month: string, userId: string, { includeInactivePaid = false } = {}): Promise<RecurringPaymentMonthly[]> {
     const result = await getDb().execute({
       sql: `SELECT sm.*, rs.name, rs.default_amount, rs.currency, c.name AS category_name,
             pm.name AS payment_method_name, pm.icon AS payment_method_icon, pm.type AS payment_method_type
@@ -10,9 +10,10 @@ export class RecurringPaymentMonthlyRepository {
             INNER JOIN recurring_payments rs ON rs.id = sm.payment_id
             LEFT JOIN categories c ON c.id = sm.category_id
             LEFT JOIN payment_methods pm ON pm.id = sm.payment_method_id
-            WHERE sm.month = ? AND rs.user_id = ? AND sm.is_active = 1
+            WHERE sm.month = ? AND rs.user_id = ? AND sm.user_id = rs.user_id
+              AND (sm.is_active = 1 OR (? AND sm.is_paid = 1 AND sm.type = 'expense'))
             ORDER BY rs.name ASC`,
-      args: [month, userId],
+      args: [month, userId, includeInactivePaid ? 1 : 0],
     });
     return (result.rows as unknown as RecurringPaymentMonthly[]).map(r => ({
       ...r, amount: Number(r.amount), is_active: Boolean(r.is_active), is_paid: Boolean(r.is_paid),

@@ -475,10 +475,10 @@ Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={loca
 ## Dashboard
 
 - **Resumen** es la pestaña predeterminada. Comparte el selector de mes con **Analíticas** (`?tab=analytics`). Cambiar el mes refresca ambos paneles a partir de un fragmento SSR.
-- Datos desde `src/lib/dashboard/load.ts` → `loadDashboardMonth(userId, month)`, directamente desde repositorios (sin HTTP). No recalcula deudas ni hace `upsert` de `card_monthly` por visita (eso ocurre bajo demanda desde cliente vía `/api/card-monthly/calculate` y desde la página de tarjetas).
+- `src/lib/dashboard/load.ts` obtiene los movimientos del mes directamente de los repositorios. Resumen y Analíticas reflejan los cambios al abrir el Dashboard o cambiar de mes. La carga es de solo lectura. La pantalla Tarjetas guarda estados de cuenta mediante `/api/card-monthly/calculate` para el flujo de pago.
 - `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (mutaciones de pago desde cliente).
 - Cards de métricas: ingresos, gastos, saldo, tarjetas de crédito, cuotas, recurrentes, tareas pendientes, eventos próximos, compras activas.
-- El bloque de tarjetas suma los saldos pendientes registrados y muestra las tarjetas con adeudo por orden de vencimiento. Las tarjetas pagadas del mes aparecen atenuadas al final, con su estado, importe y fecha de pago cuando están disponibles. Si todas están pagadas, el total pendiente es cero y las tarjetas siguen visibles. El enlace a Tarjetas abre el mes seleccionado.
+- El bloque de tarjetas calcula los saldos pendientes con los cargos y cashback del corte, las cuotas del mes y los gastos recurrentes marcados como pagados. Muestra las tarjetas con adeudo por orden de vencimiento. Las pagadas aparecen atenuadas al final y conservan su estado, importe y fecha de pago cuando están disponibles. Si todas están pagadas, el total pendiente es cero y las tarjetas siguen visibles. El enlace a Tarjetas abre el mes seleccionado.
 - Los gastos con crédito y su cashback se asignan al **mes del corte**, usando `cardStatementPeriod`: se excluye el corte anterior y se incluye el actual, ajustando días 29–31 a meses cortos. Una compra posterior al corte afecta el balance del mes siguiente; el día de pago no desplaza ese mes. Se consultan el mes seleccionado y el anterior para incluir todo el periodo de cada tarjeta, sin sumar nuevamente los snapshots de deuda. Las tarjetas sin corte y los demás métodos usan el mes calendario; los ingresos de transacciones también conservan ese criterio.
 - Los filtros de Transacciones usan el mes calendario. Las cuotas conservan su calendario de cortes, los recurrentes su mes asignado y los pagos parciales el descuento del remanente trasladado al siguiente mes.
 
@@ -544,7 +544,7 @@ Declaradas con el schema `envField` de Astro en `astro.config.mjs` (`env.schema`
 
 ## Pruebas
 
-Ejecuta `pnpm test` desde la raíz del proyecto con Node.js 24 o superior. Las pruebas unitarias en `tests/` usan `node:test` y `node:assert/strict`. Cubren cortes y vencimientos de tarjetas, cuotas a plazos y meses disponibles. Se ejecutan sin levantar Astro ni configurar Clerk o Turso.
+Ejecuta `pnpm test` desde la raíz del proyecto con Node.js 24 o superior. Las pruebas unitarias en `tests/` usan `node:test` y `node:assert/strict`. Cubren cortes y vencimientos de tarjetas, cuotas a plazos, meses disponibles, actividad mensual y saldos de tarjetas del Dashboard. Se ejecutan sin levantar Astro ni configurar Clerk o Turso.
 
 ## Despliegue
 

@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/server/db/client.ts";
 import { cardStatementPeriod, installmentFirstMonth, installmentRemaining, isInstallmentInMonth } from "@/lib/date.ts";
+import { calculateStatementBalance } from "@/lib/modules/card-monthly/statement-balance.ts";
 import type { CalculatedDebt } from "@/lib/types/card-monthly.ts";
 
 export async function calculateCardDebt(cardId: string, month: string, userId: string): Promise<CalculatedDebt> {
@@ -54,13 +55,15 @@ export async function calculateCardDebt(cardId: string, month: string, userId: s
   const totalCashback = Number((cbRes.rows[0] as unknown as { total: number }).total);
   const totalRecurring = Number((rpRes.rows[0] as unknown as { total: number }).total);
 
-  const statementBalance = totalPurchases + totalInstallments + totalRecurring - totalCashback;
-
-  return {
+  const amounts = {
     total_purchases: totalPurchases,
     total_installments: totalInstallments,
     total_recurring: totalRecurring,
     total_cashback: totalCashback,
+  };
+  const statementBalance = calculateStatementBalance(amounts);
+  return {
+    ...amounts,
     statement_balance: statementBalance,
     committed_installments: committedInstallments,
     total_committed: statementBalance + committedInstallments,
