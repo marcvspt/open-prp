@@ -2,9 +2,9 @@ import { getDb } from "@/lib/server/db/client.ts";
 import { localISOString } from "@/lib/date.ts";
 
 export type SqlValue = string | number | boolean | null;
+type DbExecutor = Pick<ReturnType<typeof getDb>, "execute">;
 
-export async function nextSeq(table: string): Promise<number> {
-  const db = getDb();
+export async function nextSeq(table: string, db: DbExecutor = getDb()): Promise<number> {
   const result = await db.execute({
     sql: `SELECT COALESCE(MAX(seq), 0) + 1 AS v FROM "${table}"`,
     args: [],
@@ -62,14 +62,14 @@ export async function insertRow<T>(
   userId: string,
   columns: string[],
   values: SqlValue[],
-  opts: { withSeq?: boolean; withUpdatedAt?: boolean } = {},
+  opts: { withSeq?: boolean; withUpdatedAt?: boolean; db?: DbExecutor } = {},
 ): Promise<T> {
-  const db = getDb();
+  const db = opts.db ?? getDb();
   const withSeq = opts.withSeq ?? true;
   const withUpdatedAt = opts.withUpdatedAt ?? true;
   const id = crypto.randomUUID();
   const timestamp = now();
-  const seq = withSeq ? await nextSeq(table) : null;
+  const seq = withSeq ? await nextSeq(table, db) : null;
 
   const colNames = ["id", "user_id", ...columns];
   const args: SqlValue[] = [id, userId, ...values];

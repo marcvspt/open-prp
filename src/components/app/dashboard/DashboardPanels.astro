@@ -1,10 +1,8 @@
 ---
 import DashboardContent from "@/components/app/dashboard/DashboardContent.astro";
-import CategoryExpensesChart from "@/components/app/dashboard/CategoryExpensesChart.tsx";
-import DailyActivityChart from "@/components/app/dashboard/DailyActivityChart.tsx";
-import MonthlyMovementCharts from "@/components/app/dashboard/MonthlyMovementCharts.tsx";
+import DashboardAnalytics from "@/components/app/dashboard/DashboardAnalytics.tsx";
 import { loadDashboardMonth } from "@/lib/dashboard/load.ts";
-import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
+import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
 interface Props {
   userId: string;
@@ -14,7 +12,6 @@ interface Props {
 }
 
 const { userId, month, locale, initialTab } = Astro.props;
-const t = getLocaleDict(locale);
 const data = await loadDashboardMonth(userId, month);
 const preferredCurrency = Astro.locals.user?.preferred_currency;
 ---
@@ -23,25 +20,14 @@ const preferredCurrency = Astro.locals.user?.preferred_currency;
   <div data-tab-content="summary" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "summary" }]}>
     <DashboardContent data={data} month={month} locale={locale} />
   </div>
-  <div data-tab-content="analytics" role="tabpanel" id="panel-analytics" aria-labelledby="tab-analytics" tabindex="0" class:list={["tab-content space-y-4 pt-4", { hidden: initialTab !== "analytics" }]}>
-    <section aria-labelledby="dashboard-daily-activity" class="space-y-4 rounded-xl border border-border bg-panel p-4 shadow-sm">
-      <h2 id="dashboard-daily-activity" class="text-base font-semibold text-string">{t.dashboard.dailyActivityTitle}</h2>
-      {data.dailyActivity.length ? (
-        <DailyActivityChart client:load groups={data.dailyActivity} preferredCurrency={preferredCurrency} locale={locale} />
-      ) : (
-        <p class="text-sm text-string-muted">{t.dashboard.noDailyActivity}</p>
-      )}
-    </section>
-    <section aria-labelledby="dashboard-category-expenses" class="space-y-4 rounded-xl border border-border bg-panel p-4 shadow-sm">
-      <h2 id="dashboard-category-expenses" class="text-base font-semibold text-string">{t.dashboard.categoryExpensesTitle}</h2>
-      {data.categoryExpenses.length ? (
-        <CategoryExpensesChart client:load groups={data.categoryExpenses} preferredCurrency={preferredCurrency} locale={locale} />
-      ) : (
-        <p class="text-sm text-string-muted">{t.dashboard.noCategoryExpenses}</p>
-      )}
-    </section>
-    {data.movementBreakdown.length > 0 && (
-      <MonthlyMovementCharts client:load groups={data.movementBreakdown} preferredCurrency={preferredCurrency} locale={locale} />
-    )}
+  <div data-tab-content="analytics" role="tabpanel" id="panel-analytics" aria-labelledby="tab-analytics" tabindex="0" class:list={["tab-content pt-4", { hidden: initialTab !== "analytics" }]}>
+    <DashboardAnalytics
+      client:load
+      dailyActivity={data.dailyActivity}
+      categoryExpenses={data.categoryExpenses}
+      movementBreakdown={data.movementBreakdown}
+      preferredCurrency={preferredCurrency}
+      locale={locale}
+    />
   </div>
 </div>

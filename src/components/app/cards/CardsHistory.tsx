@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { fetchList, apiErrorMessage, isAbortError } from "@/lib/ui/api-client.ts";
 import { monthLabel } from "@/lib/date.ts";
-import { formatCurrency } from "@/lib/format.ts";
+import { formatAmount } from "@/lib/format.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
 import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
@@ -78,13 +78,17 @@ export default function CardsHistory({ initialData, initialCards, locale = "es" 
               <tbody>
                 {items.map((d, i) => {
                   const card = cards.find(c => c.id === d.card_id);
+                  const format = (amount: number) => formatAmount(amount, locale, d.currency);
                   return (
                     <tr key={`${d.month}-${d.card_id}-${i}`} className="border-b border-border/50">
                       <td className="px-3 py-2 text-string-muted">{monthLabel(d.month, locale)}</td>
-                      <td className="px-3 py-2 font-medium text-string">{card?.name ?? "?"}</td>
-                      <td className="px-3 py-2 text-right font-mono text-string">{formatCurrency(d.statement_balance)}</td>
-                      <td className="px-3 py-2 text-right font-mono text-success">{formatCurrency(d.paid_amount)}</td>
-                      <td className="px-3 py-2 text-right font-mono text-string">{formatCurrency(Math.max(0, d.statement_balance - d.paid_amount))}</td>
+                      <td className="px-3 py-2 font-medium text-string">
+                        {card?.name ?? "?"}
+                        {!d.currency && <span className="block text-xs font-normal text-string-muted">{t.cards.unknownCurrency}</span>}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-string">{format(d.statement_balance)}</td>
+                      <td className="px-3 py-2 text-right font-mono text-success">{format(d.paid_amount)}</td>
+                      <td className="px-3 py-2 text-right font-mono text-string">{format(Math.max(0, d.statement_balance - d.paid_amount))}</td>
                       <td className="px-3 py-2 text-center">
                         <span className={`text-xs px-2 py-0.5 rounded-full ${d.is_paid ? "bg-info-bg text-info-text" : "bg-warning-bg text-warning-text"}`}>
                           {d.is_paid ? t.badge.paid : t.badge.pending}

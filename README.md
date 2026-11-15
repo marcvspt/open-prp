@@ -54,7 +54,7 @@ Los comandos de instalación, desarrollo y build los ejecuta el usuario; el agen
 
 El proyecto integra `@astrojs/sitemap` en `astro.config.mjs`, con `site` configurado como `https://oprp.marcvspt.tech`. El sitemap se genera durante el build que ejecuta el usuario; `BaseLayout.astro` enlaza `/sitemap-index.xml` y la ruta `src/pages/robots.txt.ts` lo anuncia en `robots.txt` usando el dominio configurado.
 
-Las landings `/es` y `/en` están prerenderizadas. Al añadir páginas públicas hay que revisar la cobertura del sitemap, especialmente para rutas SSR dinámicas. La configuración actual de `robots.txt` permite el rastreo (`Allow: /`); la privacidad de la app depende de su autenticación.
+El sitemap incluye las dos landings prerenderizadas, `/es` y `/en`. Cada una publica un título, una descripción y metadatos Open Graph localizados, así como su canónica y enlaces `hreflang` a ambas versiones. La app y el login declaran `noindex`. Al añadir contenido público revisa el filtro del sitemap en `astro.config.mjs`.
 
 Actualmente no hay feed RSS ni integración `@astrojs/rss`.
 
@@ -268,13 +268,14 @@ Todos los handlers de factory están envueltos en `withErrorHandling` y leen el 
 
 ### Rutas custom (sin factory)
 
-`categories/index.ts` (dup-check 409 + merge de secciones), `pantry/index.ts` (default `category_id`), `recurring-payment-monthly/index.ts` (by month, PATCH/DELETE por query param), `card-monthly/index.ts` (upsert/toggle) y `history.ts`, `notes/tags/*`, `pantry/categories/*`, `users/currency.ts`, `users/created-at.ts`, `shopping/toggle.ts`, `tasks/toggle.ts`, `shopping/lists/[id]/complete.ts`, `recurring-payments/[id]/monthly.ts`. Todas envueltas en `withErrorHandling` + `readJsonBody`.
+`categories/index.ts` (dup-check 409 + merge de secciones), `pantry/index.ts` (default `category_id`), `recurring-payment-monthly/index.ts` (by month, PATCH/DELETE por query param), `card-monthly/*` (cálculo, pagos y consultas de estados), `notes/tags/*`, `pantry/categories/*`, `users/currency.ts`, `users/created-at.ts`, `shopping/toggle.ts`, `tasks/toggle.ts`, `shopping/lists/[id]/complete.ts`, `recurring-payments/[id]/monthly.ts`. Las rutas usan `withErrorHandling` y las que reciben JSON usan `readJsonBody`.
 
 ### Endpoints especiales
 
 | Ruta | Acción |
 |---|---|
-| `GET /api/card-monthly/calculate` | Calcula deuda de tarjeta en un mes |
+| `POST /api/card-monthly/calculate` | Calcula la deuda de una tarjeta de crédito propia y guarda el estado abierto |
+| `POST /api/card-monthly/pay` | Registra el pago y el remanente del siguiente corte en la misma transacción |
 | `GET /api/card-monthly/history` | Historial de pagos de tarjetas |
 | `POST /api/recurring-payments/[id]/monthly` | Upsert snapshot mensual |
 | `GET/PATCH/DELETE /api/recurring-payment-monthly` | Snapshots por mes (`?month=`) |
@@ -475,16 +476,15 @@ Toda isla (`client:load`) recibe `locale` desde la página SSR (`<X locale={loca
 ## Dashboard
 
 - **Resumen** es la pestaña predeterminada. Comparte el selector de mes con **Analíticas** (`?tab=analytics`). Cambiar el mes refresca ambos paneles a partir de un fragmento SSR.
-- `src/lib/dashboard/load.ts` obtiene los movimientos del mes directamente de los repositorios. Resumen y Analíticas reflejan los cambios al abrir el Dashboard o cambiar de mes. La carga es de solo lectura. La pantalla Tarjetas guarda estados de cuenta mediante `/api/card-monthly/calculate` para el flujo de pago.
-- `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (mutaciones de pago desde cliente).
-- Cards de métricas: ingresos, gastos, saldo, tarjetas de crédito, cuotas, recurrentes, tareas pendientes, eventos próximos, compras activas.
+- `src/lib/dashboard/load.ts` lee los movimientos del mes directamente de los repositorios. La pantalla Tarjetas guarda los estados abiertos mediante `POST /api/card-monthly/calculate`. Al pagar con `POST /api/card-monthly/pay`, el remanente queda registrado con la misma moneda y con la fecha del siguiente corte ajustada al mes.
+- Resumen muestra ingresos, gastos, saldo, cuotas y recurrentes por moneda. Parte de la moneda preferida cuando tiene datos. Los saldos pendientes de tarjeta se totalizan por moneda. Los cortes con varias monedas muestran un aviso y quedan fuera del total. El historial conserva los importes previos y etiqueta los que tienen moneda sin confirmar.
 - El bloque de tarjetas calcula los saldos pendientes con los cargos y cashback del corte, las cuotas del mes y los gastos recurrentes marcados como pagados. Muestra las tarjetas con adeudo por orden de vencimiento. Las pagadas aparecen atenuadas al final y conservan su estado, importe y fecha de pago cuando están disponibles. Si todas están pagadas, el total pendiente es cero y las tarjetas siguen visibles. El enlace a Tarjetas abre el mes seleccionado.
 - Los gastos con crédito y su cashback se asignan al **mes del corte**, usando `cardStatementPeriod`: se excluye el corte anterior y se incluye el actual, ajustando días 29–31 a meses cortos. Una compra posterior al corte afecta el balance del mes siguiente; el día de pago no desplaza ese mes. Se consultan el mes seleccionado y el anterior para incluir todo el periodo de cada tarjeta, sin sumar nuevamente los snapshots de deuda. Las tarjetas sin corte y los demás métodos usan el mes calendario; los ingresos de transacciones también conservan ese criterio.
 - Los filtros de Transacciones usan el mes calendario. Las cuotas conservan su calendario de cortes, los recurrentes su mes asignado y los pagos parciales el descuento del remanente trasladado al siguiente mes.
 
 ### Gráficas de Analíticas
 
-Abre **Dashboard → Analíticas** y elige un mes. El selector actualiza todas las gráficas. Cada bloque ofrece un selector de moneda si tiene importes en varias y parte de la moneda preferida cuando hay datos para ella. Los importes se muestran por separado, sin conversiones. En español se usa el formato de México (`es-MX`), con coma para miles y punto para decimales, por ejemplo `12,345.67 MXN`. En inglés se usa `en-US`. Los ejes muestran importes abreviados y los tooltips muestran el importe con dos decimales y el código de moneda.
+Abre **Dashboard → Analíticas** y elige un mes. Recharts se carga al abrir la pestaña. El selector de mes actualiza todas las gráficas. Cada bloque ofrece un selector de moneda si tiene importes en varias y parte de la moneda preferida cuando hay datos para ella. Los importes se muestran por separado, sin conversiones. En español se usa el formato de México (`es-MX`), con coma para miles y punto para decimales, por ejemplo `12,345.67 MXN`. En inglés se usa `en-US`. Los ejes muestran importes abreviados y los tooltips muestran el importe con dos decimales y el código de moneda.
 
 | Gráfica | Qué muestra |
 | --- | --- |
@@ -544,7 +544,9 @@ Declaradas con el schema `envField` de Astro en `astro.config.mjs` (`env.schema`
 
 ## Pruebas
 
-Ejecuta `pnpm test` desde la raíz del proyecto con Node.js 24 o superior. Las pruebas unitarias en `tests/` usan `node:test` y `node:assert/strict`. Cubren cortes y vencimientos de tarjetas, cuotas a plazos, meses disponibles, actividad mensual y saldos de tarjetas del Dashboard. Se ejecutan sin levantar Astro ni configurar Clerk o Turso.
+Ejecuta `pnpm test` desde la raíz del proyecto con Node.js 24 o superior. Las pruebas de `tests/` cubren calendarios, balances por moneda y persistencia de pagos en una base libSQL en memoria. Se ejecutan sin levantar Astro ni configurar Clerk o Turso.
+
+Para usar `pnpm check`, agrega las dependencias de desarrollo con `pnpm add -D --save-exact @astrojs/check typescript@5.9.3` si todavía faltan. El comando revisa los tipos de los archivos TypeScript y Astro.
 
 ## Despliegue
 

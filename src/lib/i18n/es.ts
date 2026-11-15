@@ -260,6 +260,7 @@ export const es = {
     ariaMain: "Navegación principal",
     ariaGithub: "GitHub",
     openMenu: "Abrir menú",
+    closeMenu: "Cerrar menú",
   },
 
   theme: {
@@ -379,6 +380,8 @@ export const es = {
 
   cards: {
     payCardTitle: "Pagar tarjeta",
+    mixedCurrency: "Este corte tiene movimientos en varias monedas.",
+    unknownCurrency: "Moneda sin confirmar",
     or: "o",
     zeroPlaceholder: "0.00",
     remainingNote: (amount: string) => `Restante: ${amount} — se agregará como gasto al mes siguiente`,
@@ -424,6 +427,7 @@ export const es = {
     debitCards: "Tarjetas de débito",
     unassignedPaymentMethod: "Sin método de pago",
     cardPendingTotal: "Total pendiente",
+    unassignedCarryover: "El balance conserva íntegros los gastos asociados a pagos históricos con moneda sin confirmar.",
     pendingCardCount: (n: number) => n === 1 ? "1 tarjeta con saldo pendiente" : `${n} tarjetas con saldo pendiente`,
     viewCards: "Ver en Tarjetas",
     noCardStatements: "Aún no hay actividad de tarjetas de crédito para este mes.",
@@ -486,6 +490,8 @@ export const es = {
   },
 
   landing: {
+    seoTitle: "Finanzas personales y organización diaria",
+    seoDescription: "Lleva tus ingresos, gastos, tarjetas y pagos a plazos en Open PRP. Organiza también tus pendientes, despensa y listas de compras.",
     heroTitle: "Controla tus",
     heroTitleAccent: "finanzas personales",
     heroDescription: `${SITE_DATA.name} es tu centro de gestión financiera personal. Transacciones, tarjetas, plazos, suscripciones, despensa y más, todo en un solo lugar.`,
@@ -515,6 +521,8 @@ export const es = {
 
   select: {
     ariaOptions: "Opciones",
+    selectAll: "Seleccionar todas las opciones",
+    clearSelection: "Quitar todas las selecciones",
     ariaSections: shared.sections,
     countSections: (n: number) => `${n} secciones`,
     ariaCurrency: shared.currency,
@@ -547,10 +555,13 @@ export const es = {
       "database-unavailable": "La base de datos no está disponible.",
       "pantry-create-failed": "No se pudo crear el producto.",
       "card-calculation-failed": "No se pudo calcular el adeudo de la tarjeta.",
+      "card-statement-changed": "El estado de la tarjeta cambió. Actualiza el resumen antes de registrar el pago.",
+      "invalid-payment-amount": "El pago debe ser mayor que cero y no superar el saldo del corte.",
+      "card-payment-method-missing": "La tarjeta no tiene un método de pago asociado.",
+      "invalid-financial-reference": "Selecciona una tarjeta, categoría o método de pago disponible en tu cuenta.",
       "month-unavailable": "El mes seleccionado no está disponible.",
     } satisfies Record<ApiErrorCode, string>,
     monthUnavailable: "El mes seleccionado no está disponible.",
-    paymentCarryover: (message: string) => `El pago se registró, pero no se creó el cargo del saldo restante: ${message}`,
     network: "No se pudo conectar con el servidor.",
     invalidResponse: "El servidor devolvió una respuesta inválida.",
     refreshData: "El cambio se guardó, pero no se pudieron actualizar los datos de esta sección. Reintenta la actualización.",

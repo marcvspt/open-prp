@@ -14,7 +14,7 @@ interface IdRouteOptions {
   put?: boolean;
   delete?: boolean;
   notFoundCode?: ApiErrorCode;
-  validateUpdate?: (body: Record<string, unknown>) => ApiErrorCode | null;
+  validateUpdate?: (body: Record<string, unknown>, userId: string) => ApiErrorCode | null | Promise<ApiErrorCode | null>;
 }
 
 /** Handlers GET/PATCH/PUT/DELETE for a "/api/[id]" CRUD route. */
@@ -43,7 +43,7 @@ export function createIdRoutes<T, U>(repo: IdCrudRepo<T, U>, options: IdRouteOpt
     const body = await readJsonBody(context);
     if (!body) return errorResponse("invalid-body", 400);
 
-    const error = options.validateUpdate?.(body);
+    const error = await options.validateUpdate?.(body, uid);
     if (error) return errorResponse(error);
 
     const row = await repo.update(context.params.id!, body as unknown as U, uid);
@@ -77,7 +77,7 @@ interface IndexCrudRepo<F, C> {
 
 interface IndexRouteOptions<F> {
   buildFilter?: (params: Record<string, string | undefined>, context: APIContext) => F;
-  validateCreate?: (body: Record<string, unknown>) => ApiErrorCode | null;
+  validateCreate?: (body: Record<string, unknown>, userId: string) => ApiErrorCode | null | Promise<ApiErrorCode | null>;
 }
 
 /** Handlers GET/POST for a "/api/" CRUD list route. */
@@ -100,7 +100,7 @@ export function createIndexRoutes<F, C>(repo: IndexCrudRepo<F, C>, options: Inde
     const body = await readJsonBody(context);
     if (!body) return errorResponse("invalid-body", 400);
 
-    const error = options.validateCreate?.(body);
+    const error = await options.validateCreate?.(body, uid);
     if (error) return errorResponse(error);
 
     const row = await repo.create(body as unknown as C, uid);

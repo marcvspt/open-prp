@@ -259,6 +259,7 @@ export const en: Locale = {
     ariaMain: "Main navigation",
     ariaGithub: "GitHub",
     openMenu: "Open menu",
+    closeMenu: "Close menu",
   },
 
   theme: {
@@ -378,6 +379,8 @@ export const en: Locale = {
 
   cards: {
     payCardTitle: "Pay card",
+    mixedCurrency: "This statement includes movements in multiple currencies.",
+    unknownCurrency: "Unconfirmed currency",
     or: "or",
     zeroPlaceholder: "0.00",
     remainingNote: (amount: string) => `Remaining: ${amount} — will be added as an expense next month`,
@@ -423,6 +426,7 @@ export const en: Locale = {
     debitCards: "Debit cards",
     unassignedPaymentMethod: "No payment method",
     cardPendingTotal: "Total outstanding balance",
+    unassignedCarryover: "Expenses tied to past payments with an unconfirmed currency remain in the balance in full.",
     pendingCardCount: (n: number) => n === 1 ? "1 card with an outstanding balance" : `${n} cards with outstanding balances`,
     viewCards: "View in Cards",
     noCardStatements: "There is no credit card activity for this month yet.",
@@ -485,6 +489,8 @@ export const en: Locale = {
   },
 
   landing: {
+    seoTitle: "Personal finance and everyday organization",
+    seoDescription: "Track income, expenses, cards, and installment payments in Open PRP. Organize your tasks, pantry, and shopping lists in the same app.",
     heroTitle: "Take control of your",
     heroTitleAccent: "personal finances",
     heroDescription: `${SITE_DATA.name} is your personal finance management hub. Transactions, cards, installments, subscriptions, pantry and more, all in one place.`,
@@ -514,6 +520,8 @@ export const en: Locale = {
 
   select: {
     ariaOptions: "Options",
+    selectAll: "Select all options",
+    clearSelection: "Clear all selections",
     ariaSections: shared.sections,
     countSections: (n: number) => `${n} sections`,
     ariaCurrency: shared.currency,
@@ -546,10 +554,13 @@ export const en: Locale = {
       "database-unavailable": "The database is unavailable.",
       "pantry-create-failed": "Could not create the product.",
       "card-calculation-failed": "Could not calculate the card debt.",
+      "card-statement-changed": "The card statement changed. Refresh the summary before recording the payment.",
+      "invalid-payment-amount": "The payment must be greater than zero and no more than the statement balance.",
+      "card-payment-method-missing": "This card has no linked payment method.",
+      "invalid-financial-reference": "Choose a card, category, or payment method available to your account.",
       "month-unavailable": "The selected month is not available.",
     },
     monthUnavailable: "The selected month is not available.",
-    paymentCarryover: (message: string) => `The payment was recorded, but the remaining balance charge could not be created: ${message}`,
     network: "Could not connect to the server.",
     invalidResponse: "The server returned an invalid response.",
     refreshData: "The change was saved, but this section could not be updated. Retry the refresh.",

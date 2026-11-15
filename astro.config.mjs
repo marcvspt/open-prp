@@ -36,7 +36,9 @@ export default defineConfig({
     },
   },
 
-  integrations: [react(), sitemap(), clerk({
+  integrations: [react(), sitemap({
+    filter: (page) => /^\/(es|en)\/?$/.test(new URL(page).pathname),
+  }), clerk({
     afterSignOutUrl: "/es/app/login",
     localization: getClerkLocalization(DEFAULT_LOCALE),
     prefetchUI: true,

@@ -57,7 +57,17 @@ export interface MovementBreakdownGroup {
   paymentMethods: PaymentMethodActivity[];
 }
 
-export type DashboardCardDebt = Pick<CardMonthly, "card_id" | "statement_balance" | "paid_amount" | "is_paid" | "paid_at">;
+export type DashboardCardDebt = Pick<CardMonthly, "card_id" | "statement_balance" | "paid_amount" | "is_paid" | "paid_at" | "currency"> & {
+  mixedCurrency: boolean;
+};
+
+export interface DashboardBalance {
+  currency: string;
+  income: number;
+  expense: number;
+  installments: number;
+  recurringExpenses: number;
+}
 
 export interface DashboardMonthData {
   cards: Card[];
@@ -67,22 +77,9 @@ export interface DashboardMonthData {
   pendingTasks: Task[];
   overdueTasks: Task[];
   activeShopping: ShoppingItem[];
-  incomes: number;
-  expenses: number;
-  installmentTotal: number;
-  recurringExpensesTotal: number;
+  balances: DashboardBalance[];
+  hasUnassignedCarryover: boolean;
   categoryExpenses: CategoryExpenseGroup[];
   dailyActivity: DailyActivityGroup[];
   movementBreakdown: MovementBreakdownGroup[];
-}
-
-export interface PayCardDebtPartialArgs {
-  id: string;
-  month: string;
-  statementBalance: number;
-  paidAmount: number;
-  cutoffDay: number | null;
-  paymentMethodId: string | null;
-  categoryId: string | null;
-  paidAt?: string;
 }

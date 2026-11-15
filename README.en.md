@@ -54,7 +54,7 @@ Installation, development and build commands are run by the user; the agent prov
 
 The project integrates `@astrojs/sitemap` in `astro.config.mjs`, with `site` set to `https://oprp.marcvspt.tech`. The sitemap is generated during the build run by the user; `BaseLayout.astro` links to `/sitemap-index.xml`, and `src/pages/robots.txt.ts` advertises it in `robots.txt` using the configured domain.
 
-The `/es` and `/en` landing pages are prerendered. When adding public pages, review sitemap coverage, especially for dynamic SSR routes. The current `robots.txt` configuration allows crawling (`Allow: /`); app privacy relies on authentication.
+The sitemap includes the two prerendered landing pages, `/es` and `/en`. Each publishes a localized title, description and Open Graph metadata, its own canonical URL, and `hreflang` links to both versions. The app and sign-in page declare `noindex`. Review the sitemap filter in `astro.config.mjs` when adding public content.
 
 There is currently no RSS feed or `@astrojs/rss` integration.
 
@@ -268,13 +268,14 @@ All factory handlers are wrapped in `withErrorHandling` and read the body with `
 
 ### Custom routes (no factory)
 
-`categories/index.ts` (dup-check 409 + section merge), `pantry/index.ts` (default `category_id`), `recurring-payment-monthly/index.ts` (by month, PATCH/DELETE via query param), `card-monthly/index.ts` (upsert/toggle) and `history.ts`, `notes/tags/*`, `pantry/categories/*`, `users/currency.ts`, `users/created-at.ts`, `shopping/toggle.ts`, `tasks/toggle.ts`, `shopping/lists/[id]/complete.ts`, `recurring-payments/[id]/monthly.ts`. All wrapped in `withErrorHandling` + `readJsonBody`.
+`categories/index.ts` (dup-check 409 + section merge), `pantry/index.ts` (default `category_id`), `recurring-payment-monthly/index.ts` (by month, PATCH/DELETE via query param), `card-monthly/*` (statement calculation, payment and reads), `notes/tags/*`, `pantry/categories/*`, `users/currency.ts`, `users/created-at.ts`, `shopping/toggle.ts`, `tasks/toggle.ts`, `shopping/lists/[id]/complete.ts`, `recurring-payments/[id]/monthly.ts`. Routes use `withErrorHandling`, and routes accepting JSON use `readJsonBody`.
 
 ### Special endpoints
 
 | Route | Action |
 |---|---|
-| `GET /api/card-monthly/calculate` | Calculates card debt for a month |
+| `POST /api/card-monthly/calculate` | Calculates debt on an owned credit card and saves the open statement |
+| `POST /api/card-monthly/pay` | Records the payment and remaining balance for the next statement in one transaction |
 | `GET /api/card-monthly/history` | Card payment history |
 | `POST /api/recurring-payments/[id]/monthly` | Monthly snapshot upsert |
 | `GET/PATCH/DELETE /api/recurring-payment-monthly` | Snapshots by month (`?month=`) |
@@ -476,16 +477,15 @@ Every island (`client:load`) receives `locale` from the SSR page (`<X locale={lo
 ## Dashboard
 
 - **Summary** is the default tab. It shares the month selector with **Analytics** (`?tab=analytics`). Changing the month refreshes both panels from an SSR fragment.
-- `src/lib/dashboard/load.ts` reads the month's movements directly from repositories. Summary and Analytics reflect changes when opening the Dashboard or switching months. This load is read-only. The Cards page saves statements through `/api/card-monthly/calculate` for the payment flow.
-- `src/lib/dashboard/api.ts` → `payCardDebtFull` / `payCardDebtPartial` (payment mutations from the client).
-- Metric cards: income, expenses, balance, credit cards, installments, recurring, pending tasks, upcoming events, active shopping lists.
+- `src/lib/dashboard/load.ts` reads the month's movements directly from repositories. Cards saves open statements through `POST /api/card-monthly/calculate`. Paying through `POST /api/card-monthly/pay` records the remainder in the same currency and uses the next cutoff date adjusted to the month.
+- Summary shows income, expenses, balance, installments and recurring payments by currency. It opens with the preferred currency when data is available. Outstanding card balances are totaled by currency. Statements with several currencies display a notice and are excluded from the total. History preserves previous amounts and labels those with an unconfirmed currency.
 - The credit card section calculates outstanding balances from statement-period charges and cashback, monthly installments, and recurring expenses marked as paid. It lists cards with balances due in due date order. Paid cards appear at the end with subdued styling and retain their recorded status, amount, and payment date when available. If all cards are paid, the outstanding total is zero and the cards stay visible. The link to Cards opens the selected month.
 - Credit expenses and their cashback are assigned to the **statement closing month**, using `cardStatementPeriod`: the previous cutoff is excluded and the current cutoff is included, clamping days 29–31 to shorter months. A purchase after the cutoff affects the following month's balance; the payment due day does not shift that month. Queries cover the selected and previous months to include each card's full period, without adding debt snapshots again. Cards without a cutoff and other payment methods use the calendar month; transaction income also keeps this behavior.
 - Transactions filters use calendar months. Installments retain their statement schedule, recurring payments their assigned month, and partial payments the deduction of the remainder carried into the next month.
 
 ### Analytics charts
 
-Open **Dashboard → Analytics** and choose a month. The month selector updates every chart. Each chart section offers a currency selector when it has amounts in more than one currency and starts with the preferred currency when it has data for it. Amounts are displayed separately without currency conversion. Spanish uses the Mexican format (`es-MX`), with a comma for thousands and a period for decimals, as in `12,345.67 MXN`. English uses `en-US`. Axes use compact amounts, while tooltips show two decimal places and the currency code.
+Open **Dashboard → Analytics** and choose a month. Recharts loads when you open the tab. The month selector updates every chart. Each chart section offers a currency selector when it has amounts in more than one currency and starts with the preferred currency when it has data for it. Amounts are displayed separately without currency conversion. Spanish uses the Mexican format (`es-MX`), with a comma for thousands and a period for decimals, as in `12,345.67 MXN`. English uses `en-US`. Axes use compact amounts, while tooltips show two decimal places and the currency code.
 
 | Chart | What it shows |
 | --- | --- |
@@ -545,7 +545,9 @@ Declared with Astro's `envField` schema in `astro.config.mjs` (`env.schema`). Th
 
 ## Tests
 
-Run `pnpm test` from the project root with Node.js 24 or later. The unit tests in `tests/` use `node:test` and `node:assert/strict`. They cover card statement periods and due dates, installment schedules, available months, monthly activity, and Dashboard card balances. They run without starting Astro or configuring Clerk or Turso.
+Run `pnpm test` from the project root with Node.js 24 or later. The tests in `tests/` cover schedules, balances by currency and payment persistence in an in-memory libSQL database. They run without starting Astro or configuring Clerk or Turso.
+
+To use `pnpm check`, add the development dependencies with `pnpm add -D --save-exact @astrojs/check typescript@5.9.3` if they are missing. The command checks types in TypeScript and Astro files.
 
 ## Deployment
 

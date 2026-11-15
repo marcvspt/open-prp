@@ -13,22 +13,22 @@ export interface Transaction {
 }
 
 export interface CreateTransactionInput {
-  category_id?: string;
+  category_id?: string | null;
   payment_method_id: string;
   type: "income" | "expense";
   amount: number;
   currency?: string;
-  description?: string;
+  description?: string | null;
   date: string;
 }
 
 export interface UpdateTransactionInput {
-  category_id?: string;
+  category_id?: string | null;
   payment_method_id?: string;
   type?: "income" | "expense";
   amount?: number;
   currency?: string;
-  description?: string;
+  description?: string | null;
   date?: string;
 }
 

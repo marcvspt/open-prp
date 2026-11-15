@@ -1,7 +1,7 @@
 ---
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { currentMonthStr, daysUntilPaymentDue, formatDate, paymentDueDate } from "@/lib/date.ts";
-import { formatCurrency } from "@/lib/format.ts";
+import { formatAmount } from "@/lib/format.ts";
 import { getLocaleDict, type LocaleCode } from "@/lib/i18n/locale.ts";
 import type { Card } from "@/lib/types/card.ts";
 import type { DashboardCardDebt } from "@/lib/types/dashboard.ts";
@@ -22,7 +22,7 @@ const entries = cards.flatMap(card => {
   const debt = debtsByCard.get(card.id);
   if (!debt) return [];
   const pendingAmount = debt.is_paid ? 0 : Math.max(0, debt.statement_balance - debt.paid_amount);
-  if (!debt.is_paid && pendingAmount === 0) return [];
+  if (!debt.is_paid && pendingAmount === 0 && !debt.mixedCurrency) return [];
 
   const dueDay = debt.is_paid ? null : card.payment_due_day;
   const dueDate = dueDay == null ? null : paymentDueDate(month, card.cutoff_day, dueDay);
@@ -30,9 +30,13 @@ const entries = cards.flatMap(card => {
   return [{ card, debt, pendingAmount, dueDate, dueIn }];
 }).sort((a, b) => Number(a.debt.is_paid) - Number(b.debt.is_paid)
   || (a.dueIn ?? Infinity) - (b.dueIn ?? Infinity)
-  || b.pendingAmount - a.pendingAmount);
-const pending = entries.filter(entry => !entry.debt.is_paid);
-const total = pending.reduce((sum, entry) => sum + entry.pendingAmount, 0);
+  || a.card.name.localeCompare(b.card.name, locale));
+const pending = entries.filter(entry => !entry.debt.is_paid && entry.pendingAmount > 0);
+const totals = new Map<string, number>();
+for (const { debt, pendingAmount } of pending) {
+  if (debt.currency) totals.set(debt.currency, (totals.get(debt.currency) ?? 0) + pendingAmount);
+}
+const hasMixedCurrency = entries.some(entry => entry.debt.mixedCurrency);
 
 function dueBadge(days: number | null) {
   if (days === null) return { label: t.dashboard.noDueDate, color: "bg-surface text-string-muted" };
@@ -57,7 +61,15 @@ function dueBadge(days: number | null) {
       <div class="flex flex-wrap items-end justify-between gap-2">
         <div>
           <p class="text-xs uppercase tracking-wider text-string-muted">{t.dashboard.cardPendingTotal}</p>
-          <p class="mt-1 text-2xl font-bold tabular-nums text-string">{formatCurrency(total)}</p>
+          {totals.size > 0 ? (
+            <ul class="mt-1 flex flex-wrap gap-x-4 text-2xl font-bold tabular-nums text-string">
+              {[...totals].sort(([a], [b]) => a.localeCompare(b)).map(([currency, amount]) => (
+                <li>{formatAmount(amount, locale, currency)}</li>
+              ))}
+            </ul>
+          ) : (
+            <p class="mt-1 text-2xl font-bold tabular-nums text-string">{hasMixedCurrency ? "—" : formatAmount(0, locale, null)}</p>
+          )}
         </div>
         <p class="text-sm text-string-muted">{t.dashboard.pendingCardCount(pending.length)}</p>
       </div>
@@ -80,8 +92,13 @@ function dueBadge(days: number | null) {
                 {card.color && <span aria-hidden="true" class:list={["size-2 shrink-0 rounded-full", { "opacity-50": paid }]} style={{ backgroundColor: card.color }} />}
                 <span class="wrap-anywhere">{card.name}</span>
               </h3>
-              {amount > 0 && (
-                <p class:list={["text-base font-semibold tabular-nums wrap-anywhere", textColor]}>{formatCurrency(amount)}</p>
+              {debt.mixedCurrency ? (
+                <p class="text-sm text-warning-text">{t.cards.mixedCurrency}</p>
+              ) : amount > 0 && (
+                <p class:list={["text-base font-semibold tabular-nums wrap-anywhere", textColor]}>
+                  {formatAmount(amount, locale, debt.currency)}
+                  {!debt.currency && <span class="block text-xs font-normal">{t.cards.unknownCurrency}</span>}
+                </p>
               )}
               <div class="flex flex-wrap items-center gap-2 text-xs">
                 <span class:list={["rounded px-2 py-0.5 font-medium", badge.color]}>{badge.label}</span>

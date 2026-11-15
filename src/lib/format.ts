@@ -14,3 +14,8 @@ export function chartAmountFormatters(locale: LocaleCode, currency: string) {
     axisAmount,
   };
 }
+
+export function formatAmount(value: number, locale: LocaleCode, currency: string | null, showPlus = false): string {
+  const sign = showPlus && value > 0 ? "+" : "";
+  return sign + chartAmountFormatters(locale, currency ?? "").formatAmount(value === 0 ? 0 : value).trimEnd();
+}
