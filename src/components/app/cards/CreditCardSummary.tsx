@@ -8,7 +8,6 @@ import { notifyDataChange } from "@/lib/ui/data-refresh.ts";
 import { FormModal } from "@/components/app/ui/FormModal.tsx";
 import { BTN_CANCEL } from "@/lib/i18n/general-fields.ts";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider.tsx";
-import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import { getLocaleDict } from "@/lib/i18n/locale.ts";
 import type { LocaleCode } from "@/lib/i18n/locale.ts";
 
@@ -117,8 +116,8 @@ export default function CreditCardSummary({
 
   return (
     <LocaleProvider locale={locale}>
-      <div className="space-y-4">
-        {loading && <LoadingSpinner label={t.common.loading} />}
+      <div role="status" className="sr-only">{loading ? t.common.loading : ""}</div>
+      <div className="space-y-4" aria-busy={loading}>
         {error && !payDialog && <p role="alert" className="text-sm text-danger-text">{error}</p>}
         {visibleCards.length === 0 ? (
           <p className="text-string-muted text-sm">{t.empty.creditCards}</p>

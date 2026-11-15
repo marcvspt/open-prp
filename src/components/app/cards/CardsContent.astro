@@ -7,6 +7,7 @@ import PageHeader from "@/components/app/ui/PageHeader.astro";
 import DataTable from "@/components/app/ui/DataTable.astro";
 import DeleteHandler from "@/components/app/ui/DeleteHandler.astro";
 import CrudModal from "@/components/app/ui/CrudModal.tsx";
+import LoadingSpinner from "@/components/app/ui/LoadingSpinner.tsx";
 import TabBarWithMonth from "@/components/app/ui/TabBarWithMonth.tsx";
 import CreditCardSummary from "@/components/app/cards/CreditCardSummary.tsx";
 import CardsHistory from "@/components/app/cards/CardsHistory.tsx";
@@ -68,7 +69,11 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
 ---
 
 <div data-module="cards" class="space-y-4">
-  <PageHeader title={t.page.cards} />
+  <PageHeader title={t.page.cards}>
+    <div slot="title-status" data-cards-spinner class="invisible size-5 shrink-0" aria-hidden="true">
+      <LoadingSpinner className="flex" />
+    </div>
+  </PageHeader>
   <div class="tabs-container">
     <TabBarWithMonth
       client:load
@@ -127,3 +132,9 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
 </div>
 <CrudModal client:load module="cards" fields={JSON.stringify(fields)} defaultForm={JSON.stringify(defaultForm)} titleSingular={t.singular.card} locale={locale} />
 <DeleteHandler module="cards" label={t.singular.card} />
+
+<style is:global>
+  [data-module="cards"]:has([data-tab-content]:not(.hidden) [aria-busy="true"]) [data-cards-spinner] {
+    visibility: visible;
+  }
+</style>
