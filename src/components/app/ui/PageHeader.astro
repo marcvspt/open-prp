@@ -11,7 +11,10 @@ const ctaClass = mobileOnlyCTA ? "sm:hidden" : "";
 ---
 
 <div class="flex items-center justify-between flex-wrap gap-2">
-  <h1 class="text-2xl font-bold text-string">{title}</h1>
+  <div class="flex min-w-0 items-center gap-2">
+    <h1 class="text-2xl font-bold text-string">{title}</h1>
+    <slot name="title-status" />
+  </div>
   {createLabel && createModule && (
     <button data-create={createModule} class={`${ctaClass} px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-hover cursor-pointer`}>{createLabel}</button>
   )}

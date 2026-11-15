@@ -19,37 +19,39 @@ const {
 } = data;
 
 const creditCards = cards.filter(c => c.type === "credit");
+const counts = [
+  { label: t.dashboard.statCreditCards, value: creditCards.length },
+  {
+    label: t.dashboard.statPendingTasks,
+    value: pendingTasks.length,
+    detail: overdueTasks.length > 0 ? t.dashboard.overdueCount(overdueTasks.length) : undefined,
+  },
+  { label: t.dashboard.statUpcomingEvents, value: upcomingEvents.length },
+  { label: t.dashboard.statActiveShopping, value: activeShopping.length },
+  { label: t.dashboard.statRecurring, value: services.length },
+];
 ---
 
-<div class="space-y-6">
+<div class="grid gap-4 sm:gap-5">
   <DashboardBalanceSummary
     client:load
     balances={balances}
     hasUnassignedCarryover={hasUnassignedCarryover}
     preferredCurrency={Astro.locals.user?.preferred_currency}
-    creditCardCount={creditCards.length}
     locale={locale}
   />
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-    <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-      <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statPendingTasks}</p>
-      <p class="text-xl font-bold mt-1 text-sky-600">{pendingTasks.length}</p>
-      {overdueTasks.length > 0 && <p class="text-xs text-danger mt-0.5">{t.dashboard.overdueCount(overdueTasks.length)}</p>}
-    </div>
-    <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-      <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statUpcomingEvents}</p>
-      <p class="text-xl font-bold mt-1 text-rose-600">{upcomingEvents.length}</p>
-    </div>
-    <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-      <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statActiveShopping}</p>
-      <p class="text-xl font-bold mt-1 text-amber-600">{activeShopping.length}</p>
-    </div>
-    <div class="bg-panel rounded-xl border border-border p-4 shadow-sm">
-      <p class="text-xs text-string-muted uppercase tracking-wider">{t.dashboard.statRecurring}</p>
-      <p class="text-xl font-bold mt-1 text-purple-600">{services.length}</p>
-    </div>
-  </div>
+  <dl class="grid grid-cols-2 gap-4 border-y border-border px-4 py-3 sm:px-5 md:grid-cols-5">
+    {counts.map(({ label, value, detail }) => (
+      <div class="min-w-0 max-md:last:odd:col-span-2">
+        <dt class="text-xs font-medium text-string-muted">{label}</dt>
+        <dd class="mt-1 text-base font-semibold tabular-nums text-string">
+          {value}
+          {detail && <span class="block text-xs font-medium text-danger-text">{detail}</span>}
+        </dd>
+      </div>
+    ))}
+  </dl>
 
   <DashboardCardDebts cards={creditCards} debts={cardDebts} month={selectedMonth} locale={locale} />
 </div>
