@@ -459,6 +459,7 @@ export const es = {
     errand: "Encargo",
     work: "Trabajo",
     supermarket: "Supermercado",
+    clothing: "Ropa",
     transport: "Transporte",
     health: "Salud",
     leisure: "Ocio",

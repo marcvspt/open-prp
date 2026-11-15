@@ -248,7 +248,7 @@ getDb() → cliente singleton @libsql/client/web
 
 ### Seed (`db/seed.js`)
 
-ESM, se ejecuta con la última versión de Node. Inserta 3 métodos de pago globales (payroll, transfer, cash) y 27 categorías predefinidas en 6 secciones (pantry, tasks, transactions, installments, recurring-payments, events).
+ESM, se ejecuta con la última versión de Node. Inserta 3 métodos de pago globales (payroll, transfer, cash) y 28 categorías predefinidas en 6 secciones (pantry, tasks, transactions, installments, recurring-payments, events). La categoría general «Ropa» (`clothing`) está disponible en Transacciones y Plazos.
 
 ```sh
 pnpm db:seed:dev    # usa .env.development

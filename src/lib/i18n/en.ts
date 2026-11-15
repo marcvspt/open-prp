@@ -458,6 +458,7 @@ export const en: Locale = {
     errand: "Errand",
     work: "Work",
     supermarket: "Supermarket",
+    clothing: "Clothing",
     transport: "Transport",
     health: "Health",
     leisure: "Leisure",
