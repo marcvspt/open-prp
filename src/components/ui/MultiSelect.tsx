@@ -3,10 +3,12 @@ import { createPortal } from "react-dom";
 import ChevronIcon from "@/assets/chevron.svg?react";
 import { FILTER_ALL_SECTIONS, FILTER_MULTI_SELECT_FALLBACK } from "@/lib/i18n/filter-fields.ts";
 import { useLocaleDict } from "@/lib/i18n/LocaleProvider.tsx";
+import { getDropdownPosition } from "@/lib/ui/dropdown-position.ts";
 
 export interface MultiSelectOption {
   value: string;
   label: string;
+  disabled?: boolean;
 }
 
 interface MultiSelectProps {
@@ -24,17 +26,21 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
   const t = useLocaleDict();
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
+  const [pos, setPos] = useState<ReturnType<typeof getDropdownPosition> | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const bulkRef = useRef<HTMLButtonElement>(null);
   const id = useId();
 
-  let selectedValues: string[] = [];
-  try { selectedValues = JSON.parse(value); } catch { selectedValues = []; }
-  if (!Array.isArray(selectedValues)) selectedValues = [];
+  let parsed: unknown;
+  try { parsed = JSON.parse(value); } catch { parsed = []; }
+  const selectedValues = Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  const selected = new Set(selectedValues);
+  const enabledOptions = options.filter(option => !option.disabled);
 
-  const allSelected = selectedValues.length === options.length && options.length > 0;
+  const allSelected = enabledOptions.length > 0 && enabledOptions.every(option => selected.has(option.value));
   const display = allSelected
     ? FILTER_ALL_SECTIONS(t)
     : selectedValues.length === 0
@@ -44,33 +50,26 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
         : t.select.countSections(selectedValues.length);
 
   useEffect(() => {
-    if (!open) { setHighlighted(-1); setPos(null); return; }
-    setHighlighted(0);
-    if (btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxHeight: Math.max(60, window.innerHeight - r.bottom - 8) });
-    }
-  }, [open]);
-
-  useEffect(() => {
     if (!open) return;
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node) && listRef.current && !listRef.current.contains(e.target as Node)) setOpen(false);
+    function closeOutside(event: PointerEvent) {
+      if (event.target instanceof Node && !ref.current?.contains(event.target) && !popupRef.current?.contains(event.target)) setOpen(false);
     }
-    function reposition() {
-      if (btnRef.current) {
-        const r = btnRef.current.getBoundingClientRect();
-        setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxHeight: Math.max(60, window.innerHeight - r.bottom - 8) });
-      }
+    function reposition(event: Event) {
+      if (event.target instanceof Node && popupRef.current?.contains(event.target)) return;
+      if (btnRef.current) setPos(getDropdownPosition(btnRef.current));
     }
-    document.addEventListener("mousedown", handler);
+    document.addEventListener("pointerdown", closeOutside);
     window.addEventListener("scroll", reposition, true);
     window.addEventListener("resize", reposition);
     return () => {
-      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("pointerdown", closeOutside);
       window.removeEventListener("scroll", reposition, true);
       window.removeEventListener("resize", reposition);
     };
+  }, [open]);
+
+  useEffect(() => {
+    if (open) listRef.current?.focus({ preventScroll: true });
   }, [open]);
 
   useEffect(() => {
@@ -79,120 +78,163 @@ export default function MultiSelect({ value, onChange, options, placeholder, req
     el?.scrollIntoView({ block: "nearest" });
   }, [highlighted, open]);
 
-  function toggle(val: string) {
-    const idx = selectedValues.indexOf(val);
-    let next: string[];
-    if (val === "*") {
-      next = allSelected ? [] : options.map(o => o.value);
-    } else {
-      if (idx >= 0) {
-        next = selectedValues.filter(v => v !== val);
-      } else {
-        next = [...selectedValues, val];
-      }
-    }
-    onChange(JSON.stringify(next));
+  function toggle(option: MultiSelectOption) {
+    if (option.disabled) return;
+    if (selected.has(option.value)) selected.delete(option.value);
+    else selected.add(option.value);
+    onChange(JSON.stringify([...selected]));
   }
 
-  function onKeyDown(e: React.KeyboardEvent) {
-    if (!open) {
-      if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
-        e.preventDefault();
-        setOpen(true);
-      }
-      return;
+  function toggleAll() {
+    for (const option of enabledOptions) {
+      if (allSelected) selected.delete(option.value);
+      else selected.add(option.value);
     }
-    switch (e.key) {
+    onChange(JSON.stringify([...selected]));
+  }
+
+  function openPopup() {
+    if (!btnRef.current) return;
+    const firstSelected = options.findIndex(option => !option.disabled && selected.has(option.value));
+    setHighlighted(firstSelected < 0 ? options.findIndex(option => !option.disabled) : firstSelected);
+    setPos(getDropdownPosition(btnRef.current));
+    setOpen(true);
+  }
+
+  function closePopup() {
+    setOpen(false);
+    btnRef.current?.focus({ preventScroll: true });
+  }
+
+  function onListKeyDown(event: React.KeyboardEvent<HTMLUListElement>) {
+    const indexes = options.flatMap((option, index) => option.disabled ? [] : [index]);
+    const index = indexes.indexOf(highlighted);
+    const option = options[highlighted];
+    switch (event.key) {
       case "ArrowDown":
-        e.preventDefault();
-        setHighlighted(p => (p + 1) % (options.length + 1));
+      case "ArrowUp": {
+        event.preventDefault();
+        if (!indexes.length) break;
+        const next = index + (event.key === "ArrowDown" ? 1 : -1);
+        setHighlighted(indexes[(next + indexes.length) % indexes.length]);
         break;
-      case "ArrowUp":
-        e.preventDefault();
-        setHighlighted(p => (p <= 0 ? options.length : p - 1));
+      }
+      case "Home":
+      case "End":
+        event.preventDefault();
+        setHighlighted((event.key === "Home" ? indexes[0] : indexes.at(-1)) ?? -1);
         break;
       case "Enter":
-        e.preventDefault();
-        if (highlighted === 0) {
-          toggle("*");
-        } else if (highlighted > 0 && highlighted <= options.length) {
-          toggle(options[highlighted - 1].value);
-        }
+      case " ":
+        event.preventDefault();
+        if (option) toggle(option);
         break;
-      case "Escape":
-        e.preventDefault();
-        setOpen(false);
+      case "Tab":
+        if (event.shiftKey && bulkRef.current && !bulkRef.current.disabled) {
+          event.preventDefault();
+          bulkRef.current.focus();
+        } else {
+          closePopup();
+        }
         break;
     }
   }
 
   return (
-    <div ref={ref} className={`relative ${className ?? ""}`} onKeyDown={onKeyDown}>
+    <div ref={ref} className={`relative ${className ?? ""}`} onBlur={event => {
+      if (!ref.current?.contains(event.relatedTarget) && !popupRef.current?.contains(event.relatedTarget)) setOpen(false);
+    }}>
       <button
         ref={btnRef}
         type="button"
-        role="combobox"
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={ariaLabel}
-        aria-controls={`${id}-listbox`}
-        aria-activedescendant={highlighted >= 0 ? `${id}-opt-${highlighted}` : undefined}
-        disabled={disabled}
-        onClick={() => setOpen(p => !p)}
+        aria-controls={open ? `${id}-listbox` : undefined}
+        aria-describedby={ariaLabel ? `${id}-value` : undefined}
+        disabled={disabled || options.length === 0}
+        onClick={open ? closePopup : openPopup}
+        onKeyDown={event => {
+          if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            openPopup();
+          }
+        }}
         className={`flex items-center gap-2 w-full rounded-lg border text-sm px-3 py-2 transition-colors
-          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary"}
+          ${disabled || options.length === 0 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary"}
           ${open ? "border-primary ring-1 ring-primary" : "border-border"}
           ${selectedValues.length === 0 && !allSelected ? "text-string-muted" : "text-string"}
           bg-panel`}
       >
-        <span className="flex-1 text-left truncate">{display}</span>
+        <span id={`${id}-value`} className="flex-1 text-left truncate">{display}</span>
         <ChevronIcon aria-hidden="true" className={`w-4 h-4 text-string-muted transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && pos && createPortal(
-        <ul
-          ref={listRef}
-          id={`${id}-listbox`}
-          role="listbox"
-          aria-multiselectable="true"
-          aria-label={ariaLabel ?? t.select.ariaSections}
-          style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight, zIndex: 9999 }}
-          className="rounded-lg border border-border bg-panel shadow-lg overflow-y-auto"
+        <div
+          ref={popupRef}
+          style={{ position: "fixed", ...pos, zIndex: 9999 }}
+          className="flex flex-col overflow-hidden rounded-lg border border-border bg-panel shadow-lg"
+          onKeyDown={event => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              event.stopPropagation();
+              closePopup();
+            }
+          }}
         >
-          <li
-            id={`${id}-opt-0`}
-            role="option"
-            aria-selected={allSelected}
-            className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2
-              ${highlighted === 0 ? "bg-nav-hover" : ""}
-              text-string`}
-            onClick={() => toggle("*")}
-            onMouseEnter={() => setHighlighted(0)}
+          <button
+            ref={bulkRef}
+            type="button"
+            disabled={enabledOptions.length === 0}
+            className="shrink-0 border-b border-border px-3 py-2 text-left text-sm font-medium text-primary hover:bg-nav-hover focus-visible:outline-offset-[-2px] disabled:opacity-50"
+            onClick={toggleAll}
+            onKeyDown={event => {
+              if (event.key !== "Tab") return;
+              event.preventDefault();
+              if (event.shiftKey) closePopup();
+              else listRef.current?.focus();
+            }}
           >
-            <input type="checkbox" checked={allSelected} aria-hidden="true" className="w-4 h-4 accent-primary pointer-events-none" />
-            <span className={allSelected ? "font-medium text-primary" : ""}>{FILTER_ALL_SECTIONS(t)}</span>
-          </li>
-          {options.map((o, i) => {
-            const idx = i + 1;
-            const isSelected = selectedValues.includes(o.value);
-            return (
-              <li
-                key={o.value}
-                id={`${id}-opt-${idx}`}
-                role="option"
-                aria-selected={isSelected}
-                className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2
-                  ${isSelected ? "bg-primary-bg text-primary-text" : ""}
-                  ${highlighted === idx ? "bg-nav-hover" : ""}
-                  text-string`}
-                onClick={() => toggle(o.value)}
-                onMouseEnter={() => setHighlighted(idx)}
-              >
-                <input type="checkbox" checked={isSelected} aria-hidden="true" className="w-4 h-4 accent-primary pointer-events-none" />
-                {o.label}
-              </li>
-            );
-          })}
-        </ul>,
+            {allSelected ? t.select.clearSelection : t.select.selectAll}
+          </button>
+          <ul
+            ref={listRef}
+            id={`${id}-listbox`}
+            role="listbox"
+            tabIndex={0}
+            aria-multiselectable="true"
+            aria-required={required || undefined}
+            aria-label={ariaLabel ?? t.select.ariaSections}
+            aria-activedescendant={options[highlighted] ? `${id}-opt-${highlighted}` : undefined}
+            className="min-h-0 overflow-y-auto focus-visible:outline-offset-[-2px]"
+            onKeyDown={onListKeyDown}
+          >
+            {options.map((option, index) => {
+              const isSelected = selected.has(option.value);
+              return (
+                <li
+                  key={option.value}
+                  id={`${id}-opt-${index}`}
+                  role="option"
+                  aria-selected={isSelected}
+                  aria-disabled={option.disabled || undefined}
+                  className={`flex items-center gap-2 px-3 py-2 text-sm text-string
+                    ${option.disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
+                    ${isSelected ? "bg-primary-bg text-primary-text" : ""}
+                    ${highlighted === index ? "bg-nav-hover" : ""}`}
+                  onMouseDown={event => event.preventDefault()}
+                  onClick={() => toggle(option)}
+                  onMouseEnter={() => { if (!option.disabled) setHighlighted(index); }}
+                >
+                  <span aria-hidden="true" className="inline-flex size-4 shrink-0 items-center justify-center rounded border border-current">
+                    {isSelected ? "✓" : ""}
+                  </span>
+                  {option.label}
+                </li>
+              );
+            })}
+          </ul>
+        </div>,
         document.body
       )}
     </div>

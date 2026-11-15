@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS card_monthly (
   card_id TEXT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   month TEXT NOT NULL,
+  currency TEXT,
   statement_balance REAL NOT NULL DEFAULT 0,
   paid_amount REAL NOT NULL DEFAULT 0,
   is_paid INTEGER NOT NULL DEFAULT 0,

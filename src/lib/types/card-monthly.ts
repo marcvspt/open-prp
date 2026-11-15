@@ -3,6 +3,7 @@ export interface CardMonthly {
   card_id: string;
   user_id: string;
   month: string;
+  currency: string | null;
   statement_balance: number;
   paid_amount: number;
   is_paid: boolean;
@@ -15,13 +16,7 @@ export interface CardMonthlyInput {
   card_id: string;
   month: string;
   statement_balance: number;
-}
-
-export interface CardMonthlyUpdate {
-  statement_balance?: number;
-  is_paid?: boolean;
-  paid_at?: string;
-  paid_amount?: number;
+  currency: string | null;
 }
 
 export interface StatementAmounts {
@@ -33,6 +28,16 @@ export interface StatementAmounts {
 
 export interface CalculatedDebt extends StatementAmounts {
   statement_balance: number;
-  committed_installments: number;
-  total_committed: number;
+  currency: string | null;
+  mixed_currency: boolean;
+  committed_installments: number | null;
+  total_committed: number | null;
+}
+
+export interface CardPaymentInput {
+  id: string;
+  statement_balance: number;
+  currency: string;
+  paid_amount?: number;
+  paid_at?: string;
 }

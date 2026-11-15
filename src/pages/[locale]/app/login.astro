@@ -20,6 +20,7 @@ if (userId) return Astro.redirect(dashboardUrl);
 ---
 
 <BaseLayout title={`${t.common.login}`}>
+  <meta slot="head" name="robots" content="noindex" />
   <div class="flex items-center justify-center min-h-screen bg-surface">
     <div class="text-center space-y-4">
       <h1 class="flex justify-center"><BrandLogo class="h-10" /></h1>

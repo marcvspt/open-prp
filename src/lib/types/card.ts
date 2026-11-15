@@ -19,5 +19,5 @@ export interface CardInput {
   max_limit?: number | null;
   cutoff_day?: number | null;
   payment_due_day?: number | null;
-  color?: string;
+  color?: string | null;
 }

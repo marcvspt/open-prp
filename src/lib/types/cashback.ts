@@ -13,6 +13,6 @@ export interface CashbackInput {
   card_id: string;
   amount: number;
   currency?: string;
-  description?: string;
+  description?: string | null;
   date: string;
 }

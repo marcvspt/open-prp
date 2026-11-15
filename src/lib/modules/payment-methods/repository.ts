@@ -2,11 +2,13 @@ import { getDb } from "@/lib/server/db/client.ts";
 import { insertRow, applyUpdate, now, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { PaymentMethod, CreatePaymentMethodInput, UpdatePaymentMethodInput } from "@/lib/types/payment-method.ts";
 
+const VISIBLE_METHODS = "((type = 'global' AND user_id IS NULL) OR (type IN ('personal','card') AND user_id = ?))";
+
 export class PaymentMethodRepository {
   async findAll(userId: string): Promise<PaymentMethod[]> {
     const db = getDb();
     const result = await db.execute({
-      sql: "SELECT * FROM payment_methods WHERE type = 'global' OR (type IN ('personal','card') AND user_id = ?) ORDER BY type = 'global' DESC, seq ASC",
+      sql: `SELECT * FROM payment_methods WHERE ${VISIBLE_METHODS} ORDER BY type = 'global' DESC, seq ASC`,
       args: [userId],
     });
     return result.rows as unknown as PaymentMethod[];
@@ -15,7 +17,7 @@ export class PaymentMethodRepository {
   async findById(id: string, userId: string): Promise<PaymentMethod | null> {
     const db = getDb();
     const result = await db.execute({
-      sql: "SELECT * FROM payment_methods WHERE id = ? AND (user_id = ? OR type = 'global')",
+      sql: `SELECT * FROM payment_methods WHERE id = ? AND ${VISIBLE_METHODS}`,
       args: [id, userId],
     });
     return (result.rows[0] as unknown as PaymentMethod | undefined) ?? null;
@@ -26,7 +28,7 @@ export class PaymentMethodRepository {
       "name", "type", "icon", "color",
     ], [
       data.name,
-      data.type ?? "personal",
+      "personal",
       data.icon || "💳", data.color ?? null,
     ]);
   }
@@ -49,19 +51,11 @@ export class PaymentMethodRepository {
     return result.rows[0] as unknown as PaymentMethod;
   }
 
-  async updateCardMethodName(cardId: string, name: string): Promise<void> {
+  async updateCardMethodName(cardId: string, userId: string, name: string): Promise<void> {
     const db = getDb();
     await db.execute({
-      sql: "UPDATE payment_methods SET name = ?, updated_at = ? WHERE card_id = ?",
-      args: [name, now(), cardId],
-    });
-  }
-
-  async deleteCardMethods(cardId: string): Promise<void> {
-    const db = getDb();
-    await db.execute({
-      sql: "DELETE FROM payment_methods WHERE card_id = ?",
-      args: [cardId],
+      sql: "UPDATE payment_methods SET name = ?, updated_at = ? WHERE card_id = ? AND user_id = ?",
+      args: [name, now(), cardId, userId],
     });
   }
 
@@ -74,7 +68,6 @@ export class PaymentMethodRepository {
     const args: SqlValue[] = [];
 
     if (data.name !== undefined) { sets.push("name = ?"); args.push(data.name); }
-    if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }
     if (data.icon !== undefined) { sets.push("icon = ?"); args.push(data.icon ?? null); }
     if (data.color !== undefined) { sets.push("color = ?"); args.push(data.color ?? null); }
 

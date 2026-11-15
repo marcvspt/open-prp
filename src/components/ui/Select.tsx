@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import ChevronIcon from "@/assets/chevron.svg?react";
 import { FILTER_SELECT_FALLBACK } from "@/lib/i18n/filter-fields.ts";
 import { useLocaleDict } from "@/lib/i18n/LocaleProvider.tsx";
+import { getDropdownPosition } from "@/lib/ui/dropdown-position.ts";
 
 export interface SelectOption {
   value: string;
@@ -26,7 +27,7 @@ export default function Select({ value, onChange, options, placeholder, required
   const t = useLocaleDict();
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
+  const [pos, setPos] = useState<ReturnType<typeof getDropdownPosition> | null>(null);
   const [widest, setWidest] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -53,10 +54,7 @@ export default function Select({ value, onChange, options, placeholder, required
     if (!open) { setHighlighted(-1); setPos(null); return; }
     const idx = options.findIndex(o => o.value === value);
     setHighlighted(idx >= 0 ? idx : 0);
-    if (btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxHeight: Math.max(60, window.innerHeight - r.bottom - 8) });
-    }
+    if (btnRef.current) setPos(getDropdownPosition(btnRef.current));
   }, [open]);
 
   useEffect(() => {
@@ -65,10 +63,7 @@ export default function Select({ value, onChange, options, placeholder, required
       if (ref.current && !ref.current.contains(e.target as Node) && listRef.current && !listRef.current.contains(e.target as Node)) setOpen(false);
     }
     function reposition() {
-      if (btnRef.current) {
-        const r = btnRef.current.getBoundingClientRect();
-        setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxHeight: Math.max(60, window.innerHeight - r.bottom - 8) });
-      }
+      if (btnRef.current) setPos(getDropdownPosition(btnRef.current));
     }
     document.addEventListener("mousedown", handler);
     window.addEventListener("scroll", reposition, true);
@@ -102,11 +97,16 @@ export default function Select({ value, onChange, options, placeholder, required
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
-        setHighlighted(p => (p + 1) % options.length);
+        if (options.length) setHighlighted(p => (p + 1) % options.length);
         break;
       case "ArrowUp":
         e.preventDefault();
         setHighlighted(p => (p <= 0 ? options.length - 1 : p - 1));
+        break;
+      case "Home":
+      case "End":
+        e.preventDefault();
+        setHighlighted(e.key === "Home" && options.length ? 0 : options.length - 1);
         break;
       case "Enter":
       case " ":
@@ -115,6 +115,10 @@ export default function Select({ value, onChange, options, placeholder, required
         break;
       case "Escape":
         e.preventDefault();
+        e.stopPropagation();
+        setOpen(false);
+        break;
+      case "Tab":
         setOpen(false);
         break;
     }
@@ -128,9 +132,10 @@ export default function Select({ value, onChange, options, placeholder, required
         role="combobox"
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-controls={`${id}-listbox`}
+        aria-controls={open && pos ? `${id}-listbox` : undefined}
+        aria-required={required || undefined}
         aria-label={ariaLabel}
-        aria-activedescendant={highlighted >= 0 ? `${id}-opt-${highlighted}` : undefined}
+        aria-activedescendant={open && pos && options[highlighted] ? `${id}-opt-${highlighted}` : undefined}
         disabled={disabled}
         onClick={() => setOpen(p => !p)}
         style={fitWidest && widest > 0 ? { minWidth: widest } : undefined}
@@ -166,7 +171,7 @@ export default function Select({ value, onChange, options, placeholder, required
           id={`${id}-listbox`}
           role="listbox"
           aria-label={t.select.ariaOptions}
-          style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxHeight, zIndex: 9999 }}
+          style={{ position: "fixed", ...pos, zIndex: 9999 }}
           className="rounded-lg border border-border bg-panel shadow-lg overflow-y-auto"
         >
           {options.map((o, i) => (

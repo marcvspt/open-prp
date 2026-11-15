@@ -28,7 +28,7 @@ const FEATURE_ICONS = {
 const FEATURES_INFO = LANDING_FEATURES.map(({ id, icon }) => ({ icon: FEATURE_ICONS[icon], ...t.landing.features[id] }));
 ---
 
-<LandingLayout title={`${t.page.home}`}>
+<LandingLayout>
   <Hero />
   <section id="features" class="border-t border-border bg-surface-alt py-24">
     <div class="mx-auto max-w-6xl px-6">

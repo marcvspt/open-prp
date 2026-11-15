@@ -37,18 +37,25 @@ const NAVIGATION_ICONS: Record<NavigationIconId, typeof HomeIcon> = {
 };
 const APP_LINKS = getAppNavigation(locale, t).map((group) => ({
   ...group,
-  links: group.links.map((link) => ({ ...link, icon: NAVIGATION_ICONS[link.icon] })),
+  links: group.links.map((link) => ({
+    ...link, icon: NAVIGATION_ICONS[link.icon],
+    current: currentPath.replace(/\/$/, "") === link.url.replace(/\/$/, ""),
+  })),
 }));
 ---
 
 <aside
   id="sidebar"
-  class="fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-border bg-panel transition-transform duration-300 -translate-x-full lg:translate-x-0"
+  aria-label={t.nav.ariaMain}
+  class="invisible fixed left-0 top-0 z-40 flex h-full w-64 -translate-x-full flex-col border-r border-border bg-panel motion-safe:transition-transform motion-safe:duration-300 lg:visible lg:translate-x-0"
 >
   <div
     class="flex h-16 items-center justify-between px-4 border-b border-border shrink-0"
   >
     <BrandLogo />
+    <button id="sidebar-close" type="button" aria-label={t.nav.closeMenu} class="flex size-10 items-center justify-center rounded-lg text-xl text-nav hover:bg-nav-hover lg:hidden">
+      <span aria-hidden="true">×</span>
+    </button>
     <a
       href={SITE_LINKS.repository}
       target="_blank"
@@ -69,10 +76,11 @@ const APP_LINKS = getAppNavigation(locale, t).map((group) => ({
               {group.title}
             </div>
           )}
-          {group.links.map(({ url, label, icon: Icon }) => (
+          {group.links.map(({ url, label, icon: Icon, current }) => (
             <a
               href={url}
-              class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${currentPath.startsWith(url) ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}
+              aria-current={current ? "page" : undefined}
+              class={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${current ? "bg-nav-active text-nav-active-text font-medium" : "text-nav hover:bg-nav-hover"}`}
             >
               <Icon aria-hidden="true" class="w-5 h-5 shrink-0" />
               <span>{label}</span>

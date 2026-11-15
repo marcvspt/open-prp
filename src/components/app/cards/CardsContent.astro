@@ -12,8 +12,6 @@ import CreditCardSummary from "@/components/app/cards/CreditCardSummary.tsx";
 import CardsHistory from "@/components/app/cards/CardsHistory.tsx";
 import { CardRepository } from "@/lib/modules/cards/repository.ts";
 import { CardMonthlyRepository } from "@/lib/modules/card-monthly/repository.ts";
-import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
-import { CategoryRepository } from "@/lib/modules/transactions/categories.ts";
 import { currentMonthStr, resolvePaymentDueDate as resolvePaymentDueDateISO, lastYearWindow } from "@/lib/date.ts";
 
 interface Props {
@@ -32,16 +30,12 @@ const initialTab = paramTab === "admin" ? "admin" : paramTab === "history" ? "hi
 
 const cardMonthlyRepo = new CardMonthlyRepository();
 const { from: fromMonth, to: nextMonth } = lastYearWindow(Astro.locals.createdAt);
-const [cards, cardDebts, fullHistory, paymentMethods, categories] = await Promise.all([
+const [cards, cardDebts, fullHistory] = await Promise.all([
   new CardRepository().findAll(userId),
   cardMonthlyRepo.findByMonth(currentMonth, userId),
   cardMonthlyRepo.getHistory(userId),
-  new PaymentMethodRepository().findAll(userId),
-  new CategoryRepository().findAll(userId),
 ]);
 const cardHistory = urlMonth ? fullHistory.filter(d => d.month === currentMonth) : fullHistory.filter(d => d.month >= fromMonth && d.month <= nextMonth);
-
-const calculatedDebts = {};
 
 const now = new Date();
 const currentYear = now.getFullYear();
@@ -92,9 +86,6 @@ const defaultForm = { name: "", type: "credit", max_limit: 0, cutoff_day: 15, pa
         client:load
         initialCards={JSON.stringify(cards)}
         initialDebts={JSON.stringify(cardDebts)}
-        initialCalculated={JSON.stringify(calculatedDebts)}
-        initialPaymentMethods={JSON.stringify(paymentMethods)}
-        initialCategories={JSON.stringify(categories)}
         initialMonth={currentMonth}
         locale={locale}
       />

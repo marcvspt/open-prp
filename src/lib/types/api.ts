@@ -6,6 +6,8 @@ export const API_ERROR_CODES = [
   "id-required", "card-month-required", "month-amount-required", "invalid-currency",
   "category-exists", "predefined-category-readonly", "database-unavailable",
   "pantry-create-failed", "card-calculation-failed", "month-unavailable",
+  "card-statement-changed", "invalid-payment-amount", "card-payment-method-missing",
+  "invalid-financial-reference",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

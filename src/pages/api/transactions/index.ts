@@ -1,6 +1,7 @@
 import { createIndexRoutes } from "@/lib/server/api-routes.ts";
 import { getDateRange, parsePageParams } from "@/lib/server/api-helpers.ts";
 import { TransactionRepository } from "@/lib/modules/transactions/repository.ts";
+import { validateTransactionWrite } from "@/lib/server/movement-validation.ts";
 
 export const { GET, POST } = createIndexRoutes(new TransactionRepository(), {
   buildFilter: (params, context) => ({
@@ -12,8 +13,5 @@ export const { GET, POST } = createIndexRoutes(new TransactionRepository(), {
     month: params.month,
     ...getDateRange(params, context.locals.createdAt),
   }),
-  validateCreate: (body) =>
-    !body.type || body.amount == null || !body.date || !body.payment_method_id
-      ? "transaction-fields-required"
-      : null,
+  validateCreate: (body, userId) => validateTransactionWrite(body, userId, true),
 });

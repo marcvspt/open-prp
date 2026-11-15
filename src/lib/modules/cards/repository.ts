@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/server/db/client.ts";
-import { nextSeq, scopedFindById, scopedDelete, insertRow, applyUpdate, type SqlValue } from "@/lib/server/db/utils.ts";
+import { nextSeq, scopedFindById, insertRow, applyUpdate, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { Card, CardInput, CardType } from "@/lib/types/card.ts";
 import { PaymentMethodRepository } from "@/lib/modules/payment-methods/repository.ts";
 
@@ -56,14 +56,21 @@ export class CardRepository {
     if (data.name !== undefined || data.type !== undefined) {
       const newName = data.name ?? existing.name;
       const newType = data.type ?? existing.type;
-      await pmRepo.updateCardMethodName(id, cardMethodName(newType, newName));
+      await pmRepo.updateCardMethodName(id, userId, cardMethodName(newType, newName));
     }
 
     return card;
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
-    await pmRepo.deleteCardMethods(id);
-    return scopedDelete("cards", id, userId);
+    const [, deleted] = await getDb().batch([
+      {
+        sql: `DELETE FROM payment_methods WHERE card_id = ? AND user_id = ?
+              AND EXISTS (SELECT 1 FROM cards WHERE id = ? AND user_id = ?)`,
+        args: [id, userId, id, userId],
+      },
+      { sql: "DELETE FROM cards WHERE id = ? AND user_id = ?", args: [id, userId] },
+    ], "write");
+    return deleted.rowsAffected > 0;
   }
 }

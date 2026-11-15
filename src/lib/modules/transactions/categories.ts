@@ -2,13 +2,13 @@ import { getDb } from "@/lib/server/db/client.ts";
 import { scopedFindById, scopedDelete, insertRow, applyUpdate, now, type SqlValue } from "@/lib/server/db/utils.ts";
 import type { Category, CreateCategoryInput, UpdateCategoryInput } from "@/lib/types/category.ts";
 
-const PERSONAL_SCOPE = "(type = 'global' OR (type = 'personal' AND user_id = ?))";
+const VISIBLE_CATEGORIES = "((type = 'global' AND user_id IS NULL) OR (type = 'personal' AND user_id = ?))";
 
 export class CategoryRepository {
   async findAll(userId: string): Promise<Category[]> {
     const db = getDb();
     const result = await db.execute({
-      sql: "SELECT * FROM categories WHERE type = 'global' OR (type = 'personal' AND user_id = ?) ORDER BY name ASC",
+      sql: `SELECT * FROM categories WHERE ${VISIBLE_CATEGORIES} ORDER BY name ASC`,
       args: [userId],
     });
     return result.rows as unknown as Category[];
@@ -16,7 +16,7 @@ export class CategoryRepository {
 
   async findBySections(userId: string, sections: string[]): Promise<Category[]> {
     const db = getDb();
-    const conditions: string[] = [`(${PERSONAL_SCOPE})`];
+    const conditions: string[] = [VISIBLE_CATEGORIES];
     const args: (string | number | boolean | null)[] = [userId];
 
     const orParts = sections.map(s => {
@@ -33,12 +33,12 @@ export class CategoryRepository {
   }
 
   async findById(id: string, userId: string): Promise<Category | null> {
-    return scopedFindById<Category>("categories", id, userId, PERSONAL_SCOPE);
+    return scopedFindById<Category>("categories", id, userId, VISIBLE_CATEGORIES);
   }
 
   async findByName(name: string, userId: string): Promise<Category | null> {
     const result = await getDb().execute({
-      sql: `SELECT * FROM categories WHERE ${PERSONAL_SCOPE} AND name = ?`,
+      sql: `SELECT * FROM categories WHERE ${VISIBLE_CATEGORIES} AND name = ?`,
       args: [userId, name],
     });
     return (result.rows[0] as unknown as Category | undefined) ?? null;
@@ -68,7 +68,7 @@ export class CategoryRepository {
     return insertRow<Category>("categories", userId, [
       "name", "sections", "type", "icon", "color",
     ], [
-      data.name, data.sections, data.type ?? "personal", data.icon || "📁", data.color ?? null,
+      data.name, data.sections, "personal", data.icon || "📁", data.color ?? null,
     ]);
   }
 
@@ -84,7 +84,6 @@ export class CategoryRepository {
     if (data.icon !== undefined) { sets.push("icon = ?"); args.push(data.icon); }
     if (data.color !== undefined) { sets.push("color = ?"); args.push(data.color); }
     if (data.sections !== undefined) { sets.push("sections = ?"); args.push(data.sections); }
-    if (data.type !== undefined) { sets.push("type = ?"); args.push(data.type); }
 
     return applyUpdate<Category>("categories", id, userId, sets, args, { existing });
   }
