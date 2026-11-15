@@ -70,6 +70,7 @@ async function seed() {
     { name: "work", sections: ["tasks", "events"], icon: "💼", color: "#3b82f6" },
     // Transactions
     { name: "supermarket", sections: ["transactions"], icon: "🛒", color: "#f97316" },
+    { name: "clothing", sections: ["transactions", "installments"], icon: "👕", color: "#8b5cf6" },
     { name: "transport", sections: ["transactions"], icon: "🚌", color: "#3b82f6" },
     { name: "health", sections: ["transactions", "events", "installments"], icon: "🏥", color: "#ef4444" },
     { name: "leisure", sections: ["transactions"], icon: "🎮", color: "#8b5cf6" },
