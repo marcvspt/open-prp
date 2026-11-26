@@ -59,11 +59,13 @@ async function seed() {
     // Pantry
     { name: "cleaning", sections: ["pantry"], icon: "🧹", color: "#8b5cf6" },
     { name: "food", sections: ["pantry"], icon: "🍽️", color: "#f97316" },
+    { name: "seasonings", sections: ["pantry"], icon: "🧂", color: "#d97706" },
     { name: "candy", sections: ["pantry"], icon: "🍬", color: "#ec4899" },
     { name: "school", sections: ["pantry", "events", "transactions", "installments", "recurring-payments"], icon: "📚", color: "#3b82f6" },
     { name: "hygiene", sections: ["pantry"], icon: "🧴", color: "#06b6d4" },
     { name: "drinks", sections: ["pantry"], icon: "🥤", color: "#0ea5e9" },
     { name: "automotive", sections: ["pantry", "transactions", "installments", "recurring-payments"], icon: "🚗", color: "#64748b" },
+    { name: "pets", sections: ["pantry", "transactions", "installments", "recurring-payments"], icon: "🐾", color: "#f59e0b" },
     // Tasks
     { name: "personal", sections: ["tasks", "events"], icon: "👤", color: "#6366f1" },
     { name: "errand", sections: ["tasks"], icon: "📋", color: "#f59e0b" },
@@ -72,7 +74,7 @@ async function seed() {
     { name: "supermarket", sections: ["transactions"], icon: "🛒", color: "#f97316" },
     { name: "clothing", sections: ["transactions", "installments"], icon: "👕", color: "#8b5cf6" },
     { name: "transport", sections: ["transactions"], icon: "🚌", color: "#3b82f6" },
-    { name: "health", sections: ["transactions", "events", "installments"], icon: "🏥", color: "#ef4444" },
+    { name: "health", sections: ["pantry", "transactions", "events", "installments"], icon: "🏥", color: "#ef4444" },
     { name: "leisure", sections: ["transactions"], icon: "🎮", color: "#8b5cf6" },
     { name: "housing", sections: ["transactions", "installments", "recurring-payments"], icon: "🏠", color: "#22c55e" },
     { name: "salary", sections: ["transactions", "recurring-payments"], icon: "💰", color: "#22c55e" },

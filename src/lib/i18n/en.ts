@@ -449,11 +449,13 @@ export const en: Locale = {
   categoryLabels: {
     cleaning: "Cleaning",
     food: "Food",
+    seasonings: "Seasonings",
     candy: "Candy",
     school: "School",
     hygiene: "Hygiene",
     drinks: "Drinks",
     automotive: "Automotive",
+    pets: "Pets",
     personal: "Personal",
     errand: "Errand",
     work: "Work",
