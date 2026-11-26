@@ -450,11 +450,13 @@ export const es = {
   categoryLabels: {
     cleaning: "Limpieza",
     food: "Comida",
+    seasonings: "Condimentos",
     candy: "Golosinas",
     school: "Escuela",
     hygiene: "Higiene",
     drinks: "Bebidas",
     automotive: "Automotriz",
+    pets: "Mascotas",
     personal: "Personal",
     errand: "Encargo",
     work: "Trabajo",

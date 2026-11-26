@@ -248,7 +248,9 @@ getDb() → @libsql/client/web singleton client
 
 ### Seed (`db/seed.js`)
 
-ESM, runs with the latest Node version. Inserts 3 global payment methods (payroll, transfer, cash) and 28 predefined categories in 6 sections (pantry, tasks, transactions, installments, recurring-payments, events). The global Clothing category (`clothing`) is available in Transactions and Installments.
+The global Health category (`health`, 🏥) is available in Pantry, Transactions, Events and Installments.
+
+ESM, runs with the latest Node version. Inserts 3 global payment methods (payroll, transfer, cash) and 30 predefined categories in 6 sections (pantry, tasks, transactions, installments, recurring-payments, events). The global Clothing category (`clothing`) is available in Transactions and Installments. Pets (`pets`, 🐾) is available in Pantry, Transactions, Installments and Recurring payments. Seasonings (`seasonings`, 🧂) is available only in Pantry.
 
 ```sh
 pnpm db:seed:dev    # uses .env.development
